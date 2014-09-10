@@ -1,6 +1,7 @@
-﻿??/09/14, v1.1:
+﻿10/09/14, v1.1:
 	* Now uses a GUI to (de)select which action groups are fired.
 		* Should be compatible with existing vessels, though I'd give them a quick check to be sure.
 	* Removed some un-needed code
+	* Made some code a little bit more efficient.
 
 08/09/14, v1.0: Initial release

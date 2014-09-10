@@ -16,9 +16,10 @@ namespace AGroupOnStage {
 
 		private Rect _windowPos = new Rect();
 		private bool guiOpen = false;
+		//private bool isPartHighlighted = false;
 		private GUIStyle _labelStyle;
 		private bool initStyles = false;
-		public Dictionary<int, KSPActionGroup> aGroups = new Dictionary<int, KSPActionGroup>() {
+		public static Dictionary<int, KSPActionGroup> aGroups = new Dictionary<int, KSPActionGroup>() {
 
 			{ 0, KSPActionGroup.Custom01 },
 			{ 1, KSPActionGroup.Custom02 },
@@ -38,23 +39,28 @@ namespace AGroupOnStage {
 			{ 15, KSPActionGroup.SAS }
 
 		};
-			
-		public bool custom01 = false;
-		public bool custom02 = false;
-		public bool custom03 = false;
-		public bool custom04 = false;
-		public bool custom05 = false;
-		public bool custom06 = false;
-		public bool custom07 = false;
-		public bool custom08 = false;
-		public bool custom09 = false;
-		public bool custom10 = false;
-		public bool gear = false;
-		public bool lights = false;
-		public bool breaks = false;
-		public bool abort = false;
-		public bool rcs = false;
-		public bool sas = false;
+
+		// Do not make static!
+		public Dictionary<string, bool> actionGroups = new Dictionary<string, bool>() {
+
+			{ "custom01", false },
+			{ "custom02", false },
+			{ "custom03", false },
+			{ "custom04", false },
+			{ "custom05", false },
+			{ "custom06", false },
+			{ "custom07", false },
+			{ "custom08", false },
+			{ "custom09", false },
+			{ "custom10", false },
+			{ "gear", false },
+			{ "light", false },
+			{ "brakes", false },
+			{ "abort", false },
+			{ "rcs", false },
+			{ "sas", false }
+
+		};
 
 		[KSPEvent(active = true, guiActive = true, guiActiveEditor = true, guiName = "Action group control")]
 		public void toggleGUI() {
@@ -70,26 +76,11 @@ namespace AGroupOnStage {
 		}
 
 		public override void OnActive() {
-			bool[] groups = new bool[aGroups.Count];
-			groups[0] = custom01;
-			groups[1] = custom02;
-			groups[2] = custom03;
-			groups[3] = custom04;
-			groups[4] = custom05;
-			groups[5] = custom06;
-			groups[6] = custom07;
-			groups[7] = custom08;
-			groups[8] = custom09;
-			groups[9] = custom10;
-			groups[10] = gear;
-			groups[11] = lights;
-			groups[12] = breaks;
-			groups[13] = abort;
-			groups[14] = rcs;
-			groups[15] = sas;
-
+			// if the window is open, close it.
+			if (guiOpen)
+				toggleGUI();
 			for (int x = 0; x < 16; x++) {
-				if (groups[x]) {
+				if (actionGroups[aGroups[x].ToString().ToLower()]) {
 					this.part.vessel.ActionGroups.ToggleGroup(aGroups[x]);
 					Log("Toggled group '" + aGroups[x] + "' for part '" + this.part.name + "' in stage " + this.part.inverseStage);
 				}
@@ -109,27 +100,13 @@ namespace AGroupOnStage {
 			cfg.save ();
 			*/
 
-			bool[] groups = new bool[aGroups.Count];
-			groups[0] = custom01;
-			groups[1] = custom02;
-			groups[2] = custom03;
-			groups[3] = custom04;
-			groups[4] = custom05;
-			groups[5] = custom06;
-			groups[6] = custom07;
-			groups[7] = custom08;
-			groups[8] = custom09;
-			groups[9] = custom10;
-			groups[10] = gear;
-			groups[11] = lights;
-			groups[12] = breaks;
-			groups[13] = abort;
-			groups[14] = rcs;
-			groups[15] = sas;
-
-			for (int x = 0; x < aGroups.Count; x++)
-				node.AddValue(aGroups[x].ToString().ToLower(), groups[x]);
-
+			for (int x = 0; x < aGroups.Count; x++) {
+				try {
+					node.AddValue(aGroups[x].ToString().ToLower(), actionGroups[aGroups[x].ToString().ToLower()]);
+				} catch (Exception e) { 
+					Log("Couldn't save setting for '" + aGroups[x] + "' (" + e.Message + ")");
+				}
+			}
 
 		}
 
@@ -140,22 +117,23 @@ namespace AGroupOnStage {
 			_windowPos = cfg.GetValue<Rect> ("winPos");
 			*/
 
-			custom01 = Convert.ToBoolean(node.GetValue("custom01"));
-			custom02 = Convert.ToBoolean(node.GetValue("custom02"));
-			custom03 = Convert.ToBoolean(node.GetValue("custom03"));
-			custom04 = Convert.ToBoolean(node.GetValue("custom04"));
-			custom05 = Convert.ToBoolean(node.GetValue("custom05"));
-			custom06 = Convert.ToBoolean(node.GetValue("custom06"));
-			custom07 = Convert.ToBoolean(node.GetValue("custom07"));
-			custom08 = Convert.ToBoolean(node.GetValue("custom08"));
-			custom09 = Convert.ToBoolean(node.GetValue("custom09"));
-			custom10 = Convert.ToBoolean(node.GetValue("custom10"));
-			gear = Convert.ToBoolean(node.GetValue("gear"));
-			lights = Convert.ToBoolean(node.GetValue("lights"));
-			breaks = Convert.ToBoolean(node.GetValue("breaks"));
-			abort = Convert.ToBoolean(node.GetValue("abort"));
-			rcs = Convert.ToBoolean(node.GetValue("rcs"));
-			sas = Convert.ToBoolean(node.GetValue("sas"));
+			actionGroups["custom01"] = Convert.ToBoolean(node.GetValue("custom01"));
+			actionGroups["custom02"] = Convert.ToBoolean(node.GetValue("custom02"));
+			actionGroups["custom03"] = Convert.ToBoolean(node.GetValue("custom03"));
+			actionGroups["custom04"] = Convert.ToBoolean(node.GetValue("custom04"));
+			actionGroups["custom05"] = Convert.ToBoolean(node.GetValue("custom05"));
+			actionGroups["custom06"] = Convert.ToBoolean(node.GetValue("custom06"));
+			actionGroups["custom07"] = Convert.ToBoolean(node.GetValue("custom07"));
+			actionGroups["custom08"] = Convert.ToBoolean(node.GetValue("custom08"));
+			actionGroups["custom09"] = Convert.ToBoolean(node.GetValue("custom09"));
+			actionGroups["custom10"] = Convert.ToBoolean(node.GetValue("custom10"));
+			actionGroups["gear"] = Convert.ToBoolean(node.GetValue("gear"));
+			actionGroups["light"] = Convert.ToBoolean((node.HasNode("lights") ? node.GetValue("lights") : node.GetValue("light")));
+			// I'm an idiot and have been typoing this all along...
+			actionGroups["brakes"] = Convert.ToBoolean((node.HasNode("breaks") ? node.GetValue("breaks") : node.GetValue("brakes")));
+			actionGroups["abort"] = Convert.ToBoolean(node.GetValue("abort"));
+			actionGroups["rcs"] = Convert.ToBoolean(node.GetValue("rcs"));
+			actionGroups["sas"] = Convert.ToBoolean(node.GetValue("sas"));
 
 			// Turns out we nuke the part catalogue if we don't check this... Who would've thunk it?
 			if (HighLogic.LoadedScene != GameScenes.LOADING)
@@ -190,35 +168,53 @@ namespace AGroupOnStage {
 				_labelStyle.stretchWidth = initStyles = true;
 			}
 			GUILayout.BeginHorizontal(GUILayout.Width(250f));
-			GUILayout.Label("Action group control for '" + this.part.partInfo.title + "'\n\nCheck which groups you want to fire when this part is staged.", _labelStyle);
+			GUILayout.Label("Action group control for '" + this.part.partInfo.title + "'", _labelStyle);
+			GUILayout.EndHorizontal();
+
+			/* This doesn't really work how I wanted it to do (it highlights all parts in the heriarchy)
+			GUILayout.BeginHorizontal();
+			if (GUILayout.Button("Highlight"))
+				isPartHighlighted = !isPartHighlighted;
+			if (isPartHighlighted) {
+				this.part.highlightRecurse = false;
+				this.part.SetHighlightType(Part.HighlightType.AlwaysOn);
+			}
+			else
+				this.part.SetHighlightDefault();
+			this.part.SetHighlight(isPartHighlighted);
+			GUILayout.EndHorizontal(); 
+			*/
+
+			GUILayout.BeginHorizontal();
+			GUILayout.Label("Check which groups you want to fire when this part is staged.", _labelStyle);
 			GUILayout.EndHorizontal();
 
 			GUILayout.BeginHorizontal();
 
-			custom01 = GUILayout.Toggle(custom01, "Custom01", GUILayout.ExpandWidth(false));
-			custom02 = GUILayout.Toggle(custom02, "Custom02", GUILayout.ExpandWidth(false));
-			custom03 = GUILayout.Toggle(custom03, "Custom03", GUILayout.ExpandWidth(false));
-			custom04 = GUILayout.Toggle(custom04, "Custom04", GUILayout.ExpandWidth(false));
-			custom05 = GUILayout.Toggle(custom05, "Custom05", GUILayout.ExpandWidth(false));
+			actionGroups["custom01"] = GUILayout.Toggle(actionGroups["custom01"], "Custom01", GUILayout.ExpandWidth(false));
+			actionGroups["custom02"] = GUILayout.Toggle(actionGroups["custom02"], "Custom02", GUILayout.ExpandWidth(false));
+			actionGroups["custom03"] = GUILayout.Toggle(actionGroups["custom03"], "Custom03", GUILayout.ExpandWidth(false));
+			actionGroups["custom04"] = GUILayout.Toggle(actionGroups["custom04"], "Custom04", GUILayout.ExpandWidth(false));
+			actionGroups["custom05"] = GUILayout.Toggle(actionGroups["custom05"], "Custom05", GUILayout.ExpandWidth(false));
 
 			GUILayout.EndHorizontal();
 			GUILayout.BeginHorizontal();
 
-			custom06 = GUILayout.Toggle(custom06, "Custom06", GUILayout.ExpandWidth(false));
-			custom07 = GUILayout.Toggle(custom07, "Custom07", GUILayout.ExpandWidth(false));
-			custom08 = GUILayout.Toggle(custom08, "Custom08", GUILayout.ExpandWidth(false));
-			custom09 = GUILayout.Toggle(custom09, "Custom09", GUILayout.ExpandWidth(false));
-			custom10 = GUILayout.Toggle(custom10, "Custom10", GUILayout.ExpandWidth(false));
+			actionGroups["custom06"] = GUILayout.Toggle(actionGroups["custom06"], "Custom06", GUILayout.ExpandWidth(false));
+			actionGroups["custom07"] = GUILayout.Toggle(actionGroups["custom07"], "Custom07", GUILayout.ExpandWidth(false));
+			actionGroups["custom08"] = GUILayout.Toggle(actionGroups["custom08"], "Custom08", GUILayout.ExpandWidth(false));
+			actionGroups["custom09"] = GUILayout.Toggle(actionGroups["custom09"], "Custom09", GUILayout.ExpandWidth(false));
+			actionGroups["custom10"] = GUILayout.Toggle(actionGroups["custom10"], "Custom10", GUILayout.ExpandWidth(false));
 
 			GUILayout.EndHorizontal();
 			GUILayout.BeginHorizontal();
 
-			gear = GUILayout.Toggle(gear, "Gear", GUILayout.ExpandWidth(false));
-			lights = GUILayout.Toggle(lights, "Lights", GUILayout.ExpandWidth(false));
-			breaks = GUILayout.Toggle(breaks, "Breaks", GUILayout.ExpandWidth(false));
-			abort = GUILayout.Toggle(abort, "Abort", GUILayout.ExpandWidth(false));
-			rcs = GUILayout.Toggle(rcs, "RCS", GUILayout.ExpandWidth(false));
-			sas = GUILayout.Toggle(sas, "SAS", GUILayout.ExpandWidth(false));
+			actionGroups["gear"] = GUILayout.Toggle(actionGroups["gear"], "Gear", GUILayout.ExpandWidth(false));
+			actionGroups["light"] = GUILayout.Toggle(actionGroups["light"], "Lights", GUILayout.ExpandWidth(false));
+			actionGroups["brakes"] = GUILayout.Toggle(actionGroups["brakes"], "Brakes", GUILayout.ExpandWidth(false));
+			actionGroups["abort"] = GUILayout.Toggle(actionGroups["abort"], "Abort", GUILayout.ExpandWidth(false));
+			actionGroups["rcs"] = GUILayout.Toggle(actionGroups["rcs"], "RCS", GUILayout.ExpandWidth(false));
+			actionGroups["sas"] = GUILayout.Toggle(actionGroups["sas"], "SAS", GUILayout.ExpandWidth(false));
 
 			GUILayout.EndHorizontal();
 			GUILayout.BeginHorizontal();
