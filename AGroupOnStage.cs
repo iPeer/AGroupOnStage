@@ -18,7 +18,7 @@ namespace AGroupOnStage {
 		private bool guiOpen = false;
 		//private bool isPartHighlighted = false;
 		private GUIStyle _labelStyle;
-		private bool initStyles = false;
+		private bool hasInitStyles = false;
 		public static Dictionary<int, KSPActionGroup> aGroups = new Dictionary<int, KSPActionGroup>() {
 
 			{ 0, KSPActionGroup.Custom01 },
@@ -161,11 +161,23 @@ namespace AGroupOnStage {
 		}
 
 		private void OnWindow(int winID) {
-			if (!initStyles) {
-				//_labelStyle = new GUIStyle();
+			if (!hasInitStyles) {
+				GUI.skin = null;
 				_labelStyle = new GUIStyle(GUI.skin.label);
-				//_labelStyle.normal.textColor = _labelStyle.active.textColor = _labelStyle.focused.textColor = _labelStyle.hover.textColor = Color.white;
-				_labelStyle.stretchWidth = initStyles = true;
+				_labelStyle.stretchWidth = hasInitStyles = true;
+
+				// Detective work to find what mod was breaking the GUI's style :/
+
+				Log("Theme: " + GUI.skin);
+				Log("Toggle: " + GUI.skin.toggle);
+				Log("Toggle border: " + GUI.skin.toggle.border);
+				Log("Toggle offset: " + GUI.skin.toggle.contentOffset);
+				Log("Toggle margin: " + GUI.skin.toggle.margin);
+				Log("Toggle alignment: " + GUI.skin.toggle.alignment);
+				Log("Toggle Font: " + GUI.skin.toggle.font);
+				Log("Toggle Font size: " + GUI.skin.toggle.fontSize);
+				Log("Toggle style: " + GUI.skin.toggle.fontStyle);
+
 			}
 			GUILayout.BeginHorizontal(GUILayout.Width(250f));
 			GUILayout.Label("Action group control for '" + this.part.partInfo.title + "'", _labelStyle);
@@ -191,30 +203,30 @@ namespace AGroupOnStage {
 
 			GUILayout.BeginHorizontal();
 
-			actionGroups["custom01"] = GUILayout.Toggle(actionGroups["custom01"], "Custom01", GUILayout.ExpandWidth(false));
-			actionGroups["custom02"] = GUILayout.Toggle(actionGroups["custom02"], "Custom02", GUILayout.ExpandWidth(false));
-			actionGroups["custom03"] = GUILayout.Toggle(actionGroups["custom03"], "Custom03", GUILayout.ExpandWidth(false));
-			actionGroups["custom04"] = GUILayout.Toggle(actionGroups["custom04"], "Custom04", GUILayout.ExpandWidth(false));
-			actionGroups["custom05"] = GUILayout.Toggle(actionGroups["custom05"], "Custom05", GUILayout.ExpandWidth(false));
+			actionGroups["custom01"] = GUILayout.Toggle(actionGroups["custom01"], "Custom01", GUILayout.ExpandWidth(true));
+			actionGroups["custom02"] = GUILayout.Toggle(actionGroups["custom02"], "Custom02", GUILayout.ExpandWidth(true));
+			actionGroups["custom03"] = GUILayout.Toggle(actionGroups["custom03"], "Custom03", GUILayout.ExpandWidth(true));
+			actionGroups["custom04"] = GUILayout.Toggle(actionGroups["custom04"], "Custom04", GUILayout.ExpandWidth(true));
+			actionGroups["custom05"] = GUILayout.Toggle(actionGroups["custom05"], "Custom05", GUILayout.ExpandWidth(true));
 
 			GUILayout.EndHorizontal();
 			GUILayout.BeginHorizontal();
 
-			actionGroups["custom06"] = GUILayout.Toggle(actionGroups["custom06"], "Custom06", GUILayout.ExpandWidth(false));
-			actionGroups["custom07"] = GUILayout.Toggle(actionGroups["custom07"], "Custom07", GUILayout.ExpandWidth(false));
-			actionGroups["custom08"] = GUILayout.Toggle(actionGroups["custom08"], "Custom08", GUILayout.ExpandWidth(false));
-			actionGroups["custom09"] = GUILayout.Toggle(actionGroups["custom09"], "Custom09", GUILayout.ExpandWidth(false));
-			actionGroups["custom10"] = GUILayout.Toggle(actionGroups["custom10"], "Custom10", GUILayout.ExpandWidth(false));
+			actionGroups["custom06"] = GUILayout.Toggle(actionGroups["custom06"], "Custom06", GUILayout.ExpandWidth(true));
+			actionGroups["custom07"] = GUILayout.Toggle(actionGroups["custom07"], "Custom07", GUILayout.ExpandWidth(true));
+			actionGroups["custom08"] = GUILayout.Toggle(actionGroups["custom08"], "Custom08", GUILayout.ExpandWidth(true));
+			actionGroups["custom09"] = GUILayout.Toggle(actionGroups["custom09"], "Custom09", GUILayout.ExpandWidth(true));
+			actionGroups["custom10"] = GUILayout.Toggle(actionGroups["custom10"], "Custom10", GUILayout.ExpandWidth(true));
 
 			GUILayout.EndHorizontal();
 			GUILayout.BeginHorizontal();
 
-			actionGroups["gear"] = GUILayout.Toggle(actionGroups["gear"], "Gear", GUILayout.ExpandWidth(false));
-			actionGroups["light"] = GUILayout.Toggle(actionGroups["light"], "Lights", GUILayout.ExpandWidth(false));
-			actionGroups["brakes"] = GUILayout.Toggle(actionGroups["brakes"], "Brakes", GUILayout.ExpandWidth(false));
-			actionGroups["abort"] = GUILayout.Toggle(actionGroups["abort"], "Abort", GUILayout.ExpandWidth(false));
-			actionGroups["rcs"] = GUILayout.Toggle(actionGroups["rcs"], "RCS", GUILayout.ExpandWidth(false));
-			actionGroups["sas"] = GUILayout.Toggle(actionGroups["sas"], "SAS", GUILayout.ExpandWidth(false));
+			actionGroups["gear"] = GUILayout.Toggle(actionGroups["gear"], "Gear", GUILayout.ExpandWidth(true));
+			actionGroups["light"] = GUILayout.Toggle(actionGroups["light"], "Lights", GUILayout.ExpandWidth(true));
+			actionGroups["brakes"] = GUILayout.Toggle(actionGroups["brakes"], "Brakes", GUILayout.ExpandWidth(true));
+			actionGroups["abort"] = GUILayout.Toggle(actionGroups["abort"], "Abort", GUILayout.ExpandWidth(true));
+			actionGroups["rcs"] = GUILayout.Toggle(actionGroups["rcs"], "RCS", GUILayout.ExpandWidth(true));
+			actionGroups["sas"] = GUILayout.Toggle(actionGroups["sas"], "SAS", GUILayout.ExpandWidth(true));
 
 			GUILayout.EndHorizontal();
 			GUILayout.BeginHorizontal();
