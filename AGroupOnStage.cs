@@ -17,8 +17,19 @@ namespace AGroupOnStage {
 		private Rect _windowPos = new Rect();
 		private bool guiOpen = false;
 		//private bool isPartHighlighted = false;
-		private GUIStyle _labelStyle;
-		private bool hasInitStyles = false;
+		private static GUIStyle _windowStyle, _labelStyle, _toggleStyle, _buttonStyle;
+		private static int skinID = -1;
+		private static bool hasInitStyles = false, loadedSkins = false;
+		public static Dictionary<int, GUISkin> guiSkins = new Dictionary<int, GUISkin>();
+
+		// Some modded installs edit or add skins, these are the skins we prefer to use where available, in order of preference
+		public static Dictionary<int, string> preferredSkins = new Dictionary<int, string>() {
+
+			{ 0, "GameSkin(Clone)" },
+			{ 1, "GameSkin" }
+
+		};
+
 		public static Dictionary<int, KSPActionGroup> aGroups = new Dictionary<int, KSPActionGroup>() {
 
 			{ 0, KSPActionGroup.Custom01 },
@@ -81,7 +92,9 @@ namespace AGroupOnStage {
 				toggleGUI();
 			for (int x = 0; x < 16; x++) {
 				if (actionGroups[aGroups[x].ToString().ToLower()]) {
-					this.part.vessel.ActionGroups.ToggleGroup(aGroups[x]);
+					// Make sure we fire the AG on the active vessel, not the stage(s) we just dropped.
+					// TODO: Make this configurable?
+					FlightGlobals.ActiveVessel.ActionGroups.ToggleGroup(aGroups[x]);
 					Log("Toggled group '" + aGroups[x] + "' for part '" + this.part.name + "' in stage " + this.part.inverseStage);
 				}
 			}
@@ -147,10 +160,62 @@ namespace AGroupOnStage {
 
 		private void OnDraw() {
 			if (this.vessel == FlightGlobals.ActiveVessel) {
+				if (!hasInitStyles) {
+					hasInitStyles = true;
+					if (!loadedSkins) {
+						loadedSkins = true;
+						GUISkin[] skins = Resources.FindObjectsOfTypeAll(typeof(GUISkin)) as GUISkin[];
+						int _skinID = 0;
+						foreach (GUISkin _skin in skins) {
+							guiSkins.Add(_skinID++, _skin);
+							#if DEBUG
+							Log("Skin: " + _skin.name);
+							#endif
+						}
+					}
+					//GUI.skin = Resources.Load("KSP window 2") as GUISkin;
+					//GUI.skin = HighLogic.Skin;
+
+					if (skinID == -1) {
+						int __skin = -1;
+						while (skinID == -1 && __skin++ < preferredSkins.Count)
+							skinID = getSkinIDForName(preferredSkins[__skin]);
+						if (skinID > -1)
+							Log("Skin has been set to " + preferredSkins[__skin]);
+					}
+					GUISkin skinRef = guiSkins[skinID];
+					if (skinRef == null || skinID == -1) {
+						Log("skinRef == null or skinID == -1, defaulting to HighLogic.Skin");
+						skinRef = HighLogic.Skin;
+					}
+
+					_windowStyle = new GUIStyle(skinRef.window);
+					_windowStyle.fixedWidth = 500f;
+					_labelStyle = new GUIStyle(skinRef.label);
+					_labelStyle.stretchWidth = true;
+					_toggleStyle = new GUIStyle(skinRef.toggle);
+					//_toggleStyle.fixedWidth = 50f;
+					_toggleStyle.stretchWidth = true;
+					_buttonStyle = new GUIStyle(skinRef.button);
+					_buttonStyle.stretchWidth = true;
+
+					#if DEBUG
+					Log("Theme: " + GUI.skin);
+					Log("Toggle: " + GUI.skin.toggle);
+					Log("Toggle border: " + GUI.skin.toggle.border);
+					Log("Toggle offset: " + GUI.skin.toggle.contentOffset);
+					Log("Toggle margin: " + GUI.skin.toggle.margin);
+					Log("Toggle alignment: " + GUI.skin.toggle.alignment);
+					Log("Toggle Font: " + GUI.skin.toggle.font);
+					Log("Toggle Font size: " + GUI.skin.toggle.fontSize);
+					Log("Toggle style: " + GUI.skin.toggle.fontStyle);
+					#endif
+
+				}
 				// Use this.part.GetInstanceID() to (hopefully) prevent the GUI from getting stuck open if you open one from another part.
 				// Edit: Didn't work
 				// TODO: Allow users to somehow highlight the part (or something) the window belongs to in the event of multiple parts with the same name.
-				_windowPos = GUILayout.Window(+this.part.GetInstanceID(), _windowPos, OnWindow, "Action Group Control");
+				_windowPos = GUILayout.Window(+this.part.GetInstanceID(), _windowPos, OnWindow, "Action Group Control", _windowStyle);
 				// Center the GUI if it is at 0,0
 				if (_windowPos.x == 0f && _windowPos.y == 0f) {
 					_windowPos.x = Screen.width / 2 - _windowPos.width / 2;
@@ -161,25 +226,8 @@ namespace AGroupOnStage {
 		}
 
 		private void OnWindow(int winID) {
-			if (!hasInitStyles) {
-				GUI.skin = null;
-				_labelStyle = new GUIStyle(GUI.skin.label);
-				_labelStyle.stretchWidth = hasInitStyles = true;
 
-				// Detective work to find what mod was breaking the GUI's style :/
-
-				Log("Theme: " + GUI.skin);
-				Log("Toggle: " + GUI.skin.toggle);
-				Log("Toggle border: " + GUI.skin.toggle.border);
-				Log("Toggle offset: " + GUI.skin.toggle.contentOffset);
-				Log("Toggle margin: " + GUI.skin.toggle.margin);
-				Log("Toggle alignment: " + GUI.skin.toggle.alignment);
-				Log("Toggle Font: " + GUI.skin.toggle.font);
-				Log("Toggle Font size: " + GUI.skin.toggle.fontSize);
-				Log("Toggle style: " + GUI.skin.toggle.fontStyle);
-
-			}
-			GUILayout.BeginHorizontal(GUILayout.Width(250f));
+			GUILayout.BeginHorizontal();
 			GUILayout.Label("Action group control for '" + this.part.partInfo.title + "'", _labelStyle);
 			GUILayout.EndHorizontal();
 
@@ -203,40 +251,62 @@ namespace AGroupOnStage {
 
 			GUILayout.BeginHorizontal();
 
-			actionGroups["custom01"] = GUILayout.Toggle(actionGroups["custom01"], "Custom01", GUILayout.ExpandWidth(true));
-			actionGroups["custom02"] = GUILayout.Toggle(actionGroups["custom02"], "Custom02", GUILayout.ExpandWidth(true));
-			actionGroups["custom03"] = GUILayout.Toggle(actionGroups["custom03"], "Custom03", GUILayout.ExpandWidth(true));
-			actionGroups["custom04"] = GUILayout.Toggle(actionGroups["custom04"], "Custom04", GUILayout.ExpandWidth(true));
-			actionGroups["custom05"] = GUILayout.Toggle(actionGroups["custom05"], "Custom05", GUILayout.ExpandWidth(true));
+			actionGroups["custom01"] = GUILayout.Toggle(actionGroups["custom01"], "Custom01", _toggleStyle);
+			actionGroups["custom02"] = GUILayout.Toggle(actionGroups["custom02"], "Custom02", _toggleStyle);
+			actionGroups["custom03"] = GUILayout.Toggle(actionGroups["custom03"], "Custom03", _toggleStyle);
+			actionGroups["custom04"] = GUILayout.Toggle(actionGroups["custom04"], "Custom04", _toggleStyle);
+			actionGroups["custom05"] = GUILayout.Toggle(actionGroups["custom05"], "Custom05", _toggleStyle);
 
 			GUILayout.EndHorizontal();
 			GUILayout.BeginHorizontal();
 
-			actionGroups["custom06"] = GUILayout.Toggle(actionGroups["custom06"], "Custom06", GUILayout.ExpandWidth(true));
-			actionGroups["custom07"] = GUILayout.Toggle(actionGroups["custom07"], "Custom07", GUILayout.ExpandWidth(true));
-			actionGroups["custom08"] = GUILayout.Toggle(actionGroups["custom08"], "Custom08", GUILayout.ExpandWidth(true));
-			actionGroups["custom09"] = GUILayout.Toggle(actionGroups["custom09"], "Custom09", GUILayout.ExpandWidth(true));
-			actionGroups["custom10"] = GUILayout.Toggle(actionGroups["custom10"], "Custom10", GUILayout.ExpandWidth(true));
+			actionGroups["custom06"] = GUILayout.Toggle(actionGroups["custom06"], "Custom06", _toggleStyle);
+			actionGroups["custom07"] = GUILayout.Toggle(actionGroups["custom07"], "Custom07", _toggleStyle);
+			actionGroups["custom08"] = GUILayout.Toggle(actionGroups["custom08"], "Custom08", _toggleStyle);
+			actionGroups["custom09"] = GUILayout.Toggle(actionGroups["custom09"], "Custom09", _toggleStyle);
+			actionGroups["custom10"] = GUILayout.Toggle(actionGroups["custom10"], "Custom10", _toggleStyle);
 
 			GUILayout.EndHorizontal();
 			GUILayout.BeginHorizontal();
 
-			actionGroups["gear"] = GUILayout.Toggle(actionGroups["gear"], "Gear", GUILayout.ExpandWidth(true));
-			actionGroups["light"] = GUILayout.Toggle(actionGroups["light"], "Lights", GUILayout.ExpandWidth(true));
-			actionGroups["brakes"] = GUILayout.Toggle(actionGroups["brakes"], "Brakes", GUILayout.ExpandWidth(true));
-			actionGroups["abort"] = GUILayout.Toggle(actionGroups["abort"], "Abort", GUILayout.ExpandWidth(true));
-			actionGroups["rcs"] = GUILayout.Toggle(actionGroups["rcs"], "RCS", GUILayout.ExpandWidth(true));
-			actionGroups["sas"] = GUILayout.Toggle(actionGroups["sas"], "SAS", GUILayout.ExpandWidth(true));
+			actionGroups["gear"] = GUILayout.Toggle(actionGroups["gear"], "Gear", _toggleStyle);
+			actionGroups["light"] = GUILayout.Toggle(actionGroups["light"], "Lights", _toggleStyle);
+			actionGroups["brakes"] = GUILayout.Toggle(actionGroups["brakes"], "Brakes", _toggleStyle);
+			actionGroups["abort"] = GUILayout.Toggle(actionGroups["abort"], "Abort", _toggleStyle);
+			actionGroups["rcs"] = GUILayout.Toggle(actionGroups["rcs"], "RCS", _toggleStyle);
+			actionGroups["sas"] = GUILayout.Toggle(actionGroups["sas"], "SAS", _toggleStyle);
 
 			GUILayout.EndHorizontal();
 			GUILayout.BeginHorizontal();
 
-			if (GUILayout.Button("Close", GUILayout.ExpandWidth(true))) {
+			if (GUILayout.Button("Close", _buttonStyle)) {
 				toggleGUI();
 			}
+			#if DEBUG
+
+			if (GUILayout.Button(skinID + ": " + guiSkins[skinID].name, _buttonStyle)) {
+				skinID++;
+				if (skinID >= guiSkins.Count)
+					skinID = 0;
+				hasInitStyles = false;
+			}
+
+			#endif
 			GUILayout.EndHorizontal();
 
 			GUI.DragWindow();
+		}
+
+		public int getSkinIDForName(string name) {
+
+			int id = 0;
+			foreach (GUISkin _skin in guiSkins.Values) {
+				if (_skin.name == name)
+					return id;
+				id++;
+			}
+			return -1;
+
 		}
 
 
