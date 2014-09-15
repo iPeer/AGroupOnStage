@@ -1,4 +1,8 @@
-﻿10/09/14, v1.1:
+﻿15/09/14, v1.1.1:
+	* Fixed an issue causing the GUI to become squashed on heavilty modded installs.
+	* Fix action groups not always being fired when a decouple has been decoupled.
+
+10/09/14, v1.1:
 	* Now uses a GUI to (de)select which action groups are fired.
 		* Should be compatible with existing vessels, though I'd give them a quick check to be sure.
 	* Removed some un-needed code
