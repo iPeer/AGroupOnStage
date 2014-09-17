@@ -16,11 +16,14 @@ namespace AGroupOnStage {
 
 		private Rect _windowPos = new Rect();
 		private bool guiOpen = false;
-		//private bool isPartHighlighted = false;
+		private bool isPartHighlighted = false;
 		private static GUIStyle _windowStyle, _labelStyle, _toggleStyle, _buttonStyle;
 		private static int skinID = -1;
 		private static bool hasInitStyles = false, loadedSkins = false;
 		public static Dictionary<int, GUISkin> guiSkins = new Dictionary<int, GUISkin>();
+		public static int highlightedParts = 0;
+		private bool hasSetColourID = false;
+		private int colourID = 0;
 
 		// Some modded installs edit or add skins, these are the skins we prefer to use where available, in order of preference
 		public static Dictionary<int, string> preferredSkins = new Dictionary<int, string>() {
@@ -70,6 +73,23 @@ namespace AGroupOnStage {
 			{ "abort", false },
 			{ "rcs", false },
 			{ "sas", false }
+
+		};
+
+		public static Dictionary<int, Color> colourIndex = new Dictionary<int, Color>() {
+
+//			Quoted colours don't work very well (low contrast) or at all.
+
+//			{ 0, Color.black },
+			{ 0, Color.blue },
+//			{ 2, Color.clear },
+			{ 1, Color.cyan },
+//			{ 2, Color.gray },
+			{ 2, Color.green },
+			{ 3, Color.magenta },
+			{ 4, Color.red },
+			{ 5, Color.white },
+			{ 6, Color.yellow }
 
 		};
 
@@ -154,6 +174,17 @@ namespace AGroupOnStage {
 
 		}
 
+		//		public override void OnUpdate() {
+		//
+		//			if (isPartHighlighted) {
+		//
+		//				this.part.SetHighlightColor(Color.blue); // Why would you not have Colour as an alias :c
+		//				this.part.SetHighlight(true);
+		//
+		//			}
+		//
+		//		}
+
 
 
 		// GUI STUFF
@@ -199,7 +230,7 @@ namespace AGroupOnStage {
 					_buttonStyle = new GUIStyle(skinRef.button);
 					_buttonStyle.stretchWidth = true;
 
-					#if DEBUG
+					/*#if DEBUG
 					Log("Theme: " + GUI.skin);
 					Log("Toggle: " + GUI.skin.toggle);
 					Log("Toggle border: " + GUI.skin.toggle.border);
@@ -209,7 +240,7 @@ namespace AGroupOnStage {
 					Log("Toggle Font: " + GUI.skin.toggle.font);
 					Log("Toggle Font size: " + GUI.skin.toggle.fontSize);
 					Log("Toggle style: " + GUI.skin.toggle.fontStyle);
-					#endif
+					#endif*/
 
 				}
 				// Use this.part.GetInstanceID() to (hopefully) prevent the GUI from getting stuck open if you open one from another part.
@@ -229,21 +260,37 @@ namespace AGroupOnStage {
 
 			GUILayout.BeginHorizontal();
 			GUILayout.Label("Action group control for '" + this.part.partInfo.title + "'", _labelStyle);
-			GUILayout.EndHorizontal();
+//			GUILayout.EndHorizontal();
+//
+//			GUILayout.BeginHorizontal();
 
-			/* This doesn't really work how I wanted it to do (it highlights all parts in the heriarchy)
-			GUILayout.BeginHorizontal();
-			if (GUILayout.Button("Highlight"))
-				isPartHighlighted = !isPartHighlighted;
-			if (isPartHighlighted) {
-				this.part.highlightRecurse = false;
-				this.part.SetHighlightType(Part.HighlightType.AlwaysOn);
-			}
-			else
+			isPartHighlighted = GUILayout.Toggle(isPartHighlighted, "Highlight", _buttonStyle);
+			if (!isPartHighlighted) {
+				if (hasSetColourID)
+					highlightedParts--;
+				hasSetColourID = false;
 				this.part.SetHighlightDefault();
-			this.part.SetHighlight(isPartHighlighted);
+			}
+			else {
+				if (!hasSetColourID) {
+					colourID = highlightedParts;
+					highlightedParts++;
+					if (colourID >= colourIndex.Count)
+						colourID = (colourID - (int)Math.Floor((double)(highlightedParts * colourIndex.Count))) - 1; // I have to cast this to double apparently...
+					hasSetColourID = true;
+					#if DEBUG
+					Log("ColourID: " + colourID);
+					#endif
+				}
+				try {
+					this.part.SetHighlightColor(colourIndex[colourID]);
+				} catch (Exception e) {
+				}
+				this.part.SetHighlight(true);
+			}
+
 			GUILayout.EndHorizontal(); 
-			*/
+
 
 			GUILayout.BeginHorizontal();
 			GUILayout.Label("Check which groups you want to fire when this part is staged.", _labelStyle);
@@ -280,6 +327,10 @@ namespace AGroupOnStage {
 			GUILayout.BeginHorizontal();
 
 			if (GUILayout.Button("Close", _buttonStyle)) {
+				isPartHighlighted = false;
+				this.part.SetHighlightDefault();
+				highlightedParts--;
+				hasSetColourID = false;
 				toggleGUI();
 			}
 			#if DEBUG
@@ -308,7 +359,6 @@ namespace AGroupOnStage {
 			return -1;
 
 		}
-
 
 	}
 }
