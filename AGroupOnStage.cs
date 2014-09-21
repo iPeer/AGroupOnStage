@@ -19,19 +19,11 @@ namespace AGroupOnStage {
 		private bool isPartHighlighted = false;
 		private static GUIStyle _windowStyle, _labelStyle, _toggleStyle, _buttonStyle;
 		private static int skinID = -1;
-		private static bool hasInitStyles = false, loadedSkins = false;
+		private static bool hasInitStyles = false/*, loadedSkins = false*/;
 		public static Dictionary<int, GUISkin> guiSkins = new Dictionary<int, GUISkin>();
 		public static int highlightedParts = 0;
 		private bool hasSetColourID = false;
 		private int colourID = 0;
-
-		// Some modded installs edit or add skins, these are the skins we prefer to use where available, in order of preference
-		public static Dictionary<int, string> preferredSkins = new Dictionary<int, string>() {
-
-			{ 0, "GameSkin(Clone)" },
-			{ 1, "GameSkin" }
-
-		};
 
 		public static Dictionary<int, KSPActionGroup> aGroups = new Dictionary<int, KSPActionGroup>() {
 
@@ -193,32 +185,25 @@ namespace AGroupOnStage {
 			if (this.vessel == FlightGlobals.ActiveVessel) {
 				if (!hasInitStyles) {
 					hasInitStyles = true;
-					if (!loadedSkins) {
-						loadedSkins = true;
-						GUISkin[] skins = Resources.FindObjectsOfTypeAll(typeof(GUISkin)) as GUISkin[];
-						int _skinID = 0;
-						foreach (GUISkin _skin in skins) {
-							guiSkins.Add(_skinID++, _skin);
-							#if DEBUG
-							Log("Skin: " + _skin.name);
-							#endif
-						}
-					}
-					//GUI.skin = Resources.Load("KSP window 2") as GUISkin;
-					//GUI.skin = HighLogic.Skin;
+//					if (!loadedSkins) {
+//						loadedSkins = true;
+//						guiSkins = iPeerLib.Utils.getSkinList();
+//					}
+//
+//					if (skinID == -1) {
+//						int __skin = -1;
+//						while (skinID == -1 && __skin++ < iPeerLib.Utils.preferredSkins.Count)
+//							skinID = iPeerLib.Utils.getSkinIDForName(iPeerLib.Utils.preferredSkins[__skin]);
+//						if (skinID > -1)
+//							Log("Skin has been set to " + iPeerLib.Utils.preferredSkins[__skin]);
+//					}
+//					GUISkin skinRef = guiSkins[skinID];
+//					if (skinRef == null || skinID == -1) {
+//						Log("skinRef == null or skinID == -1, defaulting to HighLogic.Skin");
+//						skinRef = HighLogic.Skin;
+//					}
 
-					if (skinID == -1) {
-						int __skin = -1;
-						while (skinID == -1 && __skin++ < preferredSkins.Count)
-							skinID = getSkinIDForName(preferredSkins[__skin]);
-						if (skinID > -1)
-							Log("Skin has been set to " + preferredSkins[__skin]);
-					}
-					GUISkin skinRef = guiSkins[skinID];
-					if (skinRef == null || skinID == -1) {
-						Log("skinRef == null or skinID == -1, defaulting to HighLogic.Skin");
-						skinRef = HighLogic.Skin;
-					}
+					GUISkin skinRef = iPeerLib.Utils.getBestAvailableSkin();
 
 					_windowStyle = new GUIStyle(skinRef.window);
 					_windowStyle.fixedWidth = 500f;
@@ -333,7 +318,7 @@ namespace AGroupOnStage {
 				hasSetColourID = false;
 				toggleGUI();
 			}
-			#if DEBUG
+			/*#if DEBUG
 
 			if (GUILayout.Button(skinID + ": " + guiSkins[skinID].name, _buttonStyle)) {
 				skinID++;
@@ -342,24 +327,12 @@ namespace AGroupOnStage {
 				hasInitStyles = false;
 			}
 
-			#endif
+			#endif*/
 			GUILayout.EndHorizontal();
 
 			GUI.DragWindow();
 		}
-
-		public int getSkinIDForName(string name) {
-
-			int id = 0;
-			foreach (GUISkin _skin in guiSkins.Values) {
-				if (_skin.name == name)
-					return id;
-				id++;
-			}
-			return -1;
-
-		}
-
+			
 	}
 }
 
