@@ -10,20 +10,26 @@ using System.Collections.Generic;
 using UnityEngine;
 using KSP.IO;
 using System;
+using AGroupOnStage.ActionGroups;
 
 namespace AGroupOnStage {
+
+	[KSPModule("Action Group On Stage")]
 	public class AGroupOnStage : PartModule {
 
-		private Rect _windowPos = new Rect();
-		private bool guiOpen = false;
+		private static readonly int configVersion = 2;
+		private Rect _windowPosAddGroup = new Rect(), _windowPos = new Rect();
+		private bool guiOpen = false, addGuiOpen = false;
 		private bool isPartHighlighted = false;
-		private static GUIStyle _windowStyle, _labelStyle, _toggleStyle, _buttonStyle;
-		private static int skinID = -1;
+		private static GUIStyle _windowStyle, _labelStyle, _labelStyleCentre, _toggleStyle, _buttonStyle, _scrollStyle, _groupButtonStyle, _addWindowStyle, _labelStyleModeLabel;
 		private static bool hasInitStyles = false/*, loadedSkins = false*/;
 		public static Dictionary<int, GUISkin> guiSkins = new Dictionary<int, GUISkin>();
 		public static int highlightedParts = 0;
 		private bool hasSetColourID = false;
 		private int colourID = 0;
+		public static List<ActionGroup> groupList = new List<ActionGroup>();
+		private Vector2 scrollPos = /*What's your */Vector2/*, Victor?*/.zero;
+		private ActionGroupFireStyle groupMode = ActionGroupFireStyle.ACTIVE_VESSEL;
 
 		public static Dictionary<int, KSPActionGroup> aGroups = new Dictionary<int, KSPActionGroup>() {
 
@@ -94,6 +100,14 @@ namespace AGroupOnStage {
 			guiOpen = !guiOpen;
 		}
 
+		public void toggleAddGUI() {
+			if (addGuiOpen)
+				RenderingManager.RemoveFromPostDrawQueue(+this.part.GetInstanceID(), OnDrawAddGroup);
+			else
+				RenderingManager.AddToPostDrawQueue(+this.part.GetInstanceID(), OnDrawAddGroup);
+			addGuiOpen = !addGuiOpen;
+		}
+
 		public override string GetInfo() {
 			return "Can trigger action groups when staged.";
 		}
@@ -102,19 +116,47 @@ namespace AGroupOnStage {
 			// if the window is open, close it.
 			if (guiOpen)
 				toggleGUI();
-			for (int x = 0; x < 16; x++) {
-				if (actionGroups[aGroups[x].ToString().ToLower()]) {
-					// Make sure we fire the AG on the active vessel, not the stage(s) we just dropped.
-					// TODO: Make this configurable?
-					FlightGlobals.ActiveVessel.ActionGroups.ToggleGroup(aGroups[x]);
-					Log("Toggled group '" + aGroups[x] + "' for part '" + this.part.name + "' in stage " + this.part.inverseStage);
+			if (addGuiOpen)
+				toggleAddGUI();
+
+
+			foreach (ActionGroup ag in groupList) {
+				#if DEBUG 
+				Log(this.part + " / " + ag.getPart());
+				Log(this.part == ag.getPart());
+				#endif
+				if (ag.getPart() == this.part) {
+
+					Log("PART MATCHES");
+
+					if (ag.getMode() == ActionGroupFireStyle.ACTIVE_VESSEL || ag.getMode() == ActionGroupFireStyle.BOTH)
+						FlightGlobals.ActiveVessel.ActionGroups.ToggleGroup(aGroups[ag.getGroup()]);
+
+					if (ag.getMode() == ActionGroupFireStyle.CONNECTED_STAGE || ag.getMode() == ActionGroupFireStyle.BOTH)
+						this.part.vessel.ActionGroups.ToggleGroup(aGroups[ag.getGroup()]);
+
+					Log("Toggled group '" + aGroups[ag.getGroup()] + "' for part '" + this.part.name + "' in stage " + this.part.inverseStage);
+
 				}
+
 			}
+//			for (int x = 0; x < 16; x++) {
+//				if (actionGroups[aGroups[x].ToString().ToLower()]) {
+//					// Make sure we fire the AG on the active vessel, not the stage(s) we just dropped.
+//					// TODO: Make this configurable?
+//					FlightGlobals.ActiveVessel.ActionGroups.ToggleGroup(aGroups[x]);
+//					Log("Toggled group '" + aGroups[x] + "' for part '" + this.part.name + "' in stage " + this.part.inverseStage);
+//				}
+//			}
 
 		}
 
-		public void Log(string msg) {
-			PDebug.Log("[AGroupOnStage]: " + msg);
+		public void OnDestroy() {
+			clearGroupsForPart(this.part);
+		}
+
+		public void Log(object msg) {
+			PDebug.Log("[AGroupOnStage]: " + msg.ToString());
 		}
 
 
@@ -125,13 +167,67 @@ namespace AGroupOnStage {
 			cfg.save ();
 			*/
 
-			for (int x = 0; x < aGroups.Count; x++) {
-				try {
-					node.AddValue(aGroups[x].ToString().ToLower(), actionGroups[aGroups[x].ToString().ToLower()]);
-				} catch (Exception e) { 
-					Log("Couldn't save setting for '" + aGroups[x] + "' (" + e.Message + ")");
-				}
+			node.AddValue("version", configVersion.ToString());
+
+			foreach (ActionGroup ag in groupList) {
+				if (ag.getPart() == this.part) {
+
+					string groupName = aGroups[ag.getGroup()].ToString().ToLower();
+				
+					if (ag.getMode() == ActionGroupFireStyle.ACTIVE_VESSEL) {
+
+						if (!node.HasNode("AGOS_ACTIVE_VESSEL"))
+							node.AddNode("AGOS_ACTIVE_VESSEL");
+						node.GetNode("AGOS_ACTIVE_VESSEL").AddValue(groupName, ag.toSavableString());
+
+					}
+					else if (ag.getMode() == ActionGroupFireStyle.CONNECTED_STAGE) {
+
+						if (!node.HasNode("AGOS_CONNECTED_STAGE"))
+							node.AddNode("AGOS_CONNECTED_STAGE");
+						node.GetNode("AGOS_CONNECTED_STAGE").AddValue(groupName, ag.toSavableString());
+
+					}
+					else {
+
+						if (!node.HasNode("AGOS_BOTH"))
+							node.AddNode("AGOS_BOTH");
+						node.GetNode("AGOS_BOTH").AddValue(groupName, ag.toSavableString());
+
+					}
+
+//					if (ag.getMode() == ActionGroupFireStyle.ACTIVE_VESSEL) {
+//						if (!_node.HasNode("AGOS_ACTIVE_VESSEL"))
+//							_node.AddNode("AGOS_ACTIVE_VESSEL");
+//						if (node.name != "AGOS_ACTIVE_VESSEL")
+//							node = node.GetNode("AGOS_ACTIVE_VESSEL");
+//					}
+//					else if (ag.getMode() == ActionGroupFireStyle.CONNECTED_STAGE) {
+//						if (!node.HasNode("AGOS_CONNECTED_STAGE"))
+//							node.AddNode("AGOS_CONNECTED_STAGE");
+//						if (node.name != "AGOS_CONNECTED_STAGE")
+//							node = node.GetNode("AGOS_CONNECTED_STAGE");
+//					}
+//					else {
+//						if (!node.HasNode("AGOS_BOTH"))
+//							node.AddNode("AGOS_BOTH");
+//						if (node.name != "AGOS_BOTH")
+//							node = node.GetNode("AGOS_BOTH");
+//					}
+
+//					node.AddValue(aGroups[ag.getGroup()].ToString().ToLower(), ag.toSavableString());
+//					node.AddData(_node);
+
+				}					
 			}
+
+//			for (int x = 0; x < aGroups.Count; x++) {
+//				try {
+//					node.AddValue(aGroups[x].ToString().ToLower(), actionGroups[aGroups[x].ToString().ToLower()]);
+//				} catch (Exception e) { 
+//					Log("Couldn't save setting for '" + aGroups[x] + "' (" + e.Message + ")");
+//				}
+//			}
 
 		}
 
@@ -142,137 +238,211 @@ namespace AGroupOnStage {
 			_windowPos = cfg.GetValue<Rect> ("winPos");
 			*/
 
-			actionGroups["custom01"] = Convert.ToBoolean(node.GetValue("custom01"));
-			actionGroups["custom02"] = Convert.ToBoolean(node.GetValue("custom02"));
-			actionGroups["custom03"] = Convert.ToBoolean(node.GetValue("custom03"));
-			actionGroups["custom04"] = Convert.ToBoolean(node.GetValue("custom04"));
-			actionGroups["custom05"] = Convert.ToBoolean(node.GetValue("custom05"));
-			actionGroups["custom06"] = Convert.ToBoolean(node.GetValue("custom06"));
-			actionGroups["custom07"] = Convert.ToBoolean(node.GetValue("custom07"));
-			actionGroups["custom08"] = Convert.ToBoolean(node.GetValue("custom08"));
-			actionGroups["custom09"] = Convert.ToBoolean(node.GetValue("custom09"));
-			actionGroups["custom10"] = Convert.ToBoolean(node.GetValue("custom10"));
-			actionGroups["gear"] = Convert.ToBoolean(node.GetValue("gear"));
-			actionGroups["light"] = Convert.ToBoolean((node.HasNode("lights") ? node.GetValue("lights") : node.GetValue("light")));
-			// I'm an idiot and have been typoing this all along...
-			actionGroups["brakes"] = Convert.ToBoolean((node.HasNode("breaks") ? node.GetValue("breaks") : node.GetValue("brakes")));
-			actionGroups["abort"] = Convert.ToBoolean(node.GetValue("abort"));
-			actionGroups["rcs"] = Convert.ToBoolean(node.GetValue("rcs"));
-			actionGroups["sas"] = Convert.ToBoolean(node.GetValue("sas"));
+			if (HighLogic.LoadedScene == GameScenes.LOADING)
+				return;
+
+			clearGroupsForPart(this.part);
+
+			if (node.HasValue("version") && Convert.ToInt32(node.GetValue("version")) >= 2) { // New saving style
+
+				for (int x = 0;; x++) {
+
+					string nodeName = "BOTH";
+				
+					if (x == 0)
+						nodeName = "AGOS_ACTIVE_VESSEL";
+					else if (x == 1)
+						nodeName = "AGOS_CONNECTED_STAGE";
+					else if (x == 2)
+						nodeName = "AGOS_BOTH";
+					else
+						break;
+
+					if (!node.HasNode(nodeName))
+						continue;
+
+					ConfigNode n = node.GetNode(nodeName);
+
+					//for (int i = 0; i < n.values.Count; i++) {
+					for (int i = 0; i < aGroups.Count; i++) {
+						string groupName = aGroups[i].ToString().ToLower();
+						if (!n.HasValue(groupName))
+							continue;
+						string[] values = n.GetValue(groupName).Split(',');
+						int group = Convert.ToInt32(values[0]);
+						ActionGroupFireStyle fireStyle = iPeerLib.Utils.ParseEnum<ActionGroupFireStyle>(values[1]);
+						ActionGroup g = new ActionGroup(this.part, group, fireStyle);
+						if (!isDuplicate(g))
+							groupList.Add(g);
+					}
+
+				}
+
+			}
+			else { // Old saving style
+
+				Log("Old config version detected");
+				actionGroups["custom01"] = Convert.ToBoolean(node.GetValue("custom01"));
+				actionGroups["custom02"] = Convert.ToBoolean(node.GetValue("custom02"));
+				actionGroups["custom03"] = Convert.ToBoolean(node.GetValue("custom03"));
+				actionGroups["custom04"] = Convert.ToBoolean(node.GetValue("custom04"));
+				actionGroups["custom05"] = Convert.ToBoolean(node.GetValue("custom05"));
+				actionGroups["custom06"] = Convert.ToBoolean(node.GetValue("custom06"));
+				actionGroups["custom07"] = Convert.ToBoolean(node.GetValue("custom07"));
+				actionGroups["custom08"] = Convert.ToBoolean(node.GetValue("custom08"));
+				actionGroups["custom09"] = Convert.ToBoolean(node.GetValue("custom09"));
+				actionGroups["custom10"] = Convert.ToBoolean(node.GetValue("custom10"));
+				actionGroups["gear"] = Convert.ToBoolean(node.GetValue("gear"));
+				actionGroups["light"] = Convert.ToBoolean((node.HasNode("lights") ? node.GetValue("lights") : node.GetValue("light")));
+				// I'm an idiot and have been typoing this all along...
+				actionGroups["brakes"] = Convert.ToBoolean((node.HasNode("breaks") ? node.GetValue("breaks") : node.GetValue("brakes")));
+				actionGroups["abort"] = Convert.ToBoolean(node.GetValue("abort"));
+				actionGroups["rcs"] = Convert.ToBoolean(node.GetValue("rcs"));
+				actionGroups["sas"] = Convert.ToBoolean(node.GetValue("sas"));
+				commitActionGroups(); // Convert to new style after loading older vessels
+
+			}
 
 			// Turns out we nuke the part catalogue if we don't check this... Who would've thunk it?
-			if (HighLogic.LoadedScene != GameScenes.LOADING)
-				Log("Loaded Action Group config for part '" + this.part.name + "' ('" + this.part.partInfo.title + "'/" + this.part.GetInstanceID() + ") in stage " + this.part.inverseStage);
+			Log("Loaded Action Group config for part '" + this.part.name + "' ('" + this.part.partInfo.title + "'/" + this.part.GetInstanceID() + ") in stage " + this.part.inverseStage);
 
 		}
 
-		//		public override void OnUpdate() {
-		//
-		//			if (isPartHighlighted) {
-		//
-		//				this.part.SetHighlightColor(Color.blue); // Why would you not have Colour as an alias :c
-		//				this.part.SetHighlight(true);
-		//
-		//			}
-		//
-		//		}
-
-
-
 		// GUI STUFF
 
-		private void OnDraw() {
-			if (this.vessel == FlightGlobals.ActiveVessel) {
-				if (!hasInitStyles) {
-					hasInitStyles = true;
-//					if (!loadedSkins) {
-//						loadedSkins = true;
-//						guiSkins = iPeerLib.Utils.getSkinList();
-//					}
-//
-//					if (skinID == -1) {
-//						int __skin = -1;
-//						while (skinID == -1 && __skin++ < iPeerLib.Utils.preferredSkins.Count)
-//							skinID = iPeerLib.Utils.getSkinIDForName(iPeerLib.Utils.preferredSkins[__skin]);
-//						if (skinID > -1)
-//							Log("Skin has been set to " + iPeerLib.Utils.preferredSkins[__skin]);
-//					}
-//					GUISkin skinRef = guiSkins[skinID];
-//					if (skinRef == null || skinID == -1) {
-//						Log("skinRef == null or skinID == -1, defaulting to HighLogic.Skin");
-//						skinRef = HighLogic.Skin;
-//					}
+		#region GUI
 
-					GUISkin skinRef = iPeerLib.Utils.getBestAvailableSkin();
+		private void OnDraw() { 
 
-					_windowStyle = new GUIStyle(skinRef.window);
-					_windowStyle.fixedWidth = 500f;
-					_labelStyle = new GUIStyle(skinRef.label);
-					_labelStyle.stretchWidth = true;
-					_toggleStyle = new GUIStyle(skinRef.toggle);
-					//_toggleStyle.fixedWidth = 50f;
-					_toggleStyle.stretchWidth = true;
-					_buttonStyle = new GUIStyle(skinRef.button);
-					_buttonStyle.stretchWidth = true;
+			if (!hasInitStyles) {
+				hasInitStyles = true;
 
-					/*#if DEBUG
-					Log("Theme: " + GUI.skin);
-					Log("Toggle: " + GUI.skin.toggle);
-					Log("Toggle border: " + GUI.skin.toggle.border);
-					Log("Toggle offset: " + GUI.skin.toggle.contentOffset);
-					Log("Toggle margin: " + GUI.skin.toggle.margin);
-					Log("Toggle alignment: " + GUI.skin.toggle.alignment);
-					Log("Toggle Font: " + GUI.skin.toggle.font);
-					Log("Toggle Font size: " + GUI.skin.toggle.fontSize);
-					Log("Toggle style: " + GUI.skin.toggle.fontStyle);
-					#endif*/
+				GUISkin skinRef = iPeerLib.Utils.getBestAvailableSkin();
+
+				_windowStyle = new GUIStyle(skinRef.window);
+				_windowStyle.fixedWidth = 500f;
+				_labelStyle = new GUIStyle(skinRef.label);
+				_labelStyle.stretchWidth = true;
+				_labelStyleCentre = new GUIStyle(skinRef.label);
+				_labelStyleCentre.alignment = TextAnchor.MiddleCenter;
+				_toggleStyle = new GUIStyle(skinRef.toggle);
+				_toggleStyle.stretchWidth = true;
+				_buttonStyle = new GUIStyle(skinRef.button);
+				_buttonStyle.stretchWidth = true;
+				_scrollStyle = new GUIStyle(skinRef.scrollView);
+				_groupButtonStyle = new GUIStyle(skinRef.button);
+				_groupButtonStyle.stretchWidth = false;
+				_addWindowStyle = new GUIStyle(skinRef.window);
+				_addWindowStyle.fixedWidth = 500f;
+				_addWindowStyle.fixedHeight = 250f;
+				_labelStyleModeLabel = new GUIStyle(skinRef.label);
+				_labelStyleModeLabel.stretchWidth = false;
+
+			}
+
+			_windowPos = GUILayout.Window(+this.part.GetInstanceID(), _windowPos, OnWindow, "Action Group Configuration", _addWindowStyle);
+			if (_windowPos.x == 0f && _windowPos.y == 0f) {
+				_windowPos.x = Screen.width / 2 - _windowPos.width / 2;
+				_windowPos.y = Screen.height / 2 - _windowPos.height / 2;
+			}
+
+		}
+
+		private void OnWindow(int id) {
+
+			GUILayout.BeginHorizontal();
+			GUILayout.Label("Below is a run down of all the action groups configured to fire with this part.", _labelStyle);
+			GUILayout.EndHorizontal();
+
+			GUILayout.BeginHorizontal();
+			scrollPos = GUILayout.BeginScrollView(scrollPos, _scrollStyle);
+
+			ActionGroup[] groups = groupList.ToArray();
+
+			for (int x = 0; x < groups.Length; x++) {
+
+				ActionGroup ag = groups[x];
+
+				if (ag.getPart() == this.part) {
+
+					GUILayout.BeginHorizontal();
+					GUILayout.Label(aGroups[ag.getGroup()].ToString(), _labelStyle);
+					GUILayout.Label(ag.getMode() == ActionGroupFireStyle.ACTIVE_VESSEL ? "Vessel" : ag.getMode() == ActionGroupFireStyle.CONNECTED_STAGE ? "Stage" : "All", _labelStyleModeLabel);
+					isPartHighlighted = GUILayout.Toggle(isPartHighlighted, "H", _groupButtonStyle);
+
+					if (!isPartHighlighted) {
+						if (hasSetColourID)
+							highlightedParts--;
+						hasSetColourID = false;
+						this.part.SetHighlightDefault();
+					}
+					else {
+						if (!hasSetColourID) {
+							colourID = highlightedParts;
+							highlightedParts++;
+							if (colourID >= colourIndex.Count)
+								colourID = (colourID - (int)Math.Floor((double)(highlightedParts * colourIndex.Count))) - 1; // I have to cast this to double apparently...
+							hasSetColourID = true;
+							#if DEBUG
+							Log("ColourID: " + colourID);
+							#endif
+						}
+						try {
+							this.part.SetHighlightColor(colourIndex[colourID]);
+						} catch (Exception e) {
+						}
+						this.part.SetHighlight(true);
+					}
+
+					if (GUILayout.Button("R", _groupButtonStyle))
+						groupList.Remove(ag);
+					GUILayout.EndHorizontal();
 
 				}
+
+			}
+
+			GUILayout.EndScrollView();
+			GUILayout.EndHorizontal();
+
+			GUILayout.BeginHorizontal();
+			if (GUILayout.Button("Add Action Group(s)", _buttonStyle)) { 
+				toggleAddGUI(); 
+			}
+			GUILayout.EndHorizontal();
+			GUILayout.BeginHorizontal();
+			if (GUILayout.Button("Close", _buttonStyle)) {
+				if (addGuiOpen)
+					toggleAddGUI();
+				toggleGUI(); 
+			}
+			GUILayout.EndHorizontal();
+
+			GUI.DragWindow();
+		}
+
+		private void OnDrawAddGroup() {
+			if (this.vessel == FlightGlobals.ActiveVessel) {
 				// Use this.part.GetInstanceID() to (hopefully) prevent the GUI from getting stuck open if you open one from another part.
 				// Edit: Didn't work
 				// TODO: Allow users to somehow highlight the part (or something) the window belongs to in the event of multiple parts with the same name.
-				_windowPos = GUILayout.Window(+this.part.GetInstanceID(), _windowPos, OnWindow, "Action Group Control", _windowStyle);
+				_windowPosAddGroup = GUILayout.Window(+this.part.GetInstanceID() + 1, _windowPosAddGroup, OnWindowAddGroup, "Action Group Control", _windowStyle);
 				// Center the GUI if it is at 0,0
-				if (_windowPos.x == 0f && _windowPos.y == 0f) {
-					_windowPos.x = Screen.width / 2 - _windowPos.width / 2;
-					_windowPos.y = Screen.height / 2 - _windowPos.height / 2;
+				if (_windowPosAddGroup.x == 0f && _windowPosAddGroup.y == 0f) {
+					_windowPosAddGroup.x = Screen.width / 2 - _windowPosAddGroup.width / 2;
+					_windowPosAddGroup.y = Screen.height / 2 - _windowPosAddGroup.height / 2;
 				}
 
 			}
 		}
 
-		private void OnWindow(int winID) {
+		private void OnWindowAddGroup(int winID) {
 
 			GUILayout.BeginHorizontal();
 			GUILayout.Label("Action group control for '" + this.part.partInfo.title + "'", _labelStyle);
 //			GUILayout.EndHorizontal();
 //
 //			GUILayout.BeginHorizontal();
-
-			isPartHighlighted = GUILayout.Toggle(isPartHighlighted, "Highlight", _buttonStyle);
-			if (!isPartHighlighted) {
-				if (hasSetColourID)
-					highlightedParts--;
-				hasSetColourID = false;
-				this.part.SetHighlightDefault();
-			}
-			else {
-				if (!hasSetColourID) {
-					colourID = highlightedParts;
-					highlightedParts++;
-					if (colourID >= colourIndex.Count)
-						colourID = (colourID - (int)Math.Floor((double)(highlightedParts * colourIndex.Count))) - 1; // I have to cast this to double apparently...
-					hasSetColourID = true;
-					#if DEBUG
-					Log("ColourID: " + colourID);
-					#endif
-				}
-				try {
-					this.part.SetHighlightColor(colourIndex[colourID]);
-				} catch (Exception e) {
-				}
-				this.part.SetHighlight(true);
-			}
 
 			GUILayout.EndHorizontal(); 
 
@@ -311,13 +481,30 @@ namespace AGroupOnStage {
 			GUILayout.EndHorizontal();
 			GUILayout.BeginHorizontal();
 
-			if (GUILayout.Button("Close", _buttonStyle)) {
-				isPartHighlighted = false;
-				this.part.SetHighlightDefault();
-				highlightedParts--;
-				hasSetColourID = false;
-				toggleGUI();
+			if (GUILayout.Toggle(groupMode == ActionGroupFireStyle.ACTIVE_VESSEL, "Active Vessel Only", _buttonStyle))
+				groupMode = ActionGroupFireStyle.ACTIVE_VESSEL;
+
+			if (GUILayout.Toggle(groupMode == ActionGroupFireStyle.CONNECTED_STAGE, "Connected Stage Only", _buttonStyle))
+				groupMode = ActionGroupFireStyle.CONNECTED_STAGE;
+
+			if (GUILayout.Toggle(groupMode == ActionGroupFireStyle.BOTH, "All Stages & Vessels", _buttonStyle))
+				groupMode = ActionGroupFireStyle.BOTH;
+
+			GUILayout.EndHorizontal();
+			GUILayout.BeginHorizontal();
+
+			if (GUILayout.Button("Add Action Group", _buttonStyle)) {
+				//clearGroupsForPart(this.part);
+				commitActionGroups(groupMode);
+				toggleAddGUI();
 			}
+
+			GUILayout.EndHorizontal();
+			GUILayout.BeginHorizontal();
+
+			if (GUILayout.Button("Close", _buttonStyle))
+				toggleAddGUI();
+
 			/*#if DEBUG
 
 			if (GUILayout.Button(skinID + ": " + guiSkins[skinID].name, _buttonStyle)) {
@@ -332,7 +519,107 @@ namespace AGroupOnStage {
 
 			GUI.DragWindow();
 		}
-			
+
+		#endregion
+
+		public void commitActionGroups() {
+			commitActionGroups(ActionGroupFireStyle.ACTIVE_VESSEL);
+		}
+
+
+		public void commitActionGroups(ActionGroupFireStyle mode) {
+
+			string[] keys = new string[actionGroups.Keys.Count];
+			actionGroups.Keys.CopyTo(keys, 0);
+
+			for (int i = 0; i < keys.Length; i++) {
+
+				if (actionGroups[keys[i]]) {
+
+					actionGroups[keys[i]] = false;
+					ActionGroup g = new ActionGroup(this.part, i, mode);
+					#if DEBUG
+					Log("Adding action group config for part '" + part.partInfo.title + "' (" + g.toSavableString() + ")");
+					#endif
+					if (!isDuplicate(g))
+						groupList.Add(g);
+
+				}
+
+			}
+
+			groupMode = ActionGroupFireStyle.ACTIVE_VESSEL;
+
+//			int i = 0;
+//			Dictionary<string, bool>.Enumerator e = actionGroups.GetEnumerator();
+//			while (e.MoveNext()) {
+//				if (e.Current.Value) {
+//					ActionGroup g = new ActionGroup(this.part, i, ActionGroupFireStyle.BOTH);
+//					#if DEBUG
+//					Log("Adding action group config for part '" + part.partInfo.title + "' (" + g.toSavableString() + ")");
+//					#endif
+//					groupList.Add(g);
+//				}
+//				i++;
+//			}
+//			e.Dispose();
+//			foreach (string key in actionGroups.Keys)
+//				actionGroups[key] = false;
+
+		}
+
+		public void clearGroupsForPart(Part part) {
+
+			ActionGroup[] groups = groupList.ToArray();
+			for (int x = 0; x < groups.Length; x++) {
+
+				ActionGroup ag = groups[x];
+
+				#if DEBUG
+				Log("Removing action group config for part '" + part.partInfo.title + "' (" + ag.toSavableString() + ")");
+				#endif
+
+				if (ag.getPart() == part)
+					groupList.Remove(ag);
+
+			}
+
+//			List<ActionGroup>.Enumerator e = groupList.GetEnumerator();
+//			while (e.MoveNext())
+//				if (e.Current.getPart() == part) {
+//					#if DEBUG
+//					Log("Removing action group config for part '" + part.partInfo.title + "' (" + e.Current.toSavableString() + ")");
+//					#endif
+//					groupList.Remove(e.Current);
+//				}
+//
+		}
+
+		public bool isNotDuplicate(ActionGroup g) { // So lazy...
+			return !isDuplicate(g);
+		}
+
+
+		public bool isDuplicate(ActionGroup g) {
+
+			ActionGroup[] groups = groupList.ToArray();
+			for (int x = 0; x < groups.Length; x++) {
+
+				ActionGroup ag = groups[x];
+//				#if DEBUG
+//				Log("DUPLICATE ENTRY TEST " + ((!(ag.getPartIID() == g.getPartIID() && ag.getGroup() == g.getGroup() && ag.getMode() == g.getMode()) ? "PASSED" : "FAILED")) + ":");
+//				Log(ag.getMode() == g.getMode());
+//				Log(ag.getGroup() == g.getGroup());
+//				Log(ag.getPartIID() == g.getPartIID());
+//				#endif
+				if (ag.getPartIID() == g.getPartIID() && ag.getGroup() == g.getGroup() && ag.getMode() == g.getMode())
+					return true;
+
+			}
+			return false;
+
+		}
+
 	}
 }
 
