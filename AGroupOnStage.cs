@@ -22,7 +22,7 @@ namespace AGroupOnStage {
 		private bool guiOpen = false, addGuiOpen = false;
 		private bool isPartHighlighted = false;
 		private static GUIStyle _windowStyle, _labelStyle, _labelStyleCentre, _toggleStyle, _buttonStyle, _scrollStyle, _groupButtonStyle, _addWindowStyle, _labelStyleModeLabel;
-		private static bool hasInitStyles = false/*, loadedSkins = false*/;
+		private static bool hasInitStyles = false;
 		public static Dictionary<int, GUISkin> guiSkins = new Dictionary<int, GUISkin>();
 		public static int highlightedParts = 0;
 		private bool hasSetColourID = false;
@@ -141,14 +141,6 @@ namespace AGroupOnStage {
 				}
 
 			}
-//			for (int x = 0; x < 16; x++) {
-//				if (actionGroups[aGroups[x].ToString().ToLower()]) {
-//					// Make sure we fire the AG on the active vessel, not the stage(s) we just dropped.
-//					// TODO: Make this configurable?
-//					FlightGlobals.ActiveVessel.ActionGroups.ToggleGroup(aGroups[x]);
-//					Log("Toggled group '" + aGroups[x] + "' for part '" + this.part.name + "' in stage " + this.part.inverseStage);
-//				}
-//			}
 
 		}
 
@@ -168,11 +160,6 @@ namespace AGroupOnStage {
 
 
 		public override void OnSave(ConfigNode node) {
-			/* Do we really need to save and load the position?
-			PluginConfiguration cfg = PluginConfiguration.CreateForType<AGroupOnStage> ();
-			cfg.SetValue ("winPos", _windowPos);
-			cfg.save ();
-			*/
 
 			node.AddValue("version", configVersion.ToString());
 
@@ -202,48 +189,13 @@ namespace AGroupOnStage {
 						node.GetNode("AGOS_BOTH").AddValue(groupName, ag.toSavableString());
 
 					}
-
-//					if (ag.getMode() == ActionGroupFireStyle.ACTIVE_VESSEL) {
-//						if (!_node.HasNode("AGOS_ACTIVE_VESSEL"))
-//							_node.AddNode("AGOS_ACTIVE_VESSEL");
-//						if (node.name != "AGOS_ACTIVE_VESSEL")
-//							node = node.GetNode("AGOS_ACTIVE_VESSEL");
-//					}
-//					else if (ag.getMode() == ActionGroupFireStyle.CONNECTED_STAGE) {
-//						if (!node.HasNode("AGOS_CONNECTED_STAGE"))
-//							node.AddNode("AGOS_CONNECTED_STAGE");
-//						if (node.name != "AGOS_CONNECTED_STAGE")
-//							node = node.GetNode("AGOS_CONNECTED_STAGE");
-//					}
-//					else {
-//						if (!node.HasNode("AGOS_BOTH"))
-//							node.AddNode("AGOS_BOTH");
-//						if (node.name != "AGOS_BOTH")
-//							node = node.GetNode("AGOS_BOTH");
-//					}
-
-//					node.AddValue(aGroups[ag.getGroup()].ToString().ToLower(), ag.toSavableString());
-//					node.AddData(_node);
-
+						
 				}					
 			}
-
-//			for (int x = 0; x < aGroups.Count; x++) {
-//				try {
-//					node.AddValue(aGroups[x].ToString().ToLower(), actionGroups[aGroups[x].ToString().ToLower()]);
-//				} catch (Exception e) { 
-//					Log("Couldn't save setting for '" + aGroups[x] + "' (" + e.Message + ")");
-//				}
-//			}
 
 		}
 
 		public override void OnLoad(ConfigNode node) {
-			/* Do we really need to save and load the position?
-			PluginConfiguration cfg = PluginConfiguration.CreateForType<AGroupOnStage> ();
-			cfg.load ();
-			_windowPos = cfg.GetValue<Rect> ("winPos");
-			*/
 
 			if (HighLogic.LoadedScene == GameScenes.LOADING)
 				return;
@@ -269,8 +221,7 @@ namespace AGroupOnStage {
 						continue;
 
 					ConfigNode n = node.GetNode(nodeName);
-
-					//for (int i = 0; i < n.values.Count; i++) {
+						
 					for (int i = 0; i < aGroups.Count; i++) {
 						string groupName = aGroups[i].ToString().ToLower();
 						if (!n.HasValue(groupName))
@@ -309,8 +260,7 @@ namespace AGroupOnStage {
 				commitActionGroups(); // Convert to new style after loading older vessels
 
 			}
-
-			// Turns out we nuke the part catalogue if we don't check this... Who would've thunk it?
+				
 			Log("Loaded Action Group config for part '" + this.part.name + "' ('" + this.part.partInfo.title + "'/" + this.part.GetInstanceID() + ") in stage " + this.part.inverseStage);
 
 		}
@@ -439,9 +389,7 @@ namespace AGroupOnStage {
 
 		private void OnDrawAddGroup() {
 			if (this.vessel == FlightGlobals.ActiveVessel) {
-				// Use this.part.GetInstanceID() to (hopefully) prevent the GUI from getting stuck open if you open one from another part.
-				// Edit: Didn't work
-				// TODO: Allow users to somehow highlight the part (or something) the window belongs to in the event of multiple parts with the same name.
+
 				_windowPosAddGroup = GUILayout.Window(+this.part.GetInstanceID() + 1, _windowPosAddGroup, OnWindowAddGroup, "Action Group Control", _windowStyle);
 				// Center the GUI if it is at 0,0
 				if (_windowPosAddGroup.x == 0f && _windowPosAddGroup.y == 0f) {
@@ -465,9 +413,6 @@ namespace AGroupOnStage {
 
 			GUILayout.BeginHorizontal();
 			GUILayout.Label("Action group control for '" + this.part.partInfo.title + "'", _labelStyle);
-//			GUILayout.EndHorizontal();
-//
-//			GUILayout.BeginHorizontal();
 
 			GUILayout.EndHorizontal(); 
 
@@ -529,17 +474,7 @@ namespace AGroupOnStage {
 
 			if (GUILayout.Button("Close", _buttonStyle))
 				toggleAddGUI();
-
-			/*#if DEBUG
-
-			if (GUILayout.Button(skinID + ": " + guiSkins[skinID].name, _buttonStyle)) {
-				skinID++;
-				if (skinID >= guiSkins.Count)
-					skinID = 0;
-				hasInitStyles = false;
-			}
-
-			#endif*/
+			
 			GUILayout.EndHorizontal();
 
 			GUI.DragWindow();
@@ -575,22 +510,6 @@ namespace AGroupOnStage {
 
 			groupMode = ActionGroupFireStyle.ACTIVE_VESSEL;
 
-//			int i = 0;
-//			Dictionary<string, bool>.Enumerator e = actionGroups.GetEnumerator();
-//			while (e.MoveNext()) {
-//				if (e.Current.Value) {
-//					ActionGroup g = new ActionGroup(this.part, i, ActionGroupFireStyle.BOTH);
-//					#if DEBUG
-//					Log("Adding action group config for part '" + part.partInfo.title + "' (" + g.toSavableString() + ")");
-//					#endif
-//					groupList.Add(g);
-//				}
-//				i++;
-//			}
-//			e.Dispose();
-//			foreach (string key in actionGroups.Keys)
-//				actionGroups[key] = false;
-
 		}
 
 		public void clearGroupsForPart(Part part) {
@@ -608,16 +527,7 @@ namespace AGroupOnStage {
 					groupList.Remove(ag);
 
 			}
-
-//			List<ActionGroup>.Enumerator e = groupList.GetEnumerator();
-//			while (e.MoveNext())
-//				if (e.Current.getPart() == part) {
-//					#if DEBUG
-//					Log("Removing action group config for part '" + part.partInfo.title + "' (" + e.Current.toSavableString() + ")");
-//					#endif
-//					groupList.Remove(e.Current);
-//				}
-//
+					
 		}
 
 		public bool isNotDuplicate(ActionGroup g) { // So lazy...
@@ -631,12 +541,7 @@ namespace AGroupOnStage {
 			for (int x = 0; x < groups.Length; x++) {
 
 				ActionGroup ag = groups[x];
-//				#if DEBUG
-//				Log("DUPLICATE ENTRY TEST " + ((!(ag.getPartIID() == g.getPartIID() && ag.getGroup() == g.getGroup() && ag.getMode() == g.getMode()) ? "PASSED" : "FAILED")) + ":");
-//				Log(ag.getMode() == g.getMode());
-//				Log(ag.getGroup() == g.getGroup());
-//				Log(ag.getPartIID() == g.getPartIID());
-//				#endif
+
 				if (ag.getPartIID() == g.getPartIID() && ag.getGroup() == g.getGroup() && ag.getMode() == g.getMode())
 					return true;
 
