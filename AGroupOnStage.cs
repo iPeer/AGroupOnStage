@@ -98,6 +98,7 @@ namespace AGroupOnStage {
 			else
 				RenderingManager.AddToPostDrawQueue(+this.part.GetInstanceID(), OnDraw);
 			guiOpen = !guiOpen;
+			EditorLogic.fetch.Unlock("AGOS_INPUT_LOCK");
 		}
 
 		public void toggleAddGUI() {
@@ -151,8 +152,14 @@ namespace AGroupOnStage {
 
 		}
 
+		public override void OnAwake() {
+			InputLockManager.RemoveControlLock("AGOS_INPUT_LOCK");
+		}
+
 		public void OnDestroy() {
 			clearGroupsForPart(this.part);
+			// Remove locks on editor, if any
+			EditorLogic.fetch.Unlock("AGOS_INPUT_LOCK");
 		}
 
 		public void Log(object msg) {
@@ -346,6 +353,15 @@ namespace AGroupOnStage {
 				_windowPos.y = Screen.height / 2 - _windowPos.height / 2;
 			}
 
+			if (_windowPos.Contains(Input.mousePosition)) {
+
+				EditorTooltip.Instance.HideToolTip();
+				EditorLogic.fetch.Lock(true, true, true, "AGOS_INPUT_LOCK");
+
+			}
+			else
+				EditorLogic.fetch.Unlock("AGOS_INPUT_LOCK");
+
 		}
 
 		private void OnWindow(int id) {
@@ -432,6 +448,15 @@ namespace AGroupOnStage {
 					_windowPosAddGroup.x = Screen.width / 2 - _windowPosAddGroup.width / 2;
 					_windowPosAddGroup.y = Screen.height / 2 - _windowPosAddGroup.height / 2;
 				}
+
+				if (_windowPosAddGroup.Contains(Input.mousePosition)) {
+
+					EditorTooltip.Instance.HideToolTip();
+					EditorLogic.fetch.Lock(true, true, true, "AGOS_INPUT_LOCK");
+
+				}
+				else
+					EditorLogic.fetch.Unlock("AGOS_INPUT_LOCK");
 
 			}
 		}
