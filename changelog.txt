@@ -1,4 +1,14 @@
-﻿15/09/14, v1.1.1:
+﻿05/10/14, v1.2:
+	* Users can now have duplicate actions groups which fire based on separate criteria:
+		* "Active Vessel Only": Fires the configured action group(s) to fire only on the vessel that the player has control of after staging.
+		* "Connected Stage Only": Fires the configued action group(s) on the stage which the decoupler stays connected to (this requires a probe on that stage).
+		* "All Stages": Both of the above configurations combined.
+	* AGroupOnStage now only saves information it needs to the save file, cutting down on their size for large vessels.
+	* The module's name is now correctly defined in-game.
+	* Fixed click-through on the GUIs in the editors.
+	* Using a separate library for "reusable" parts of code instead of having multiple copies of it everywhere.
+	
+15/09/14, v1.1.1:
 	* Fixed an issue causing the GUI to become squashed on heavily modded installs.
 	* Fix action groups not always being fired when a decouple has been decoupled.
 
