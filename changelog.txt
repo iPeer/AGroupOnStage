@@ -1,4 +1,9 @@
-﻿05/10/14, v1.2:
+﻿05/10/14, v1.2.1:
+	* The main GUI for action groups is now hidden while you are selecting new groups to be fired.
+	* Fixed an issue with control lock triggers not matching dialogue positions.
+	* Part highlighting is now disabled when all dialogues for that part are closed.
+
+05/10/14, v1.2:
 	* Users can now have duplicate actions groups which fire based on separate criteria:
 		* "Active Vessel Only": Fires the configured action group(s) to fire only on the vessel that the player has control of after staging.
 		* "Connected Stage Only": Fires the configued action group(s) on the stage which the decoupler stays connected to (this requires a probe on that stage).

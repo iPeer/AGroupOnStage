@@ -30,6 +30,7 @@ namespace AGroupOnStage {
 		public static List<ActionGroup> groupList = new List<ActionGroup>();
 		private Vector2 scrollPos = /*What's your */Vector2/*, Victor?*/.zero;
 		private ActionGroupFireStyle groupMode = ActionGroupFireStyle.ACTIVE_VESSEL;
+		private bool hideMainDialogue = false;
 
 		public static Dictionary<int, KSPActionGroup> aGroups = new Dictionary<int, KSPActionGroup>() {
 
@@ -93,12 +94,30 @@ namespace AGroupOnStage {
 
 		[KSPEvent(active = true, guiActive = true, guiActiveEditor = true, guiName = "Action group control")]
 		public void toggleGUI() {
-			if (guiOpen)
+			if (guiOpen) {
 				RenderingManager.RemoveFromPostDrawQueue(+this.part.GetInstanceID(), OnDraw);
-			else
+				if (isSceneVABOrSPH())
+					EditorLogic.fetch.Unlock("AGOS_INPUT_LOCK");
+				if (isPartHighlighted) {
+					isPartHighlighted = false;
+					if (hasSetColourID)
+						highlightedParts--;
+					hasSetColourID = false;
+					this.part.SetHighlightDefault();
+				}
+			}
+			else {
 				RenderingManager.AddToPostDrawQueue(+this.part.GetInstanceID(), OnDraw);
+				#if DEBUG
+				Log("VABorSPH: " + isSceneVABOrSPH());
+				#endif
+				if (isSceneVABOrSPH()) {
+					EditorTooltip.Instance.HideToolTip();
+					EditorLogic.fetch.Lock(true, true, true, "AGOS_INPUT_LOCK");
+				}
+			}
 			guiOpen = !guiOpen;
-			EditorLogic.fetch.Unlock("AGOS_INPUT_LOCK");
+
 		}
 
 		public void toggleAddGUI() {
@@ -107,6 +126,7 @@ namespace AGroupOnStage {
 			else
 				RenderingManager.AddToPostDrawQueue(+this.part.GetInstanceID(), OnDrawAddGroup);
 			addGuiOpen = !addGuiOpen;
+			hideMainDialogue = !hideMainDialogue;
 		}
 
 		public override string GetInfo() {
@@ -128,8 +148,6 @@ namespace AGroupOnStage {
 				#endif
 				if (ag.getPart() == this.part) {
 
-					Log("PART MATCHES");
-
 					if (ag.getMode() == ActionGroupFireStyle.ACTIVE_VESSEL || ag.getMode() == ActionGroupFireStyle.BOTH)
 						FlightGlobals.ActiveVessel.ActionGroups.ToggleGroup(aGroups[ag.getGroup()]);
 
@@ -145,13 +163,19 @@ namespace AGroupOnStage {
 		}
 
 		public override void OnAwake() {
-			InputLockManager.RemoveControlLock("AGOS_INPUT_LOCK");
+			if (isSceneVABOrSPH())
+				InputLockManager.RemoveControlLock("AGOS_INPUT_LOCK");
 		}
 
 		public void OnDestroy() {
+			if (guiOpen)
+				toggleGUI();
+			if (addGuiOpen)
+				toggleAddGUI();
 			clearGroupsForPart(this.part);
 			// Remove locks on editor, if any
-			EditorLogic.fetch.Unlock("AGOS_INPUT_LOCK");
+			if (isSceneVABOrSPH())
+				EditorLogic.fetch.Unlock("AGOS_INPUT_LOCK");
 		}
 
 		public void Log(object msg) {
@@ -270,6 +294,8 @@ namespace AGroupOnStage {
 		#region GUI
 
 		private void OnDraw() { 
+			if (hideMainDialogue)
+				return;
 
 			if (!hasInitStyles) {
 				hasInitStyles = true;
@@ -302,16 +328,6 @@ namespace AGroupOnStage {
 				_windowPos.x = Screen.width / 2 - _windowPos.width / 2;
 				_windowPos.y = Screen.height / 2 - _windowPos.height / 2;
 			}
-
-			if (_windowPos.Contains(Input.mousePosition)) {
-
-				EditorTooltip.Instance.HideToolTip();
-				EditorLogic.fetch.Lock(true, true, true, "AGOS_INPUT_LOCK");
-
-			}
-			else
-				EditorLogic.fetch.Unlock("AGOS_INPUT_LOCK");
-
 		}
 
 		private void OnWindow(int id) {
@@ -396,16 +412,6 @@ namespace AGroupOnStage {
 					_windowPosAddGroup.x = Screen.width / 2 - _windowPosAddGroup.width / 2;
 					_windowPosAddGroup.y = Screen.height / 2 - _windowPosAddGroup.height / 2;
 				}
-
-				if (_windowPosAddGroup.Contains(Input.mousePosition)) {
-
-					EditorTooltip.Instance.HideToolTip();
-					EditorLogic.fetch.Lock(true, true, true, "AGOS_INPUT_LOCK");
-
-				}
-				else
-					EditorLogic.fetch.Unlock("AGOS_INPUT_LOCK");
-
 			}
 		}
 
@@ -547,6 +553,12 @@ namespace AGroupOnStage {
 
 			}
 			return false;
+
+		}
+
+		public bool isSceneVABOrSPH() { 
+
+			return  HighLogic.LoadedScene == GameScenes.EDITOR || HighLogic.LoadedScene == GameScenes.SPH;
 
 		}
 
