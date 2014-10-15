@@ -321,6 +321,12 @@ namespace AGroupOnStage {
 				_labelStyleModeLabel = new GUIStyle(skinRef.label);
 				_labelStyleModeLabel.stretchWidth = false;
 
+				#if DEBUG
+
+				Log("Skin: " + skinRef.name + " (" + iPeerLib.Utils.CURRENT_SKIN_INDEX + ")");
+
+				#endif
+
 			}
 
 			_windowPos = GUILayout.Window(+this.part.GetInstanceID(), _windowPos, OnWindow, "Action Group Configuration", _addWindowStyle);
@@ -474,12 +480,20 @@ namespace AGroupOnStage {
 				commitActionGroups(groupMode);
 				toggleAddGUI();
 			}
+			#if DEBUG
+
+			if (GUILayout.Button(iPeerLib.Utils.CURRENT_SKIN_INDEX + ": " + iPeerLib.Utils.getSkinList()[iPeerLib.Utils.CURRENT_SKIN_INDEX].name)) {
+
+				iPeerLib.Utils.CURRENT_SKIN_INDEX++;
+				if (iPeerLib.Utils.CURRENT_SKIN_INDEX > iPeerLib.Utils.getSkinList().Count)
+					iPeerLib.Utils.CURRENT_SKIN_INDEX = -1;
+				hasInitStyles = false;
+
+			}
+			#endif
 
 			GUILayout.EndHorizontal();
 			GUILayout.BeginHorizontal();
-
-			if (GUILayout.Button("Close", _buttonStyle))
-				toggleAddGUI();
 			
 			GUILayout.EndHorizontal();
 

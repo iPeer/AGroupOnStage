@@ -1,4 +1,7 @@
-07/10/10, v1.2.2:
+15/10/14, v1.2.3:
+	* Fixed an issue with GUI skinning on modded 0.25 installs.
+
+07/10/14, v1.2.2:
     * Recompiled against 0.25 libraries
     
 ﻿05/10/14, v1.2.1:

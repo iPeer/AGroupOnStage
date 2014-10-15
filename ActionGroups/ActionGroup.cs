@@ -21,7 +21,7 @@ namespace AGroupOnStage.ActionGroups {
 		}
 
 		public ActionGroup setGroup(int group) {
-			this.aGroup = aGroup;
+			this.aGroup = group;
 			return this;
 		}
 
