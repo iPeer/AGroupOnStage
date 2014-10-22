@@ -11,17 +11,20 @@ using UnityEngine;
 using KSP.IO;
 using System;
 using AGroupOnStage.ActionGroups;
+using iPeerLib.Logging;
+using iPeerLib.Utility;
+using System.Globalization;
 
 namespace AGroupOnStage {
 
 	[KSPModule("Action Group On Stage")]
 	public class AGroupOnStage : PartModule {
 
-		private static readonly int configVersion = 2;
+		private static readonly int configVersion = 3;
 		private Rect _windowPosAddGroup = new Rect(), _windowPos = new Rect();
 		private bool guiOpen = false, addGuiOpen = false;
 		private bool isPartHighlighted = false;
-		private static GUIStyle _windowStyle, _labelStyle, _labelStyleCentre, _toggleStyle, _buttonStyle, _scrollStyle, _groupButtonStyle, _addWindowStyle, _labelStyleModeLabel;
+		private static GUIStyle _windowStyle, _labelStyle, _labelStyleCentre, _toggleStyle, _buttonStyle, _scrollStyle, _groupButtonStyle, _addWindowStyle, _labelStyleModeLabel, _sliderStyle, _sliderStyleSlider, _sliderStyleThumb;
 		private static bool hasInitStyles = false;
 		public static Dictionary<int, GUISkin> guiSkins = new Dictionary<int, GUISkin>();
 		public static int highlightedParts = 0;
@@ -31,6 +34,7 @@ namespace AGroupOnStage {
 		private Vector2 scrollPos = /*What's your */Vector2/*, Victor?*/.zero;
 		private ActionGroupFireStyle groupMode = ActionGroupFireStyle.ACTIVE_VESSEL;
 		private bool hideMainDialogue = false;
+        private float throttleLevel = 0f;
 
 		public static Dictionary<int, KSPActionGroup> aGroups = new Dictionary<int, KSPActionGroup>() {
 
@@ -49,7 +53,8 @@ namespace AGroupOnStage {
 			{ 12, KSPActionGroup.Brakes },
 			{ 13, KSPActionGroup.Abort },
 			{ 14, KSPActionGroup.RCS },
-			{ 15, KSPActionGroup.SAS }
+			{ 15, KSPActionGroup.SAS },
+            { 16, KSPActionGroup.Stage }
 
 		};
 
@@ -71,7 +76,9 @@ namespace AGroupOnStage {
 			{ "brakes", false },
 			{ "abort", false },
 			{ "rcs", false },
-			{ "sas", false }
+			{ "sas", false },
+            { "stage", false }, // Never true
+            { "throttle", false }
 
 		};
 
@@ -115,7 +122,25 @@ namespace AGroupOnStage {
 					EditorTooltip.Instance.HideToolTip();
 					EditorLogic.fetch.Lock(true, true, true, "AGOS_INPUT_LOCK");
 				}
+				isPartHighlighted = true;
+				if (!hasSetColourID) {
+					colourID = highlightedParts;
+					highlightedParts++;
+					if (colourID >= colourIndex.Count)
+						colourID = (colourID - (int)Math.Floor((double)(highlightedParts * colourIndex.Count))) - 1; // I have to cast this to double apparently...
+					hasSetColourID = true;
+					#if DEBUG
+					Log("ColourID: " + colourID);
+					#endif
+				}
+				try {
+					this.part.SetHighlightColor(colourIndex[colourID]);
+					this.part.SetHighlight(true);
+                }
+                catch (Exception e) { LogError(e); }
 			}
+
+
 			guiOpen = !guiOpen;
 
 		}
@@ -142,19 +167,27 @@ namespace AGroupOnStage {
 
 
 			foreach (ActionGroup ag in groupList) {
-				#if DEBUG 
+				/*#if DEBUG 
 				Log(this.part + " / " + ag.getPart());
-				Log(this.part == ag.getPart());
-				#endif
+				Log("{0}", this.part == ag.getPart());
+				#endif*/
 				if (ag.getPart() == this.part) {
 
-					if (ag.getMode() == ActionGroupFireStyle.ACTIVE_VESSEL || ag.getMode() == ActionGroupFireStyle.BOTH)
-						FlightGlobals.ActiveVessel.ActionGroups.ToggleGroup(aGroups[ag.getGroup()]);
+                    if (ag.isThrottle)
+                    {
+                        FlightInputHandler.state.mainThrottle = ag.throttleLevel;
+                        Log("Set throttle to {0} ({0:P2})", ag.throttleLevel);
+                    }
+                    else
+                    {
 
-					if (ag.getMode() == ActionGroupFireStyle.CONNECTED_STAGE || ag.getMode() == ActionGroupFireStyle.BOTH)
-						this.part.vessel.ActionGroups.ToggleGroup(aGroups[ag.getGroup()]);
+                        if (ag.getMode() == ActionGroupFireStyle.ACTIVE_VESSEL || ag.getMode() == ActionGroupFireStyle.BOTH)
+                            FlightGlobals.ActiveVessel.ActionGroups.ToggleGroup(aGroups[ag.getGroup()]);
 
-					Log("Toggled group '" + aGroups[ag.getGroup()] + "' for part '" + this.part.name + "' in stage " + this.part.inverseStage);
+                        if (ag.getMode() == ActionGroupFireStyle.CONNECTED_STAGE || ag.getMode() == ActionGroupFireStyle.BOTH)
+                            this.part.vessel.ActionGroups.ToggleGroup(aGroups[ag.getGroup()]);
+                        Log("Toggled group '" + aGroups[ag.getGroup()] + "' for part '" + this.part.name + "' in stage " + this.part.inverseStage);
+                    }
 
 				}
 
@@ -178,9 +211,19 @@ namespace AGroupOnStage {
 				EditorLogic.fetch.Unlock("AGOS_INPUT_LOCK");
 		}
 
-		public void Log(object msg) {
-			PDebug.Log("[AGroupOnStage]: " + msg.ToString());
+		public void Log(String message, params object[] data) {
+            iPeerLib.Logging.Logger.Log(message, data);
 		}
+
+        public void LogWarning(String message, params object[] data)
+        {
+            iPeerLib.Logging.Logger.logWarning(message);
+        }
+
+        public void LogError(Exception e)
+        {
+            iPeerLib.Logging.Logger.LogError(e);
+        }
 
 
 		public override void OnSave(ConfigNode node) {
@@ -190,7 +233,11 @@ namespace AGroupOnStage {
 			foreach (ActionGroup ag in groupList) {
 				if (ag.getPart() == this.part) {
 
-					string groupName = aGroups[ag.getGroup()].ToString().ToLower();
+					string groupName;
+                    if (ag.isThrottle)
+                        groupName = "throttle";
+                    else
+                        groupName = aGroups[ag.getGroup()].ToString().ToLower();
 				
 					if (ag.getMode() == ActionGroupFireStyle.ACTIVE_VESSEL) {
 
@@ -226,11 +273,20 @@ namespace AGroupOnStage {
 
 			clearGroupsForPart(this.part);
 
-			if (node.HasValue("version") && Convert.ToInt32(node.GetValue("version")) >= 2) { // New saving style
+			int saveVersion = 0;
+
+			if (node.HasValue("version"))
+				saveVersion = Convert.ToInt32(node.GetValue("version"));
+
+			#if DEBUG
+			Log("Save Version is " + saveVersion);
+			#endif
+
+			if (saveVersion >= 2) { // New saving style
 
 				for (int x = 0;; x++) {
 
-					string nodeName = "BOTH";
+					string nodeName = "AGOS_BOTH";
 				
 					if (x == 0)
 						nodeName = "AGOS_ACTIVE_VESSEL";
@@ -244,16 +300,57 @@ namespace AGroupOnStage {
 					if (!node.HasNode(nodeName))
 						continue;
 
+                    #if DEBUG
+                    Log("Parsing entries for " + nodeName + " (" + Utils.ParseEnum<ActionGroupFireStyle>(nodeName) + ")");
+                    #endif
+
 					ConfigNode n = node.GetNode(nodeName);
-						
-					for (int i = 0; i < aGroups.Count; i++) {
-						string groupName = aGroups[i].ToString().ToLower();
-						if (!n.HasValue(groupName))
-							continue;
-						string[] values = n.GetValue(groupName).Split(',');
-						int group = Convert.ToInt32(values[0]);
-						ActionGroupFireStyle fireStyle = iPeerLib.Utils.ParseEnum<ActionGroupFireStyle>(values[1]);
-						ActionGroup g = new ActionGroup(this.part, group, fireStyle);
+                    float throttleValue = 0f;
+                    bool isThrottleController = false;
+                    int numEntries = n.values.Count;
+                    if (numEntries < 1)
+                    {
+                        Log("{0} has no entries, skipping.", nodeName);
+                        continue;
+                    }
+                    for (int i = 0; i < numEntries; i++)
+                    {
+                        string valueName = n.values[i].name;
+						int group = 0;
+						string valueValue = n.GetValue(valueName);
+						#if DEBUG
+                        Log("Node '{0}' = {1}", valueName, valueValue);
+						#endif
+                        if (saveVersion == 2)
+                        {
+                            string[] values = valueValue.Split(',');
+                            group = Convert.ToInt32(values[0]);
+                        }
+                        else
+                            if (valueName == "stage")
+                                LogWarning("Usage of the 'Stage' action group is not recommended!");
+                            if (valueName == "throttle")
+                            {
+                                isThrottleController = true;
+                                throttleValue = Convert.ToSingle(valueValue.Split(',')[1], CultureInfo.InvariantCulture);
+                                group = Convert.ToInt32(valueValue.Split(',')[0]);
+                                if (throttleValue > 1f)
+                                {
+                                    LogWarning("Loaded throttle value is >1f, resetting it to 1f.");
+                                    throttleValue = 1f;
+                                }
+                                if (throttleValue < 0f)
+                                {
+                                    LogWarning("Loaded throttle value is <0f, resetting it to 0f.");
+                                    throttleValue = 0f;
+                                }
+                            }
+                            else
+                                group = Convert.ToInt32(valueValue);
+						ActionGroupFireStyle fireStyle = Utils.ParseEnum<ActionGroupFireStyle>(nodeName);
+						ActionGroup g = new ActionGroup(this.part, group, fireStyle, isThrottleController);
+                        if (isThrottleController)
+                            g.throttleLevel = throttleValue;
 						if (!isDuplicate(g))
 							groupList.Add(g);
 					}
@@ -300,7 +397,7 @@ namespace AGroupOnStage {
 			if (!hasInitStyles) {
 				hasInitStyles = true;
 
-				GUISkin skinRef = iPeerLib.Utils.getBestAvailableSkin();
+				GUISkin skinRef = Utils.getBestAvailableSkin();
 
 				_windowStyle = new GUIStyle(skinRef.window);
 				_windowStyle.fixedWidth = 500f;
@@ -320,10 +417,13 @@ namespace AGroupOnStage {
 				_addWindowStyle.fixedHeight = 250f;
 				_labelStyleModeLabel = new GUIStyle(skinRef.label);
 				_labelStyleModeLabel.stretchWidth = false;
+                _sliderStyle = new GUIStyle(skinRef.horizontalScrollbar);
+                _sliderStyleSlider = skinRef.horizontalSlider;
+                _sliderStyleThumb = skinRef.horizontalSliderThumb;
 
 				#if DEBUG
 
-				Log("Skin: " + skinRef.name + " (" + iPeerLib.Utils.CURRENT_SKIN_INDEX + ")");
+				Log("Skin: " + skinRef.name + " (" + Utils.CURRENT_SKIN_INDEX + ")");
 
 				#endif
 
@@ -354,36 +454,18 @@ namespace AGroupOnStage {
 				if (ag.getPart() == this.part) {
 
 					GUILayout.BeginHorizontal();
-					GUILayout.Label(aGroups[ag.getGroup()].ToString(), _labelStyle);
+
+                    if (ag.isThrottle)
+                    {
+                        GUILayout.Label(String.Format("Set throttle to {0:P2}", ag.throttleLevel), _labelStyle);
+                    }
+                    else
+                        GUILayout.Label(aGroups[ag.getGroup()].ToString(), _labelStyle);
 					GUILayout.Label(ag.getMode() == ActionGroupFireStyle.ACTIVE_VESSEL ? "Vessel" : ag.getMode() == ActionGroupFireStyle.CONNECTED_STAGE ? "Stage" : "All", _labelStyleModeLabel);
-					isPartHighlighted = GUILayout.Toggle(isPartHighlighted, "H", _groupButtonStyle);
 
-					if (!isPartHighlighted) {
-						if (hasSetColourID)
-							highlightedParts--;
-						hasSetColourID = false;
-						this.part.SetHighlightDefault();
-					}
-					else {
-						if (!hasSetColourID) {
-							colourID = highlightedParts;
-							highlightedParts++;
-							if (colourID >= colourIndex.Count)
-								colourID = (colourID - (int)Math.Floor((double)(highlightedParts * colourIndex.Count))) - 1; // I have to cast this to double apparently...
-							hasSetColourID = true;
-							#if DEBUG
-							Log("ColourID: " + colourID);
-							#endif
-						}
-						try {
-							this.part.SetHighlightColor(colourIndex[colourID]);
-						} catch (Exception e) {
-						}
-						this.part.SetHighlight(true);
-					}
-
-					if (GUILayout.Button("R", _groupButtonStyle))
+					if (GUILayout.Button("Remove", _groupButtonStyle))
 						groupList.Remove(ag);
+					
 					GUILayout.EndHorizontal();
 
 				}
@@ -463,6 +545,17 @@ namespace AGroupOnStage {
 			GUILayout.EndHorizontal();
 			GUILayout.BeginHorizontal();
 
+            actionGroups["throttle"] = GUILayout.Toggle(actionGroups["throttle"], "Throttle Control", _toggleStyle);
+            if (actionGroups["throttle"])
+            {
+                throttleLevel = GUILayout.HorizontalSlider(throttleLevel, 0f, 1f, _sliderStyleSlider, _sliderStyleThumb);
+                GUILayout.Label(String.Format("{0:P2}", throttleLevel), _labelStyle);
+            }
+
+
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+
 			if (GUILayout.Toggle(groupMode == ActionGroupFireStyle.ACTIVE_VESSEL, "Active Vessel Only", _buttonStyle))
 				groupMode = ActionGroupFireStyle.ACTIVE_VESSEL;
 
@@ -477,16 +570,16 @@ namespace AGroupOnStage {
 
 			if (GUILayout.Button("Add Action Group", _buttonStyle)) {
 				//clearGroupsForPart(this.part);
-				commitActionGroups(groupMode);
+                commitActionGroups(groupMode, throttleLevel);
 				toggleAddGUI();
 			}
 			#if DEBUG
 
-			if (GUILayout.Button(iPeerLib.Utils.CURRENT_SKIN_INDEX + ": " + iPeerLib.Utils.getSkinList()[iPeerLib.Utils.CURRENT_SKIN_INDEX].name)) {
+			if (GUILayout.Button(Utils.CURRENT_SKIN_INDEX + ": " + Utils.getSkinList()[Utils.CURRENT_SKIN_INDEX].name)) {
 
-				iPeerLib.Utils.CURRENT_SKIN_INDEX++;
-				if (iPeerLib.Utils.CURRENT_SKIN_INDEX > iPeerLib.Utils.getSkinList().Count)
-					iPeerLib.Utils.CURRENT_SKIN_INDEX = -1;
+				Utils.CURRENT_SKIN_INDEX++;
+				if (Utils.CURRENT_SKIN_INDEX > Utils.getSkinList().Count)
+					Utils.CURRENT_SKIN_INDEX = -1;
 				hasInitStyles = false;
 
 			}
@@ -502,12 +595,17 @@ namespace AGroupOnStage {
 
 		#endregion
 
-		public void commitActionGroups() {
-			commitActionGroups(ActionGroupFireStyle.ACTIVE_VESSEL);
+        public void commitActionGroups()
+        {
+            commitActionGroups(0f);
+        }
+
+		public void commitActionGroups(float throttleValue) {
+			commitActionGroups(ActionGroupFireStyle.ACTIVE_VESSEL, throttleValue);
 		}
 
 
-		public void commitActionGroups(ActionGroupFireStyle mode) {
+		public void commitActionGroups(ActionGroupFireStyle mode, float throttleValue) {
 
 			string[] keys = new string[actionGroups.Keys.Count];
 			actionGroups.Keys.CopyTo(keys, 0);
@@ -517,7 +615,14 @@ namespace AGroupOnStage {
 				if (actionGroups[keys[i]]) {
 
 					actionGroups[keys[i]] = false;
-					ActionGroup g = new ActionGroup(this.part, i, mode);
+                    ActionGroup g;
+                    if (keys[i] == "throttle")
+                    {
+                        g = new ActionGroup(this.part, i, mode, true);
+                        g.throttleLevel = throttleValue;
+                    }
+                    else 
+                        g = new ActionGroup(this.part, i, mode);
 					#if DEBUG
 					Log("Adding action group config for part '" + part.partInfo.title + "' (" + g.toSavableString() + ")");
 					#endif

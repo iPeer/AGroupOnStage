@@ -3,6 +3,8 @@
 #################
 
 *.csproj
+*.bat
+output_grep.txt
 
 #################
 ## Eclipse

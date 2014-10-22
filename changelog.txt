@@ -2,7 +2,7 @@
 	* Fixed an issue with GUI skinning on modded 0.25 installs.
 
 07/10/14, v1.2.2:
-    * Recompiled against 0.25 libraries
+	* Recompiled against 0.25 libraries
     
 ﻿05/10/14, v1.2.1:
 	* The main GUI for action groups is now hidden while you are selecting new groups to be fired.
