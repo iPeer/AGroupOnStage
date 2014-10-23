@@ -324,13 +324,26 @@ namespace AGroupOnStage {
                         if (saveVersion == 2)
                         {
                             string[] values = valueValue.Split(',');
-                            group = Convert.ToInt32(values[0]);
+#if DEBUG
+                            Log("0 = {0}", values[0]);
+#endif
+                            try
+                            {
+                                group = Convert.ToInt32(values[0].ToString().Trim());
+                            }
+                            catch (Exception e)
+                            {
+                                Logger.Log("An error has occured when trying to parse a version 2 node:", LogLevel.ERROR);
+                                LogError(e);
+                            }
                         }
                         else
+                        {
                             if (valueName == "stage")
                                 LogWarning("Usage of the 'Stage' action group is not recommended!");
                             if (valueName == "throttle")
                             {
+                                Log("Parsing throttle control value");
                                 isThrottleController = true;
                                 throttleValue = Convert.ToSingle(valueValue.Split(',')[1], CultureInfo.InvariantCulture);
                                 group = Convert.ToInt32(valueValue.Split(',')[0]);
@@ -347,6 +360,7 @@ namespace AGroupOnStage {
                             }
                             else
                                 group = Convert.ToInt32(valueValue);
+                        }
 						ActionGroupFireStyle fireStyle = Utils.ParseEnum<ActionGroupFireStyle>(nodeName);
 						ActionGroup g = new ActionGroup(this.part, group, fireStyle, isThrottleController);
                         if (isThrottleController)
