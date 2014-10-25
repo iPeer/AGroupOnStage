@@ -292,7 +292,8 @@ namespace AGroupOnStage
         public override void OnLoad(ConfigNode node)
         {
 
-            if (HighLogic.LoadedScene == GameScenes.LOADING)
+            // Fix for Nullref when reloading parts via the debug menu
+            if (!Utils.isLoadedSceneOneOf(GameScenes.FLIGHT, GameScenes.EDITOR, GameScenes.SPH))
                 return;
 
             clearGroupsForPart(this.part);
@@ -742,7 +743,7 @@ namespace AGroupOnStage
         public bool isSceneVABOrSPH()
         {
 
-            return HighLogic.LoadedScene == GameScenes.EDITOR || HighLogic.LoadedScene == GameScenes.SPH;
+            return Utils.isLoadedSceneOneOf(GameScenes.EDITOR, GameScenes.SPH);
 
         }
 

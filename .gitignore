@@ -2,6 +2,10 @@
 ## Custom
 #################
 
+ProjectSettings*
+Temp*
+Library*
+PartTools*
 *.csproj
 *.bat
 output_grep.txt
@@ -203,7 +207,6 @@ $RECYCLE.BIN/
 dist/
 build/
 eggs/
-parts/
 var/
 sdist/
 develop-eggs/
