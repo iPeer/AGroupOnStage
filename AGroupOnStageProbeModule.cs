@@ -26,9 +26,12 @@ namespace AGroupOnStage
 
         public override void OnAwake()
         {
-            createStageMap();
-            GameEvents.onStageActivate.Add(onStageActivate);
-            GameEvents.onStageSeparation.Add(onStageSeparation);
+            if (iPeerLib.Utility.Utils.isLoadedSceneOneOf(GameScenes.EDITOR, GameScenes.FLIGHT, GameScenes.SPH))
+            {
+                createStageMap();
+                GameEvents.onStageActivate.Add(onStageActivate);
+                GameEvents.onStageSeparation.Add(onStageSeparation);
+            }
         }
 
         private void onStageSeparation(EventReport data)

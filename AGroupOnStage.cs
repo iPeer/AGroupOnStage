@@ -6,6 +6,8 @@
 *
 */
 
+/* PERSONAL NOTE: CHANGE BACK TO STABLE LIBRARIES AFTER EXPERIMENTALS ARE OVER */
+
 using System.Collections.Generic;
 using UnityEngine;
 using KSP.IO;
@@ -109,14 +111,16 @@ namespace AGroupOnStage
                 RenderingManager.RemoveFromPostDrawQueue(+this.part.GetInstanceID(), OnDraw);
                 if (isSceneVABOrSPH())
                     EditorLogic.fetch.Unlock("AGOS_INPUT_LOCK");
-                if (isPartHighlighted)
+                // TODO: Fix in 0.90
+
+                /* if (isPartHighlighted)
                 {
                     isPartHighlighted = false;
                     if (hasSetColourID)
                         highlightedParts--;
                     hasSetColourID = false;
                     this.part.SetHighlightDefault();
-                }
+                }*/
             }
             else
             {
@@ -129,7 +133,8 @@ namespace AGroupOnStage
                     EditorTooltip.Instance.HideToolTip();
                     EditorLogic.fetch.Lock(true, true, true, "AGOS_INPUT_LOCK");
                 }
-                isPartHighlighted = true;
+                // TODO: Find alternative for 0.90
+                /*isPartHighlighted = true;
                 if (!hasSetColourID)
                 {
                     colourID = highlightedParts;
@@ -141,12 +146,12 @@ namespace AGroupOnStage
                     Log("ColourID: " + colourID);
 #endif
                 }
-                try
+try
                 {
                     this.part.SetHighlightColor(colourIndex[colourID]);
                     this.part.SetHighlight(true);
                 }
-                catch (Exception e) { LogError(e); }
+                catch (Exception e) { LogError(e); }*/
             }
 
 
@@ -293,7 +298,7 @@ namespace AGroupOnStage
         {
 
             // Fix for Nullref when reloading parts via the debug menu
-            if (!Utils.isLoadedSceneOneOf(GameScenes.FLIGHT, GameScenes.EDITOR, GameScenes.SPH))
+            if (!Utils.isLoadedSceneOneOf(GameScenes.FLIGHT, GameScenes.EDITOR/*, GameScenes.SPH*/))
                 return;
 
             clearGroupsForPart(this.part);
@@ -386,7 +391,10 @@ namespace AGroupOnStage
                                 }
                             }
                             else
+                            {
+                                isThrottleController = false;
                                 group = Convert.ToInt32(valueValue);
+                            }
                         }
                         ActionGroupFireStyle fireStyle = Utils.ParseEnum<ActionGroupFireStyle>(nodeName);
                         ActionGroup g = new ActionGroup(this.part, group, fireStyle, isThrottleController);
@@ -742,8 +750,7 @@ namespace AGroupOnStage
 
         public bool isSceneVABOrSPH()
         {
-
-            return Utils.isLoadedSceneOneOf(GameScenes.EDITOR, GameScenes.SPH);
+            return Utils.isLoadedSceneOneOf(GameScenes.EDITOR/*, GameScenes.SPH*/);
 
         }
 
