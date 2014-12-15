@@ -111,16 +111,15 @@ namespace AGroupOnStage
                 RenderingManager.RemoveFromPostDrawQueue(+this.part.GetInstanceID(), OnDraw);
                 if (isSceneVABOrSPH())
                     EditorLogic.fetch.Unlock("AGOS_INPUT_LOCK");
-                // TODO: Fix in 0.90
 
-                /* if (isPartHighlighted)
+                 if (isPartHighlighted)
                 {
                     isPartHighlighted = false;
                     if (hasSetColourID)
                         highlightedParts--;
                     hasSetColourID = false;
                     this.part.SetHighlightDefault();
-                }*/
+                }
             }
             else
             {
@@ -133,8 +132,7 @@ namespace AGroupOnStage
                     EditorTooltip.Instance.HideToolTip();
                     EditorLogic.fetch.Lock(true, true, true, "AGOS_INPUT_LOCK");
                 }
-                // TODO: Find alternative for 0.90
-                /*isPartHighlighted = true;
+                isPartHighlighted = true;
                 if (!hasSetColourID)
                 {
                     colourID = highlightedParts;
@@ -149,9 +147,9 @@ namespace AGroupOnStage
 try
                 {
                     this.part.SetHighlightColor(colourIndex[colourID]);
-                    this.part.SetHighlight(true);
+                    this.part.SetHighlight(true, false);
                 }
-                catch (Exception e) { LogError(e); }*/
+                catch (Exception e) { LogError(e); }
             }
 
 

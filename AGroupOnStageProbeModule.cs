@@ -26,7 +26,7 @@ namespace AGroupOnStage
 
         public override void OnAwake()
         {
-            if (iPeerLib.Utility.Utils.isLoadedSceneOneOf(GameScenes.EDITOR, GameScenes.FLIGHT, GameScenes.SPH))
+            if (iPeerLib.Utility.Utils.isLoadedSceneOneOf(GameScenes.EDITOR, GameScenes.FLIGHT/*, GameScenes.SPH*/))
             {
                 createStageMap();
                 GameEvents.onStageActivate.Add(onStageActivate);
