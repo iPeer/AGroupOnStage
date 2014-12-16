@@ -70,6 +70,16 @@ namespace AGroupOnStage.ActionGroups {
 			return this.aGroup.ToString()+(this.isThrottle ? ","+this.throttleLevel : "");
 		}
 
+        public float getRequiredUpgradeLevel()
+        {
+
+            if (this.isThrottle || this.aGroup.ToString().ToLower().StartsWith("custom"))
+                return 1f;
+            else
+                return 0.5f;
+
+        }
+
 	}
 }
 

@@ -28,7 +28,7 @@ namespace AGroupOnStage
         private Rect _windowPosAddGroup = new Rect(), _windowPos = new Rect();
         private bool guiOpen = false, addGuiOpen = false;
         private bool isPartHighlighted = false;
-        private static GUIStyle _windowStyle, _labelStyle, _labelStyleCentre, _toggleStyle, _buttonStyle, _scrollStyle, _groupButtonStyle, _addWindowStyle, _labelStyleModeLabel, _sliderStyle, _sliderStyleSlider, _sliderStyleThumb;
+        private static GUIStyle _windowStyle, _labelStyle, _labelStyleCentre, _toggleStyle, _buttonStyle, _scrollStyle, _groupButtonStyle, _addWindowStyle, _labelStyleModeLabel, _sliderStyle, _sliderStyleSlider, _sliderStyleThumb, _labelStyleRed;
         private static bool hasInitStyles = false;
         public static Dictionary<int, GUISkin> guiSkins = new Dictionary<int, GUISkin>();
         public static int highlightedParts = 0;
@@ -106,6 +106,11 @@ namespace AGroupOnStage
         [KSPEvent(active = true, guiActive = true, guiActiveEditor = true, guiName = "Action group control")]
         public void toggleGUI()
         {
+            // TODO: Show a message if the player's VAB is t0.
+#if DEBUG
+            Log("RND Tech Level = "+getVABTechLevel());
+#endif
+
             if (guiOpen)
             {
                 RenderingManager.RemoveFromPostDrawQueue(+this.part.GetInstanceID(), OnDraw);
@@ -189,6 +194,8 @@ try
                 #endif*/
                 if (ag.getPart() == this.part)
                 {
+
+                    if (getVABTechLevel() < ag.getRequiredUpgradeLevel()) { iPeerLib.Logging.Logger.Log("VAB tier is not high enough to activate action grou {0}", aGroups[ag.getGroup()]); return; }
 
                     if (ag.isThrottle)
                     {
@@ -453,6 +460,9 @@ try
                 _windowStyle.fixedWidth = 500f;
                 _labelStyle = new GUIStyle(skinRef.label);
                 _labelStyle.stretchWidth = true;
+                _labelStyleRed = new GUIStyle(skinRef.label);
+                _labelStyleRed.stretchWidth = true;
+                _labelStyleRed.normal.textColor = Color.red;
                 _labelStyleCentre = new GUIStyle(skinRef.label);
                 _labelStyleCentre.alignment = TextAnchor.MiddleCenter;
                 _toggleStyle = new GUIStyle(skinRef.toggle);
@@ -514,7 +524,7 @@ try
                         GUILayout.Label(String.Format("Set throttle to {0:P2}", ag.throttleLevel), _labelStyle);
                     }
                     else
-                        GUILayout.Label(aGroups[ag.getGroup()].ToString(), _labelStyle);
+                        GUILayout.Label(aGroups[ag.getGroup()].ToString(), (getVABTechLevel() < ag.getRequiredUpgradeLevel() ? _labelStyleRed : _labelStyle));
                     GUILayout.Label(ag.getMode() == ActionGroupFireStyle.ACTIVE_VESSEL ? "Vessel" : ag.getMode() == ActionGroupFireStyle.CONNECTED_STAGE ? "Stage" : "All", _labelStyleModeLabel);
 
                     if (GUILayout.Button("Remove", _groupButtonStyle))
@@ -749,6 +759,13 @@ try
         public bool isSceneVABOrSPH()
         {
             return Utils.isLoadedSceneOneOf(GameScenes.EDITOR/*, GameScenes.SPH*/);
+
+        }
+
+        public float getVABTechLevel() // 0 = 0, 0.5 = 1, 1 = 2
+        {
+
+            return (HighLogic.CurrentGame.Mode != Game.Modes.CAREER ? 1f : ScenarioUpgradeableFacilities.GetFacilityLevel(SpaceCenterFacility.VehicleAssemblyBuilding));
 
         }
 
