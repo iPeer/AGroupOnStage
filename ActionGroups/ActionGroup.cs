@@ -73,7 +73,7 @@ namespace AGroupOnStage.ActionGroups {
         public float getRequiredUpgradeLevel()
         {
 
-            if (this.isThrottle || this.aGroup.ToString().ToLower().StartsWith("custom"))
+            if (this.isThrottle || this.aGroup < 10)
                 return 1f;
             else
                 return 0.5f;

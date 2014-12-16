@@ -110,6 +110,11 @@ namespace AGroupOnStage
 #if DEBUG
             Log("RND Tech Level = "+getVABTechLevel());
 #endif
+            if (getVABTechLevel() < 0.5f)
+            {
+                ScreenMessages.PostScreenMessage("You do not have access to action groups yet. Please upgrade your VAB at least once to unlock them.", 5f, ScreenMessageStyle.UPPER_CENTER);
+                return;
+            }
 
             if (guiOpen)
             {
@@ -195,7 +200,7 @@ try
                 if (ag.getPart() == this.part)
                 {
 
-                    if (getVABTechLevel() < ag.getRequiredUpgradeLevel()) { iPeerLib.Logging.Logger.Log("VAB tier is not high enough to activate action grou {0}", aGroups[ag.getGroup()]); return; }
+                    if (getVABTechLevel() < ag.getRequiredUpgradeLevel()) { Logger.Log("VAB tier is not high enough to activate action group {0}. Have {1} vs. {2} required", aGroups[ag.getGroup()], getVABTechLevel(), ag.getRequiredUpgradeLevel()); continue; }
 
                     if (ag.isThrottle)
                     {
@@ -513,6 +518,10 @@ try
             {
 
                 ActionGroup ag = groups[x];
+/*#if DEBUG
+                // Spammy McSpammerson
+                Logger.Log("Required tier for action group {2} is {0}. Actual tier is {1}", ag.getRequiredUpgradeLevel(), getVABTechLevel(), aGroups[ag.getGroup()].ToString());
+#endif*/
 
                 if (ag.getPart() == this.part)
                 {
@@ -585,45 +594,56 @@ try
             GUILayout.Label("Check which groups you want to fire when this part is staged.", _labelStyle);
             GUILayout.EndHorizontal();
 
-            GUILayout.BeginHorizontal();
-
-            actionGroups["custom01"] = GUILayout.Toggle(actionGroups["custom01"], "Custom01", _toggleStyle);
-            actionGroups["custom02"] = GUILayout.Toggle(actionGroups["custom02"], "Custom02", _toggleStyle);
-            actionGroups["custom03"] = GUILayout.Toggle(actionGroups["custom03"], "Custom03", _toggleStyle);
-            actionGroups["custom04"] = GUILayout.Toggle(actionGroups["custom04"], "Custom04", _toggleStyle);
-            actionGroups["custom05"] = GUILayout.Toggle(actionGroups["custom05"], "Custom05", _toggleStyle);
-
-            GUILayout.EndHorizontal();
-            GUILayout.BeginHorizontal();
-
-            actionGroups["custom06"] = GUILayout.Toggle(actionGroups["custom06"], "Custom06", _toggleStyle);
-            actionGroups["custom07"] = GUILayout.Toggle(actionGroups["custom07"], "Custom07", _toggleStyle);
-            actionGroups["custom08"] = GUILayout.Toggle(actionGroups["custom08"], "Custom08", _toggleStyle);
-            actionGroups["custom09"] = GUILayout.Toggle(actionGroups["custom09"], "Custom09", _toggleStyle);
-            actionGroups["custom10"] = GUILayout.Toggle(actionGroups["custom10"], "Custom10", _toggleStyle);
-
-            GUILayout.EndHorizontal();
-            GUILayout.BeginHorizontal();
-
-            actionGroups["gear"] = GUILayout.Toggle(actionGroups["gear"], "Gear", _toggleStyle);
-            actionGroups["light"] = GUILayout.Toggle(actionGroups["light"], "Lights", _toggleStyle);
-            actionGroups["brakes"] = GUILayout.Toggle(actionGroups["brakes"], "Brakes", _toggleStyle);
-            actionGroups["abort"] = GUILayout.Toggle(actionGroups["abort"], "Abort", _toggleStyle);
-            actionGroups["rcs"] = GUILayout.Toggle(actionGroups["rcs"], "RCS", _toggleStyle);
-            actionGroups["sas"] = GUILayout.Toggle(actionGroups["sas"], "SAS", _toggleStyle);
-
-            GUILayout.EndHorizontal();
-            GUILayout.BeginHorizontal();
-
-            actionGroups["throttle"] = GUILayout.Toggle(actionGroups["throttle"], "Throttle Control", _toggleStyle);
-            if (actionGroups["throttle"])
+            if (getVABTechLevel() >= 1f)
             {
-                throttleLevel = GUILayout.HorizontalSlider(throttleLevel, 0f, 1f, _sliderStyleSlider, _sliderStyleThumb);
-                GUILayout.Label(String.Format("{0:P2}", throttleLevel), _labelStyle);
+                GUILayout.BeginHorizontal();
+
+                actionGroups["custom01"] = GUILayout.Toggle(actionGroups["custom01"], "Custom01", _toggleStyle);
+                actionGroups["custom02"] = GUILayout.Toggle(actionGroups["custom02"], "Custom02", _toggleStyle);
+                actionGroups["custom03"] = GUILayout.Toggle(actionGroups["custom03"], "Custom03", _toggleStyle);
+                actionGroups["custom04"] = GUILayout.Toggle(actionGroups["custom04"], "Custom04", _toggleStyle);
+                actionGroups["custom05"] = GUILayout.Toggle(actionGroups["custom05"], "Custom05", _toggleStyle);
+
+                GUILayout.EndHorizontal();
+                GUILayout.BeginHorizontal();
+
+                actionGroups["custom06"] = GUILayout.Toggle(actionGroups["custom06"], "Custom06", _toggleStyle);
+                actionGroups["custom07"] = GUILayout.Toggle(actionGroups["custom07"], "Custom07", _toggleStyle);
+                actionGroups["custom08"] = GUILayout.Toggle(actionGroups["custom08"], "Custom08", _toggleStyle);
+                actionGroups["custom09"] = GUILayout.Toggle(actionGroups["custom09"], "Custom09", _toggleStyle);
+                actionGroups["custom10"] = GUILayout.Toggle(actionGroups["custom10"], "Custom10", _toggleStyle);
+
+                GUILayout.EndHorizontal();
             }
 
+            if (getVABTechLevel() >= 0.5f)
+            {
+                GUILayout.BeginHorizontal();
 
-            GUILayout.EndHorizontal();
+                actionGroups["gear"] = GUILayout.Toggle(actionGroups["gear"], "Gear", _toggleStyle);
+                actionGroups["light"] = GUILayout.Toggle(actionGroups["light"], "Lights", _toggleStyle);
+                actionGroups["brakes"] = GUILayout.Toggle(actionGroups["brakes"], "Brakes", _toggleStyle);
+                actionGroups["abort"] = GUILayout.Toggle(actionGroups["abort"], "Abort", _toggleStyle);
+                actionGroups["rcs"] = GUILayout.Toggle(actionGroups["rcs"], "RCS", _toggleStyle);
+                actionGroups["sas"] = GUILayout.Toggle(actionGroups["sas"], "SAS", _toggleStyle);
+
+                GUILayout.EndHorizontal();
+            }
+
+            if (getVABTechLevel() >= 1f)
+            {
+                GUILayout.BeginHorizontal();
+                actionGroups["throttle"] = GUILayout.Toggle(actionGroups["throttle"], "Throttle Control", _toggleStyle);
+                if (actionGroups["throttle"])
+                {
+                    throttleLevel = GUILayout.HorizontalSlider(throttleLevel, 0f, 1f, _sliderStyleSlider, _sliderStyleThumb);
+                    GUILayout.Label(String.Format("{0:P2}", throttleLevel), _labelStyle);
+                }
+
+
+                GUILayout.EndHorizontal();
+            }
+
             GUILayout.BeginHorizontal();
 
             if (GUILayout.Toggle(groupMode == ActionGroupFireStyle.ACTIVE_VESSEL, "Active Vessel Only", _buttonStyle))

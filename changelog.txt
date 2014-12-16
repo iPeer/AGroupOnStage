@@ -1,3 +1,13 @@
+16/12/14, v1.2.4:
+	* 0.90 Compatibility
+	* Action groups available are now limited depending on VAB tier (careeer only).
+		* Locked action groups will be displayed in red if they are already in a vessel's configuration and will not fire upon staging.
+	* Throttle level can now be changed on stage.
+	* Reduced the amount of data AGOS needs to save to save files
+	* "Stage" is now a valid action group (but requires save editing to use and probably doesn't work how you'd hope anyway).
+	* Tweaked the GUI, no longer has a "H" button as parts are highlighted when the config GUI opens and "R" button changed to say "Remove".
+	* [iPeerLib] Skins are now correctly set based on order of preference.
+
 15/10/14, v1.2.3:
 	* Fixed an issue with GUI skinning on modded 0.25 installs.
 
