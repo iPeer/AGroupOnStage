@@ -1,3 +1,6 @@
+06/02/15, v1.2.5:
+	* Fixed AGOS modules not applying to stock launch clamps if Extraplanetary Launchpads is installed. [Reported by ShimmyTheJJ]
+
 16/12/14, v1.2.4:
 	* 0.90 Compatibility
 	* Action groups available are now limited depending on VAB tier (careeer only).
