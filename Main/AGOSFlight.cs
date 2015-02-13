@@ -1,4 +1,4 @@
-﻿using iPeerLib.Logging;
+﻿using AGroupOnStage.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,9 +13,10 @@ namespace AGroupOnStage.Main
 
         public void Start()
         {
-            Logger.Log("Start!");
+            Logger.Log("AGOS.Main.AGOSFlight.Start()");
             GameEvents.onStageActivate.Add(OnStageActivate);
             GameEvents.onStageSeparation.Add(OnStageSeparation);
+            Logger.Log("{0}", FlightGlobals.ActiveVessel.id);
         }
 
         private void OnStageActivate(int stage)
