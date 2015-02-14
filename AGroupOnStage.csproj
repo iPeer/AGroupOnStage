@@ -1,0 +1,159 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{C44EBE51-2A63-473F-83DD-A9D2CAB0EB69}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <RootNamespace>AGroupOnStage</RootNamespace>
+    <AssemblyName>AGroupOnStage</AssemblyName>
+    <ReleaseVersion>1.0</ReleaseVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
+    <SynchReleaseVersion>false</SynchReleaseVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+    <CustomCommands>
+      <CustomCommands>
+        <Command type="AfterBuild" command="xcopy ${TargetFile} C:\KSPScratchpad\GameData\iPeer\AGroupOnStage\ /y" externalConsole="True" />
+        <Command type="AfterBuild" command="xcopy AGroupOnStage.cfg C:\KSPScratchpad\GameData\iPeer\AGroupOnStage\ /y" externalConsole="True" />
+        <Command type="AfterBuild" command="xcopy ${TargetDir}\iPeerLib.dll C:\KSPScratchpad\GameData\iPeer\AGroupOnStage\ /y" externalConsole="True" />
+      </CustomCommands>
+    </CustomCommands>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+    <CustomCommands>
+      <CustomCommands>
+        <Command type="AfterBuild" command="xcopy ${TargetFile} H:\Dropbox\Public\KSP\mods\staging\AGroupOnStage\GameData\iPeer\AGroupOnStage\ /y" externalConsole="True" />
+        <Command type="AfterBuild" command="xcopy AGroupOnStage.cfg H:\Dropbox\Public\KSP\mods\staging\AGroupOnStage\GameData\iPeer\AGroupOnStage\ /y" externalConsole="True" />
+        <Command type="AfterBuild" command="xcopy ${TargetDir}\iPeerLib.dll H:\Dropbox\Public\KSP\mods\staging\AGroupOnStage\GameData\iPeer\AGroupOnStage\ /y" externalConsole="True" />
+      </CustomCommands>
+    </CustomCommands>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'DebugAndRun|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <ConsolePause>false</ConsolePause>
+    <CustomCommands>
+      <CustomCommands>
+        <Command type="AfterBuild" command="xcopy ${TargetFile} C:\KSPScratchpad\GameData\iPeer\AGroupOnStage\ /y" externalConsole="True" />
+        <Command type="AfterBuild" command="xcopy AGroupOnStage.cfg C:\KSPScratchpad\GameData\iPeer\AGroupOnStage\ /y" externalConsole="True" />
+        <Command type="AfterBuild" command="xcopy ${TargetDir}\iPeerLib.dll C:\KSPScratchpad\GameData\iPeer\AGroupOnStage\ /y" externalConsole="True" />
+        <Command type="AfterBuild" command="..\..\..\..\..\..\KSPScratchpad\KSP.exe" />
+      </CustomCommands>
+    </CustomCommands>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'AGOS %28Debug%29|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\AGOS %28Debug%29\</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>ManagedMinimumRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'AGOS %28Release%29|AnyCPU'">
+    <OutputPath>bin\AGOS %28Release%29\</OutputPath>
+    <Optimize>true</Optimize>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>ManagedMinimumRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'AGOS_Debug|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\AGOS_Debug\</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>ManagedMinimumRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'AGOS_Release|AnyCPU'">
+    <OutputPath>bin\AGOS_Release\</OutputPath>
+    <Optimize>true</Optimize>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>ManagedMinimumRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'KER_Downrange|AnyCPU'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\KER_Downrange\</OutputPath>
+    <DefineConstants>DEBUG;</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>ManagedMinimumRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'KER_Downrange %28Release%29|AnyCPU'">
+    <OutputPath>bin\KER_Downrange %28Release%29\</OutputPath>
+    <Optimize>true</Optimize>
+    <DebugType>full</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>ManagedMinimumRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>H:\Steam\SteamApps\common\Kerbal Space Program\KSP_Data\Managed\Assembly-CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="UnityEngine">
+      <HintPath>H:\Steam\SteamApps\common\Kerbal Space Program\KSP_Data\Managed\UnityEngine.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="ActionGroups\IActionGroup.cs" />
+    <Compile Include="ActionGroups\CameraControlActionGroup.cs" />
+    <Compile Include="ActionGroups\FineControlActionGroup.cs" />
+    <Compile Include="ActionGroups\ThrottleControlActionGroup.cs" />
+    <Compile Include="Extensions\VesselExtensions.cs" />
+    <Compile Include="Main\AGOSEditor.cs" />
+    <Compile Include="Main\AGOSFlight.cs" />
+    <Compile Include="Main\AGOSMain.cs" />
+    <Compile Include="AGX\AGXInterface.cs" />
+    <Compile Include="Logging\Logger.cs" />
+    <Compile Include="Main\AGOSModule.cs" />
+    <Compile Include="Main\AGOSUtils.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <ItemGroup>
+    <None Include="changelog.txt" />
+    <None Include="grep.bat" />
+  </ItemGroup>
+  <ItemGroup />
+  <PropertyGroup>
+    <PostBuildEvent>if $(ConfigurationName) == AGOS_Debug (
+  xcopy $(TargetFileName) C:\KSPScratchpad\GameData\iPeer\AGroupOnStage\ /y
+  xcopy $(ProjectDir)GameData C:\KSPScratchPad\GameData\ /y /e
+  xcopy $(SolutionDir)iPeerLib\bin\$(ConfigurationName)\iPeerLib.dll C:\KSPScratchpad\GameData\iPeer\AGroupOnStage\ /y
+)
+if $(ConfigurationName) == AGOS_Release (
+  xcopy $(TargetFileName) H:\Dropbox\Public\KSP\mods\staging\AGroupOnStage\GameData\iPeer\AGroupOnStage /y
+  xcopy $(ProjectDir)GameData H:\Dropbox\Public\KSP\mods\staging\AGroupOnStage\GameData\ /y /e
+  xcopy $(SolutionDir)iPeerLib\bin\$(ConfigurationName)\iPeerLib.dll H:\Dropbox\Public\KSP\mods\staging\AGroupOnStage\GameData\iPeer\AGroupOnStage /y
+)
+</PostBuildEvent>
+  </PropertyGroup>
+</Project>

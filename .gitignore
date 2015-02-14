@@ -6,7 +6,6 @@ ProjectSettings*
 Temp*
 Library*
 PartTools*
-*.csproj
 *.bat
 output_grep.txt
 
