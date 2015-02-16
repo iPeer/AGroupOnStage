@@ -10,8 +10,8 @@ namespace AGroupOnStage.Logging
     {
 
         public static void Log(String message, params object[] data) { Log(message, LogLevel.NORMAL, data); }
-        public static void Warning(String message) { logWarning(message); }
-        public static void logWarning(String message) { Log(message, LogLevel.WARNING); }
+        public static void Warning(String message, params object[] data) { LogWarning(message, data); }
+        public static void LogWarning(String message, params object[] data) { Log(message, LogLevel.WARNING, data); }
         public static void Error(Exception e) { LogError(e); }
         public static void Log(Exception e) { LogError(e); }
         public static void LogError(Exception e) { Log("{0}", LogLevel.ERROR, e.StackTrace); }

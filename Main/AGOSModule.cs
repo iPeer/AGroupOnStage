@@ -21,7 +21,7 @@ namespace AGroupOnStage.Main
                 if (am == null || this == am)
                     this.isRoot = true;
             }
-            catch { Logger.logWarning("Catch Exception on part awake!"); this.isRoot = true; }
+            catch { Logger.LogWarning("Caught exception on part awake! (Harmless? Maybe?)"); this.isRoot = true; }
         }
 
         public override void OnSave(ConfigNode node)
