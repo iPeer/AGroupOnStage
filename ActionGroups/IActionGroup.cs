@@ -8,7 +8,7 @@ namespace AGroupOnStage.ActionGroups
     interface IActionGroup
     {
 
-        int Stage { get; set; }
+        int[] Stages { get; set; }
         int Group { get; set; }
         float ThrottleLevel { get; set; }
         FlightCamera.Modes cameraMode { get; set; }

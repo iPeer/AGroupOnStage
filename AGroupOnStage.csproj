@@ -123,6 +123,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ActionGroups\BasicActionGroup.cs" />
     <Compile Include="ActionGroups\IActionGroup.cs" />
     <Compile Include="ActionGroups\CameraControlActionGroup.cs" />
     <Compile Include="ActionGroups\FineControlActionGroup.cs" />

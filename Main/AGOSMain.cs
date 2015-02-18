@@ -19,6 +19,13 @@ namespace AGroupOnStage.Main
 
         #endregion
 
+        #region GUI control vars
+
+        private float throttleLevel = 0f;
+        private string stageList = "";
+
+        #endregion
+
         #region private vars
 
         private static int AGOS_GUI_WINDOW_ID = 03022007;
@@ -48,7 +55,7 @@ namespace AGroupOnStage.Main
         #region GUI vars
 
         private Rect _windowPos = new Rect();
-        private Vector2 _scrollPosGroups = Vector2.zero;
+        private Vector2 _scrollPosGroups = Vector2.zero, _scrollPosConfig = Vector2.zero;
         private GUIStyle _buttonStyle,
             _scrollStyle,
             _windowStyle,
@@ -56,7 +63,8 @@ namespace AGroupOnStage.Main
             _toggleStyle,
             _sliderStyle,
             _sliderSliderStyle,
-            _sliderThumbStyle;
+            _sliderThumbStyle,
+            _textFieldStyle;
 
         private Dictionary<string, string> agosGroupPrettyNames = new Dictionary<string, string>() {
 
@@ -110,16 +118,16 @@ namespace AGroupOnStage.Main
                 {
                     groupName = agosGroupPrettyNames[agosGroupNames[x]];
                 }
-                catch 
-                { 
-                    groupName = agosGroupNames[x]; 
+                catch
+                {
+                    groupName = agosGroupNames[x];
                     Logger.LogWarning("No pretty name set for action group '{0}'", groupName);
                 }
                 actionGroupList.Add(agosGroupIDs[x], groupName);
                 actionGroupSettings.Add(agosGroupIDs[x], false);
             }
             Logger.Log("\tDone!");
-            if (useAGXConfig) 
+            if (useAGXConfig)
             {
                 Logger.Log("\tAGX...");
                 throw new NotImplementedException();
@@ -186,7 +194,7 @@ namespace AGroupOnStage.Main
             }
         }
 
-        private void OnDraw() 
+        private void OnDraw()
         {
 
             if (!hasSetupStyles)
@@ -203,49 +211,163 @@ namespace AGroupOnStage.Main
             GUILayout.BeginHorizontal();
 
             GUILayout.BeginVertical();
-            if (useAGXConfig) 
+            if (useAGXConfig)
             {
                 throw new NotImplementedException();
             }
             else
             {
-                _scrollPosGroups = GUILayout.BeginScrollView(_scrollPosGroups, /*_scrollStyle*/new GUIStyle(), GUILayout.Width(250f), GUILayout.Height(270f));
+                _scrollPosGroups = GUILayout.BeginScrollView(_scrollPosGroups, _scrollStyle, GUILayout.Width(230f), GUILayout.Height(270f));
                 //_scrollPosGroups = GUILayout.BeginScrollView(_scrollPosGroups, false, false, _scrollStyle, _scrollStyle, _scrollStyle, GUILayout.Width(250f), GUILayout.Height(450f));
-               
-                int AG_MIN = Enum.GetNames(typeof(AGOSActionGroups)).Length;
-                int AG_MAX = actionGroupSettings.Count - AG_MIN;
+
+                int[] AG_MIN_MAX = getMinMaxGroupIds();
+                int AG_MIN = AG_MIN_MAX[0];
+                int AG_MAX = AG_MIN_MAX[1];
 
                 //Logger.LogDebug("MAX: {0}, MIN: {1}", AG_MAX, -AG_MIN);    
 
                 for (int x = -AG_MIN; x < AG_MAX; x++)
                 {
                     //Logger.Log("AG {0}: {1}", x, actionGroupList[x]);
+                    if (x == 0) { continue; } // "None" action group
                     actionGroupSettings[x] = GUILayout.Toggle(actionGroupSettings.ContainsKey(x) ? actionGroupSettings[x] : false, actionGroupList[x], _buttonStyle);
                 }
                 GUILayout.EndScrollView();
             }
             GUILayout.EndVertical();
             GUILayout.BeginVertical(GUILayout.Width(240f));
-            GUILayout.Label("Side panel; controls for AG configuration will go here such as throttle level (if applicable) and stage settings\n\nIgnore the following (word-wrap test):\n"+
-            "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@", _labelStyle);
+            GUILayout.Label("Stages: ", _labelStyle);
+            stageList = GUILayout.TextField(stageList, _textFieldStyle);
+            GUILayout.Label("Separate multiple by a comma (,)", _labelStyle);
+            GUILayout.Space(4);
+            if (actionGroupSettings[actionGroupList.First(a => a.Value.Contains("Throttle")).Key])
+            {
+                GUILayout.Label("Throttle control:", _labelStyle);
+                GUILayout.BeginHorizontal(GUILayout.Width(240f));
+                throttleLevel = GUILayout.HorizontalSlider(throttleLevel, 0f, 1f, _sliderSliderStyle, _sliderThumbStyle);
+                GUILayout.Label(String.Format("{0:P2}", throttleLevel), _labelStyle);
+                GUILayout.EndHorizontal();
+                GUILayout.Space(4);
+            }
+
+            if (GUILayout.Button("Commit group(s)", _buttonStyle))
+            {
+                commitGroups();
+            }
 
             GUILayout.EndVertical();
 
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
-            GUILayout.Label("Bottom panel; a list of configured groups will go here.", _labelStyle);
+            _scrollPosConfig = GUILayout.BeginScrollView(_scrollPosConfig, _scrollStyle);
+
+            IActionGroup[] groups = actionGroups.ToArray();
+
+            foreach (IActionGroup ag in groups)
+            {
+                GUILayout.BeginHorizontal();
+
+                GUILayout.Label(actionGroupList[ag.Group], _labelStyle);
+                int[] stages = ag.Stages;
+                string stagesString = "";
+                foreach (int s in stages) {
+                    stagesString = stagesString+(stagesString.Length > 0 ? ", " : "")+s;
+                }
+                GUILayout.Label(stagesString, _labelStyle);
+                if (GUILayout.Button("Remove", _buttonStyle, GUILayout.MaxWidth(70f)))
+                    actionGroups.Remove(ag);
+
+                GUILayout.EndHorizontal();
+            }
+
+            GUILayout.EndScrollView();
             GUILayout.EndHorizontal();
 
             GUI.DragWindow(); // Make window dragable
 
         }
 
+        private void commitGroups()
+        {
+            Logger.Log("Commiting current action group configuration...");
+            int[] AG_MIN_MAX = getMinMaxGroupIds();
+            int AG_MIN = -AG_MIN_MAX[0];
+            int AG_MAX = AG_MIN_MAX[1];
+
+            for (int x = AG_MIN; x < AG_MAX; x++)
+            {
+                if (actionGroupSettings[x])
+                {
+
+                    /*
+                    THROTTLE = -1,
+                    FINE_CONTROLS = -2,
+                    CAMERA_AUTO = -3,
+                    CAMERA_ORBITAL = -4,
+                    CAMERA_CHASE = -5,
+                    CAMERA_FREE = -6
+                    */
+
+                    IActionGroup ag;
+                    if (x == -1) // Throttle
+                    {
+                        ag = new ThrottleControlActionGroup();
+                        ag.ThrottleLevel = throttleLevel;
+                    }
+                    else if (x == -2) // Fine controls
+                    {
+                        ag = new FineControlActionGroup();
+                    }
+                    else if (x < -2 && x > -7) // Camera mode
+                    {
+                        ag = new CameraControlActionGroup();
+                        ag.cameraMode = AGOSUtils.getCameraModeForGroupID(x);
+                    }
+                    else
+                    {
+                        ag = new BasicActionGroup();
+                    }
+
+                    ag.Group = x;
+                    int[] stages;
+                    string[] sList = stageList.Split(',');
+                    stages = new int[sList.Length];
+                    for (int i = 0; i < sList.Length; i++)
+                        try
+                        {
+                            stages[i] = Convert.ToInt32(sList[i]);
+                        }
+                        catch
+                        {
+                            Logger.LogWarning("Couldn't parse stage number '{0}'. Skipping.", sList[i]);
+                        }
+                    ag.Stages = stages;
+
+                    Logger.Log("\t{0}", ag.ToString());
+
+                    actionGroups.Add(ag);
+                    actionGroupSettings[x] = false;
+
+                }
+            }
+            throttleLevel = 0f;
+            stageList = "";
+        }
+
+        private int[] getMinMaxGroupIds()
+        {
+            int[] ret = new int[2];
+            ret[0] = Enum.GetNames(typeof(AGOSActionGroups)).Length;
+            ret[1] = actionGroupSettings.Count - ret[0];
+            return ret;
+        }
+
         private void setUpStyles()
         {
             Logger.Log("Setting up GUI styles");
             hasSetupStyles = true;
-            GUISkin skin = /*AGOSUtils.getBestAvailableSkin();*/HighLogic.Skin;
+            GUISkin skin = AGOSUtils.getBestAvailableSkin()/*HighLogic.Skin*/;
             Logger.LogDebug("Skin name: {0}", skin.name);
             _windowStyle = new GUIStyle(skin.window);
             _windowStyle.fixedHeight = 500f;
@@ -258,8 +380,11 @@ namespace AGroupOnStage.Main
             _sliderStyle = new GUIStyle(skin.horizontalSlider);
             _sliderSliderStyle = skin.horizontalSlider;
             _sliderThumbStyle = skin.horizontalSliderThumb;
+            _sliderStyle.stretchWidth = true;
             _scrollStyle = new GUIStyle(skin.scrollView);
             _scrollStyle.stretchHeight = true;
+            _textFieldStyle = new GUIStyle(skin.textField);
+            _textFieldStyle.fixedWidth = 235f;
             Logger.Log("Done setting up GUI styles");
         }
 

@@ -39,6 +39,23 @@ namespace AGroupOnStage.Main
 
 		};
 
+        public static FlightCamera.Modes getCameraModeForGroupID(int id)
+        {
+            switch (id)
+            {
+                case -3:
+                    return FlightCamera.Modes.AUTO;
+                case -4:
+                    return FlightCamera.Modes.ORBITAL;
+                case -5:
+                    return FlightCamera.Modes.CHASE;
+                case -6:
+                    return FlightCamera.Modes.FREE;
+                default:
+                    return FlightCamera.Modes.AUTO;
+            }
+        }
+
         public static GUISkin getBestAvailableSkin()
         {
             Dictionary<int, GUISkin> skinList = getSkinList();

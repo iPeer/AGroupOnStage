@@ -5,7 +5,7 @@ using System.Text;
 
 namespace AGroupOnStage.ActionGroups
 {
-    class FineControlActionGroup : IActionGroup
+    class BasicActionGroup : IActionGroup
     {
         public int[] Stages { get; set; }
         public int Group { get; set; }
