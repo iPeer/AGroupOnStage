@@ -196,7 +196,8 @@ namespace AGroupOnStage.Main
             if (!AGOSUtils.isLoadedSceneOneOf(GameScenes.EDITOR, GameScenes.FLIGHT, GameScenes.SPACECENTER))
                 return;
             int removed = AGOSMain.Instance.actionGroups.RemoveAll(a => a.linkedPart != null && a.linkedPart == this.part);
-            Logger.Log("Removed {0} action group(s) because its/their linked part was destroyed", removed);
+            if (removed > 0)
+                Logger.Log("Removed {0} action group(s) because its/their linked part was destroyed", removed);
         }
 
         public override string GetInfo()

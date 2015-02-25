@@ -98,6 +98,8 @@ namespace AGroupOnStage.Main
             GameEvents.onVesselChange.Add(onVesselLoaded);
             GameEvents.onGameSceneLoadRequested.Add(onSceneLoadRequested);
             GameEvents.onLevelWasLoaded.Add(onLevelWasLoaded);
+            GameEvents.onEditorUndo.Add(OnEditorUndo);
+            GameEvents.onEditorRedo.Add(OnEditorUndo);
         }
 
         private void OnGUIApplicationLauncherReady()
@@ -281,17 +283,27 @@ namespace AGroupOnStage.Main
             foreach (IActionGroup ag in groups)
             {
                 //AGOSUtils.printActionGroupInfo(ag);
-                GUILayout.BeginHorizontal();
-
-                GUILayout.Label(actionGroupList[ag.Group], _labelStyle, GUILayout.MinWidth(150f));
                 string stagesString;
                 if (ag.isPartLocked)
+                {
+                    if (ag.linkedPart == null)
+                    {
+                        Logger.LogWarning("Action group '{0}' is invalid (part reference is null), removing it from the list", ag.Group);
+                        actionGroups.Remove(ag);
+                        continue;
+                    }
                     stagesString = String.Format("(PART) {1}", ag.partRef, ag.linkedPart.inverseStage);
+                }
                 else
                 {
                     int[] stages = ag.Stages;
                     stagesString = AGOSUtils.intArrayToString(stages, ", ");
                 }
+
+                GUILayout.BeginHorizontal();
+
+                GUILayout.Label(actionGroupList[ag.Group], _labelStyle, GUILayout.MinWidth(150f));
+
                 GUIStyle __labelStyle = _labelStyle;
                 // TODO: Fix the nullref that this causes.
                 /*if ((ag.linkedPart != null || !AGOSUtils.getVesselPartsList().Contains(ag.linkedPart)) || ag.Stages.Count(a => a > Staging.StageCount) > 0)
@@ -510,7 +522,7 @@ namespace AGroupOnStage.Main
                     continue;
                 }
                 g.linkedPart = part;
-                Logger.Log("Action group and part '{0}' ({1}) have been paired", part.partInfo.title, String.Format("{0}_{1}", part.name, part.craftID));
+                Logger.Log("Action group '{2}' and part '{0}' ({1}) have been paired", part.partInfo.title, String.Format("{0}_{1}", part.name, part.craftID), g.Group);
             }
             Logger.Log("Finished finding homes for all part locked action group configurations");
         }
@@ -525,6 +537,13 @@ namespace AGroupOnStage.Main
         private void onSceneLoadRequested(GameScenes scene)
         {
             AGOSUtils.resetActionGroupConfig();
+        }
+
+
+        private void OnEditorUndo(ShipConstruct data)
+        {
+            //AGOSUtils.resetActionGroupConfig();
+            findHomesForPartLockedGroups(data.parts);
         }
 
         private void onLevelWasLoaded(GameScenes level)
