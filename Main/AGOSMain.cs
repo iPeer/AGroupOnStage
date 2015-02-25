@@ -16,6 +16,14 @@ namespace AGroupOnStage.Main
         #region public vars
 
         public static AGOSMain Instance { get; protected set; } // Protected set in case we need/want to extend this class in the future
+        public Part linkPart { get; set; }
+        public bool guiVisible = false;
+        public bool useAGXConfig = false;
+        public bool launcherButtonAdded = false;
+        public List<IActionGroup> actionGroups = new List<IActionGroup>();
+        public Dictionary<int, string> actionGroupList = new Dictionary<int, string>();
+        public Dictionary<int, bool> actionGroupSettings = new Dictionary<int, bool>();
+        public Dictionary<int, KSPActionGroup> stockAGMap;
 
         #endregion
 
@@ -28,16 +36,9 @@ namespace AGroupOnStage.Main
 
         #region private vars
 
-        private static int AGOS_GUI_WINDOW_ID = 03022007;
-        private bool launcherButtonAdded = false;
-        private bool guiVisible = false;
-        private bool useAGXConfig = false;
-        private List<IActionGroup> actionGroups = new List<IActionGroup>();
-        private Dictionary<int, string> actionGroupList = new Dictionary<int, string>();
-        private Dictionary<int, bool> actionGroupSettings = new Dictionary<int, bool>();
         private string[] stockAGNames;
         private KSPActionGroup[] stockAGList;
-        private Dictionary<int, KSPActionGroup> stockAGMap;
+        private static readonly int AGOS_GUI_WINDOW_ID = 03022007;
         private ApplicationLauncherButton agosButton = null;
         private bool hasSetupStyles = false;
         private enum AGOSActionGroups
@@ -47,7 +48,8 @@ namespace AGroupOnStage.Main
             CAMERA_AUTO = -3,
             CAMERA_ORBITAL = -4,
             CAMERA_CHASE = -5,
-            CAMERA_FREE = -6
+            CAMERA_FREE = -6,
+            LOCK_STAGING = -7
         }
 
         #endregion
@@ -60,6 +62,7 @@ namespace AGroupOnStage.Main
             _scrollStyle,
             _windowStyle,
             _labelStyle,
+            _labelStyleRed,
             _toggleStyle,
             _sliderStyle,
             _sliderSliderStyle,
@@ -73,7 +76,8 @@ namespace AGroupOnStage.Main
             {"CAMERA_AUTO", "Set camera: AUTO"},
             {"CAMERA_ORBITAL", "Set camera: ORBITAL"},
             {"CAMERA_CHASE", "Set camera: CHASE"},
-            {"CAMERA_FREE", "Set camera: FREE"}
+            {"CAMERA_FREE", "Set camera: FREE"},
+            {"LOCK_STAGING", "Lock staging"}
 
         };
 
@@ -91,6 +95,9 @@ namespace AGroupOnStage.Main
             //else // Not installed - fall back to stock controller.
             loadActionGroups();
             GameEvents.onGUIApplicationLauncherReady.Add(OnGUIApplicationLauncherReady);
+            GameEvents.onVesselChange.Add(onVesselLoaded);
+            GameEvents.onGameSceneLoadRequested.Add(onSceneLoadRequested);
+            GameEvents.onLevelWasLoaded.Add(onLevelWasLoaded);
         }
 
         private void OnGUIApplicationLauncherReady()
@@ -180,7 +187,7 @@ namespace AGroupOnStage.Main
             launcherButtonAdded = false;
         }
 
-        private void toggleGUI()
+        public void toggleGUI()
         {
             if (guiVisible)
             {
@@ -224,21 +231,28 @@ namespace AGroupOnStage.Main
                 int AG_MIN = AG_MIN_MAX[0];
                 int AG_MAX = AG_MIN_MAX[1];
 
-                //Logger.LogDebug("MAX: {0}, MIN: {1}", AG_MAX, -AG_MIN);    
+                //Logger.LogDebug("MAX: {0}, MIN: {1}", AG_MAX, AG_MIN);    
 
-                for (int x = -AG_MIN; x < AG_MAX; x++)
+                for (int x = AG_MIN; x < AG_MAX; x++)
                 {
                     //Logger.Log("AG {0}: {1}", x, actionGroupList[x]);
-                    if (x == 0) { continue; } // "None" action group
+                    if (x == 0 || x == 1) { continue; } // "None" and "Stage" action groups
                     actionGroupSettings[x] = GUILayout.Toggle(actionGroupSettings.ContainsKey(x) ? actionGroupSettings[x] : false, actionGroupList[x], _buttonStyle);
                 }
                 GUILayout.EndScrollView();
             }
             GUILayout.EndVertical();
             GUILayout.BeginVertical(GUILayout.Width(240f));
-            GUILayout.Label("Stages: ", _labelStyle);
-            stageList = GUILayout.TextField(stageList, _textFieldStyle);
-            GUILayout.Label("Separate multiple by a comma (,)", _labelStyle);
+            if (linkPart != null)
+            {
+                GUILayout.Label("Part: " + linkPart.name);
+            }
+            else
+            {
+                GUILayout.Label("Stages: ", _labelStyle);
+                stageList = GUILayout.TextField(stageList, _textFieldStyle);
+                GUILayout.Label("Separate multiple by a comma (,)", _labelStyle);
+            }
             GUILayout.Space(4);
             if (actionGroupSettings[actionGroupList.First(a => a.Value.Contains("Throttle")).Key])
             {
@@ -266,15 +280,38 @@ namespace AGroupOnStage.Main
 
             foreach (IActionGroup ag in groups)
             {
+                //AGOSUtils.printActionGroupInfo(ag);
                 GUILayout.BeginHorizontal();
 
-                GUILayout.Label(actionGroupList[ag.Group], _labelStyle);
-                int[] stages = ag.Stages;
-                string stagesString = "";
-                foreach (int s in stages) {
-                    stagesString = stagesString+(stagesString.Length > 0 ? ", " : "")+s;
+                GUILayout.Label(actionGroupList[ag.Group], _labelStyle, GUILayout.MinWidth(150f));
+                string stagesString;
+                if (ag.isPartLocked)
+                    stagesString = String.Format("(PART) {1}", ag.partRef, ag.linkedPart.inverseStage);
+                else
+                {
+                    int[] stages = ag.Stages;
+                    stagesString = AGOSUtils.intArrayToString(stages, ", ");
                 }
-                GUILayout.Label(stagesString, _labelStyle);
+                GUIStyle __labelStyle = _labelStyle;
+                // TODO: Fix the nullref that this causes.
+                /*if ((ag.linkedPart != null || !AGOSUtils.getVesselPartsList().Contains(ag.linkedPart)) || ag.Stages.Count(a => a > Staging.StageCount) > 0)
+                    __labelStyle.normal.textColor = XKCDColors.Red;
+                else
+                    __labelStyle.normal.textColor = _labelStyle.normal.textColor;*/
+                GUILayout.Label(stagesString, __labelStyle);
+                if (GUILayout.Button("Edit", _buttonStyle, GUILayout.MaxWidth(40f)))
+                {
+                    actionGroupSettings[ag.Group] = true;
+                    throttleLevel = ag.ThrottleLevel;
+                    if (ag.linkedPart != null)
+                    {
+                        linkPart = ag.linkedPart;
+                        stageList = "";
+                    }
+                    else
+                        stageList = AGOSUtils.intArrayToString(ag.Stages, ",");
+                    actionGroups.Remove(ag);
+                }
                 if (GUILayout.Button("Remove", _buttonStyle, GUILayout.MaxWidth(70f)))
                     actionGroups.Remove(ag);
 
@@ -292,7 +329,7 @@ namespace AGroupOnStage.Main
         {
             Logger.Log("Commiting current action group configuration...");
             int[] AG_MIN_MAX = getMinMaxGroupIds();
-            int AG_MIN = -AG_MIN_MAX[0];
+            int AG_MIN = AG_MIN_MAX[0];
             int AG_MAX = AG_MIN_MAX[1];
 
             for (int x = AG_MIN; x < AG_MAX; x++)
@@ -306,7 +343,8 @@ namespace AGroupOnStage.Main
                     CAMERA_AUTO = -3,
                     CAMERA_ORBITAL = -4,
                     CAMERA_CHASE = -5,
-                    CAMERA_FREE = -6
+                    CAMERA_FREE = -6,
+                    LOCK_STAGING = -7
                     */
 
                     IActionGroup ag;
@@ -324,28 +362,40 @@ namespace AGroupOnStage.Main
                         ag = new CameraControlActionGroup();
                         ag.cameraMode = AGOSUtils.getCameraModeForGroupID(x);
                     }
+                    else if (x == -7)
+                    {
+                        ag = new StageLockActionGroup();
+                    }
                     else
                     {
                         ag = new BasicActionGroup();
                     }
+                    if (linkPart != null)
+                    {
+                        ag.linkedPart = linkPart;
+                        ag.isPartLocked = true;
+                        ag.partRef = String.Format("{0}_{1}", linkPart.name, linkPart.craftID);
+                    }
+                    else
+                    {
+                        int[] stages;
+                        string[] sList = stageList.Split(',');
+                        stages = new int[sList.Length];
+                        for (int i = 0; i < sList.Length; i++)
+                            try
+                            {
+                                stages[i] = Convert.ToInt32(sList[i]);
+                            }
+                            catch
+                            {
+                                Logger.LogWarning("Couldn't parse stage number '{0}'. Skipping.", sList[i]);
+                            }
+                        ag.Stages = stages;
+                    }
 
                     ag.Group = x;
-                    int[] stages;
-                    string[] sList = stageList.Split(',');
-                    stages = new int[sList.Length];
-                    for (int i = 0; i < sList.Length; i++)
-                        try
-                        {
-                            stages[i] = Convert.ToInt32(sList[i]);
-                        }
-                        catch
-                        {
-                            Logger.LogWarning("Couldn't parse stage number '{0}'. Skipping.", sList[i]);
-                        }
-                    ag.Stages = stages;
 
                     Logger.Log("\t{0}", ag.ToString());
-
                     actionGroups.Add(ag);
                     actionGroupSettings[x] = false;
 
@@ -353,13 +403,15 @@ namespace AGroupOnStage.Main
             }
             throttleLevel = 0f;
             stageList = "";
+            linkPart = null;
         }
 
         private int[] getMinMaxGroupIds()
         {
             int[] ret = new int[2];
-            ret[0] = Enum.GetNames(typeof(AGOSActionGroups)).Length;
-            ret[1] = actionGroupSettings.Count - ret[0];
+            int min = Enum.GetNames(typeof(AGOSActionGroups)).Length;
+            ret[0] = -min;
+            ret[1] = actionGroupSettings.Count - min;
             return ret;
         }
 
@@ -423,7 +475,62 @@ namespace AGroupOnStage.Main
 
         }
 
+        public void updatePartLockedStages(bool suppressLog = false)
+        {
+            List<IActionGroup> toUpdate = actionGroups.FindAll(a => a.linkedPart != null);
+            if (toUpdate.Count == 0)
+            {
+                if (!suppressLog)
+                    Logger.Log("No part locked groups to update");
+                return;
+            }
+            foreach (IActionGroup ag in toUpdate)
+                if (ag.Stages[0] != ag.linkedPart.inverseStage)
+                    ag.Stages[0] = ag.linkedPart.inverseStage;
+            if (!suppressLog)
+                Logger.Log("{0} part linked action group(s) checked and updated where neccessary", toUpdate.Count);
+        }
+        public void findHomesForPartLockedGroups(Vessel vessel)
+        {
+            findHomesForPartLockedGroups(vessel.parts);
+        }
+        public void findHomesForPartLockedGroups(List<Part> vessel)
+        {
+            if (vessel.Count() == 0) // Empty parts list
+                return;
+            Logger.Log("Finding homes for part locked action group configurations");
+            List<IActionGroup> partLinkedGroups = actionGroups.FindAll(a => a.isPartLocked && a.linkedPart == null);
+            Logger.Log("{0} homeless part(s)", partLinkedGroups.Count());
+            foreach (IActionGroup g in partLinkedGroups)
+            {
+                Part part = AGOSUtils.findPartByReference(g.partRef, vessel);
+                if (part == null)
+                {
+                    Logger.LogWarning("Action group supplied invalid part reference '{0}', skipping.", g.partRef);
+                    continue;
+                }
+                g.linkedPart = part;
+                Logger.Log("Action group and part '{0}' ({1}) have been paired", part.partInfo.title, String.Format("{0}_{1}", part.name, part.craftID));
+            }
+            Logger.Log("Finished finding homes for all part locked action group configurations");
+        }
+
         #endregion
 
+        internal void onVesselLoaded(Vessel data)
+        {
+            findHomesForPartLockedGroups(data);
+        }
+
+        private void onSceneLoadRequested(GameScenes scene)
+        {
+            AGOSUtils.resetActionGroupConfig();
+        }
+
+        private void onLevelWasLoaded(GameScenes level)
+        {
+            if (AGOSUtils.isLoadedSceneOneOf(GameScenes.EDITOR, GameScenes.FLIGHT))
+                findHomesForPartLockedGroups(AGOSUtils.getVesselPartsList());
+        }
     }
 }

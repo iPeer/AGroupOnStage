@@ -124,11 +124,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ActionGroups\BasicActionGroup.cs" />
+    <Compile Include="ActionGroups\StageLockActionGroup.cs" />
     <Compile Include="ActionGroups\IActionGroup.cs" />
     <Compile Include="ActionGroups\CameraControlActionGroup.cs" />
     <Compile Include="ActionGroups\FineControlActionGroup.cs" />
     <Compile Include="ActionGroups\ThrottleControlActionGroup.cs" />
-    <Compile Include="Extensions\VesselExtensions.cs" />
     <Compile Include="Main\AGOSEditor.cs" />
     <Compile Include="Main\AGOSFlight.cs" />
     <Compile Include="Main\AGOSMain.cs" />
@@ -143,7 +143,9 @@
     <None Include="changelog.txt" />
     <None Include="grep.bat" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Extensions\" />
+  </ItemGroup>
   <PropertyGroup>
     <PostBuildEvent>if $(ConfigurationName) == AGOS_Debug (
   xcopy $(TargetFileName) C:\KSPScratchpad\GameData\iPeer\AGroupOnStage\ /y

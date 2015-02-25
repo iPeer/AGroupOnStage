@@ -5,13 +5,17 @@ using System.Text;
 
 namespace AGroupOnStage.ActionGroups
 {
-    interface IActionGroup
+    public interface IActionGroup
     {
 
+        Vessel Vessel { get; set; }
         int[] Stages { get; set; }
         int Group { get; set; }
         float ThrottleLevel { get; set; }
         FlightCamera.Modes cameraMode { get; set; }
+        Part linkedPart { get; set; }
+        bool isPartLocked { get; set; }
+        string partRef { get; set; }
 
     }
 }

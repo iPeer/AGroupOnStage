@@ -1,4 +1,5 @@
-﻿using AGroupOnStage.Logging;
+﻿using AGroupOnStage.ActionGroups;
+using AGroupOnStage.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -79,5 +80,76 @@ namespace AGroupOnStage.Main
             return HighLogic.Skin;
         }
 
+        public static string intArrayToString(int[] array, string separator)
+        {
+            string returnString = "";
+            foreach(int o in array)
+            {
+                returnString = returnString + (returnString.Length > 0 && separator != null ? separator : "") + o.ToString();
+            }
+            return returnString;
+        }
+
+        public static List<Part> getVesselPartsList()
+        {
+            return (HighLogic.LoadedSceneIsEditor ? EditorLogic.fetch.ship.parts : FlightGlobals.fetch.activeVessel.parts);
+        }
+
+        public static void printActionGroupInfo(IActionGroup ag)
+        {
+            Logger.Log("{0}, {1}, {2}, {3}, {4}, {5}, {6}", ag.Group.ToString(), (ag.Stages != null && ag.Stages.Length > 0 ? intArrayToString(ag.Stages, "|") : "none"), (ag.linkedPart != null ? ag.linkedPart.ToString() : "none"), ag.ThrottleLevel.ToString(), ag.cameraMode.ToString(), ag.isPartLocked, ag.partRef);
+        }
+
+        public static bool checkSavedGroupIsValid(ConfigNode node, string groupType)
+        {
+            if (groupType.Equals(typeof(ThrottleControlActionGroup).Name))
+                return (node.HasValue("changesThrottle") && Convert.ToBoolean(node.GetValue("changesThrottle")) && node.HasValue("throttleLevel"));
+            else if (groupType.Equals(typeof(FineControlActionGroup).Name))
+                return (node.HasValue("togglesFineControls") && Convert.ToBoolean(node.GetValue("togglesFineControls")));
+            else if (groupType.Equals(typeof(StageLockActionGroup).Name))
+                return (node.HasValue("locksStaging") && Convert.ToBoolean(node.GetValue("locksStaging")));
+            else if (groupType.Equals(typeof(CameraControlActionGroup).Name))
+                return (node.HasValue("changesCamera") && node.HasValue("cameraMode"));
+            else
+                return true;
+        }
+
+        public static Part findPartByReference(string _ref)
+        {
+            return findPartByReference(_ref, getVesselPartsList());
+        }
+
+        public static Part findPartByReference(string _ref, Vessel ves)
+        {
+            Logger.Log("{0}", ves == null);
+            return findPartByReference(_ref, ves.parts);
+        }
+
+        public static Part findPartByReference(string _ref, List<Part> parts)
+        {
+            //Logger.Log("{0}", parts.Count == 0 || parts == null);
+            return parts.Find(a => String.Format("{0}_{1}", a.name, a.craftID).Equals(_ref));
+        }
+
+        public static FlightCamera.Modes getCameramodeFromName(string name)
+        {
+            foreach (FlightCamera.Modes a in Enum.GetValues(typeof(FlightCamera.Modes)))
+            {
+                Logger.Log(a.ToString());
+                if (a.ToString().Equals(name))
+                    return a;
+            }
+            return FlightCamera.Modes.AUTO;
+        }
+
+
+        public static void resetActionGroupConfig()
+        {
+            if (AGOSMain.Instance.actionGroups.Count() > 0)
+                AGOSMain.Instance.actionGroups.Clear();
+            int[] keys = AGOSMain.Instance.actionGroupSettings.Keys.ToArray();
+            foreach (int k in keys)
+                AGOSMain.Instance.actionGroupSettings[k] = false;
+        }
     }
 }

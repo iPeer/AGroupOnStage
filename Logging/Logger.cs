@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -15,6 +16,7 @@ namespace AGroupOnStage.Logging
         public static void Error(Exception e) { LogError(e); }
         public static void Log(Exception e) { LogError(e); }
         public static void LogError(Exception e) { Log("{0}", LogLevel.ERROR, e.StackTrace); }
+        public static void LogClassMethod(object o, MethodBase m) { Log("{0}.{1}", LogLevel.NORMAL, o.GetType().FullName, m.Name); }
         [System.Diagnostics.Conditional("DEBUG")]
         public static void LogDebug(String message, params object[] data) { Log(message, LogLevel.DEBUG, data); }
 
