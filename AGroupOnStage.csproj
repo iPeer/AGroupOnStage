@@ -135,6 +135,7 @@
     <Compile Include="AGX\AGXInterface.cs" />
     <Compile Include="Logging\Logger.cs" />
     <Compile Include="Main\AGOSModule.cs" />
+    <Compile Include="Main\AGOSSettings.cs" />
     <Compile Include="Main\AGOSUtils.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

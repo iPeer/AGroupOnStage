@@ -1,6 +1,7 @@
 ﻿using AGroupOnStage.ActionGroups;
 using AGroupOnStage.AGX;
 using AGroupOnStage.Logging;
+using KSP.IO;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,6 +25,7 @@ namespace AGroupOnStage.Main
         public Dictionary<int, string> actionGroupList = new Dictionary<int, string>();
         public Dictionary<int, bool> actionGroupSettings = new Dictionary<int, bool>();
         public Dictionary<int, KSPActionGroup> stockAGMap;
+        public static AGOSSettings Settings { get; protected set; }
 
         #endregion
 
@@ -88,16 +90,22 @@ namespace AGroupOnStage.Main
         public void Start()
         {
             Logger.Log("AGOS.Main.AGOSMain.Start()");
+            Settings = new AGroupOnStage.Main.AGOSSettings(IOUtils.GetFilePathFor(this.GetType(), "settings.cfg"));
             Instance = this;
             useAGXConfig = AGXInterface.isAGXInstalled();
             Logger.Log("This install is " + (useAGXConfig ? "" : "not ") + "running AGX.");
             //if (useAGXConfig) { /* DO NAAHTHING! */ } // AGX is installed - use its controller, not stock's
             //else // Not installed - fall back to stock controller.
             loadActionGroups();
+            Logger.Log("Loading AGOS' settings");
+            Settings.load();
+            _windowPos.x = Settings.WIN_POS_X;
+            _windowPos.y = Settings.WIN_POS_Y;
+            Logger.Log("AGOS' Settings loaded");
             GameEvents.onGUIApplicationLauncherReady.Add(OnGUIApplicationLauncherReady);
             GameEvents.onVesselChange.Add(onVesselLoaded);
             GameEvents.onGameSceneLoadRequested.Add(onSceneLoadRequested);
-            GameEvents.onLevelWasLoaded.Add(onLevelWasLoaded);
+            //GameEvents.onLevelWasLoaded.Add(onLevelWasLoaded);
             GameEvents.onEditorUndo.Add(OnEditorUndo);
             GameEvents.onEditorRedo.Add(OnEditorUndo);
         }
@@ -195,6 +203,9 @@ namespace AGroupOnStage.Main
             {
                 guiVisible = false;
                 RenderingManager.RemoveFromPostDrawQueue(AGOS_GUI_WINDOW_ID, OnDraw);
+                Settings.WIN_POS_X = _windowPos.x;
+                Settings.WIN_POS_Y = _windowPos.y;
+                Settings.save();
             }
             else
             {
@@ -261,7 +272,7 @@ namespace AGroupOnStage.Main
                 GUILayout.Label("Throttle control:", _labelStyle);
                 GUILayout.BeginHorizontal(GUILayout.Width(240f));
                 throttleLevel = GUILayout.HorizontalSlider(throttleLevel, 0f, 1f, _sliderSliderStyle, _sliderThumbStyle);
-                GUILayout.Label(String.Format("{0:P2}", throttleLevel), _labelStyle);
+                GUILayout.Label(String.Format("{0:P0}", throttleLevel), _labelStyle);
                 GUILayout.EndHorizontal();
                 GUILayout.Space(4);
             }

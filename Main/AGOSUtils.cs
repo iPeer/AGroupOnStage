@@ -127,8 +127,14 @@ namespace AGroupOnStage.Main
 
         public static Part findPartByReference(string _ref, List<Part> parts)
         {
+            // TODO: Fix not returning part after revert to launch/editor redo
             //Logger.Log("{0}", parts.Count == 0 || parts == null);
-            return parts.Find(a => String.Format("{0}_{1}", a.name, a.craftID).Equals(_ref));
+            string[] refData = _ref.Split('_');
+            printArray<string>(refData);
+            Part p = parts.Find(a => a.craftID == Convert.ToUInt32(refData[1]));
+            //Part p = parts.Find(a => String.Format("{0}_{1}", a.name, a.craftID).Equals(_ref) || (a.name.Equals(refData[0]) && a.craftID == Convert.ToUInt32(refData[1])));
+            Logger.Log("{0}, {1} / {2} | {3}, {4} / {5}", refData[0], p.name, p.name.Equals(refData[0]), refData[1], p.craftID, p.craftID == Convert.ToUInt32(refData[1]));
+            return p;
         }
 
         public static FlightCamera.Modes getCameramodeFromName(string name)
@@ -150,6 +156,15 @@ namespace AGroupOnStage.Main
             int[] keys = AGOSMain.Instance.actionGroupSettings.Keys.ToArray();
             foreach (int k in keys)
                 AGOSMain.Instance.actionGroupSettings[k] = false;
+        }
+
+        public static void printArray<T>(T[] array)
+        {
+            Logger.Log("{0} item(s) in array:", array.Length);
+            foreach (T i in array)
+            {
+                Logger.Log("\t{0}", i);
+            }
         }
     }
 }

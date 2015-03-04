@@ -17,17 +17,17 @@ namespace AGroupOnStage.AGX
                 Type calledType = Type.GetType("ActionGroupsExtended.AGExtExternal, AGExt");
                 return (bool)calledType.InvokeMember("AGXInstalled", BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Static, null, null, null);
             }
-            catch { 
+            catch 
+            { 
                 return false; 
             }
 
         }
 
-        public static bool AGXFireAG(uint flightID, int group) // Activate the action group via AGX
+        public static void AGExtToggleGroup(int group)
         {
             Type calledType = Type.GetType("ActionGroupsExtended.AGExtExternal, AGExt");
-            bool success = (bool)calledType.InvokeMember("AGX2VslToggleGroup", BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Static, null, null, new System.Object[] { flightID, group });
-            return success;
+            calledType.InvokeMember("AGXToggleGroup", BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Static, null, null, new System.Object[] { group });
         }
 
     }

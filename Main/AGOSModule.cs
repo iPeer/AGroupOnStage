@@ -81,9 +81,14 @@ namespace AGroupOnStage.Main
         public override void OnLoad(ConfigNode node)
         {
             if (!AGOSUtils.isLoadedSceneOneOf(GameScenes.FLIGHT, GameScenes.EDITOR)) { return; } // Invalid scene
-            if (node.CountValues == 0 && node.CountNodes == 0) { return; } // No config to load
+            //if (node.CountValues == 0 && node.CountNodes == 0) { return; } // No config to load
             this.isRoot = Convert.ToBoolean(node.GetValue("isRoot"));
             if (!this.isRoot) { return; } // Only the root module can load
+            if (!node.HasNode("AGOS"))
+            {
+                Logger.Log("No config to load for this vessel.");
+                return;
+            }
 
             //AGOSUtils.resetActionGroupConfig(); // Clear the list and reset all settings if neccessary
 
