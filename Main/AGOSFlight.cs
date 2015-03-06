@@ -12,10 +12,11 @@ namespace AGroupOnStage.Main
     class AGOSFlight : MonoBehaviour
     {
 
-        private static readonly int MAX_TICK_COUNT = 60; // 30 = 1 in-game second
+        private static readonly int MAX_TICK_COUNT = 90; // 30 = 1 in-game second
         private static int CURRENT_TICK_COUNT = 0;
         bool stageLockScheduled = false;
-        private bool handledByActivate = false;
+        private bool handledBySeparation = false;
+        private bool processingStageEvent = false;
 
         public void Start()
         {
@@ -46,26 +47,32 @@ namespace AGroupOnStage.Main
 
         private void onStageActivate(int stage)
         {
-            handledByActivate = true;
+            if (handledBySeparation)
+            {
+                Logger.Log("Staging already handled by onStageSeparation()");
+                return;
+            }
             Logger.Log("OnStageActivate: " + stage);
             activateGroupsForStage(stage);
-            handledByActivate = false;
         }
 
         private void onStageSeparation(EventReport e)
         {
-            if (handledByActivate)
-            {
-                Logger.Log("Staging already handled by onStageActivate()");
-                return;
-            }
+            handledBySeparation = true;
             int stage = e.stage - 1; // We take 1 to get the "real" stage number
             activateGroupsForStage(stage);
             Logger.Log("OnStageSeparation: " + stage);
+            handledBySeparation = false;
         }
 
         public void activateGroupsForStage(int s)
         {
+            if (processingStageEvent)
+            {
+                Logger.LogWarning("Already processing a staging event! Cannot process multiple at the same time.");
+                return;
+            }
+            processingStageEvent = true;
             List<IActionGroup> toFire = new List<IActionGroup>();
             toFire.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.Stages != null && a.Stages.Length > 0 && a.Stages.Contains(s))); // Regular action groups
             toFire.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.isPartLocked && a.linkedPart.inverseStage == s)); // Part locked groups
@@ -104,7 +111,13 @@ namespace AGroupOnStage.Main
                         FlightGlobals.ActiveVessel.ActionGroups.ToggleGroup(g);
                     }
                 }
+                if (ag.isPartLocked || ag.Stages.Count(a => a < FlightGlobals.fetch.activeVessel.currentStage) == 1)
+                {
+                    Logger.Log("Removing action group from config as it has no more triggers");
+                    AGOSMain.Instance.actionGroups.Remove(ag);
+                }
             }
+            processingStageEvent = false;
         }
 
         /* 
