@@ -22,25 +22,21 @@ namespace AGroupOnStage.Main
         {
 
             ConfigNode node = ConfigNode.Load(configPath);
-            if (node == null || node.CountNodes == 0 || node.CountValues == 0) { return; }
-            node = node.GetNode("AGOS_CONFIG");
+            if (node == null || node.CountValues == 0) { return; }
             INSTANT_CAMERA_TRANSITIONS = Convert.ToBoolean(node.GetValue("InstantCameraTransitions"));
             WIN_POS_X = Convert.ToSingle(node.GetValue("wPosX"));
             WIN_POS_Y = Convert.ToSingle(node.GetValue("wPosY"));
             SHOW_DRAGONS_DIALOG = Convert.ToBoolean(node.GetValue("HereBeDragons"));
-
         }
 
         public void save()
         {
             Logger.Log("Saving AGOS config");
             ConfigNode node = new ConfigNode();
-            node.AddNode("AGOS_CONFIG");
-            ConfigNode _node = node = node.GetNode("AGOS_CONFIG");
-            _node.AddValue("InstantCameraTransitions", INSTANT_CAMERA_TRANSITIONS);
-            _node.AddValue("wPosX", WIN_POS_X);
-            _node.AddValue("wPosY", WIN_POS_Y);
-            _node.AddValue("HereBeDragons", SHOW_DRAGONS_DIALOG);
+            node.AddValue("InstantCameraTransitions", INSTANT_CAMERA_TRANSITIONS);
+            node.AddValue("wPosX", WIN_POS_X);
+            node.AddValue("wPosY", WIN_POS_Y);
+            node.AddValue("HereBeDragons", SHOW_DRAGONS_DIALOG);
             node.Save(configPath);
         }
 
