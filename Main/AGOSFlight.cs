@@ -20,9 +20,16 @@ namespace AGroupOnStage.Main
         public void Start()
         {
             Logger.Log("AGOS.Main.AGOSFlight.Start()");
-            GameEvents.onStageActivate.Add(onStageActivate);
-            GameEvents.onStageSeparation.Add(onStageSeparation);
-            GameEvents.onFlightReady.Add(onFlightReady);
+            if (AGOSMain.Instance.FlightEventsRegistered)
+                Logger.LogWarning("GameEvents for Flight are already registered (harmless)");
+            else
+            {
+                GameEvents.onStageActivate.Add(onStageActivate);
+                GameEvents.onStageSeparation.Add(onStageSeparation);
+                GameEvents.onFlightReady.Add(onFlightReady);
+                AGOSMain.Instance.FlightEventsRegistered = true;
+                Logger.Log("Registered for Flight related GameEvents");
+            }
             //GameEvents.onVesselLoaded.Add(AGOSMain.Instance.onVesselLoaded);
             //AGOSUtils.resetActionGroupConfig();
         }

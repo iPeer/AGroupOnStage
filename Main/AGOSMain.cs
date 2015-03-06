@@ -26,6 +26,8 @@ namespace AGroupOnStage.Main
         public Dictionary<int, bool> actionGroupSettings = new Dictionary<int, bool>();
         public Dictionary<int, KSPActionGroup> stockAGMap;
         public static AGOSSettings Settings { get; protected set; }
+        public bool FlightEventsRegistered { get; set; }
+        public bool EditorEventsRegistered { get; set; }
 
         #endregion
 
@@ -99,8 +101,6 @@ namespace AGroupOnStage.Main
             loadActionGroups();
             Logger.Log("Loading AGOS' settings");
             Settings.load();
-            _windowPos.x = Settings.WIN_POS_X;
-            _windowPos.y = Settings.WIN_POS_Y;
             Logger.Log("AGOS' Settings loaded");
             GameEvents.onGUIApplicationLauncherReady.Add(OnGUIApplicationLauncherReady);
             GameEvents.onVesselChange.Add(onVesselLoaded);
@@ -215,6 +215,8 @@ namespace AGroupOnStage.Main
                 EditorTooltip.Instance.HideToolTip();
                 EditorLogic.fetch.Lock(true, true, true, "AGOS_INPUT_LOCK");
                 guiVisible = true;
+                _windowPos.x = Settings.WIN_POS_X;
+                _windowPos.y = Settings.WIN_POS_Y;
                 RenderingManager.AddToPostDrawQueue(AGOS_GUI_WINDOW_ID, OnDraw);
             }
         }

@@ -17,12 +17,19 @@ namespace AGroupOnStage.Main
         public void Start()
         {
             Logger.Log("AGOS.Main.AGOSEditor.Start()");
-            /*GameEvents.onGameStateSave.Add(onGameStateSave);
-            GameEvents.onGameStateLoad.Add(onGameStateLoad);
-            /*GameEvents.onNewVesselCreated.Add(onNewVesselCreated);*/
-            //GameEvents.onVesselLoaded.Add(AGOSMain.Instance.onVesselLoaded);
-            //AGOSUtils.resetActionGroupConfig();
-            GameEvents.onLevelWasLoaded.Add(onLevelWasLoaded);
+            if (AGOSMain.Instance.EditorEventsRegistered)
+                Logger.LogWarning("GameEvents for Editor are already registered (harmless)");
+            else
+            {
+                /*GameEvents.onGameStateSave.Add(onGameStateSave);
+                GameEvents.onGameStateLoad.Add(onGameStateLoad);
+                /*GameEvents.onNewVesselCreated.Add(onNewVesselCreated);*/
+                //GameEvents.onVesselLoaded.Add(AGOSMain.Instance.onVesselLoaded);
+                //AGOSUtils.resetActionGroupConfig();
+                GameEvents.onLevelWasLoaded.Add(onLevelWasLoaded);
+                AGOSMain.Instance.EditorEventsRegistered = true;
+                Logger.Log("Registered for Editor related GameEvents");
+            }
 
         }
 
