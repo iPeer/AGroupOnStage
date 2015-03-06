@@ -108,6 +108,8 @@ namespace AGroupOnStage.Main
             //GameEvents.onLevelWasLoaded.Add(onLevelWasLoaded);
             GameEvents.onEditorUndo.Add(OnEditorUndo);
             GameEvents.onEditorRedo.Add(OnEditorUndo);
+            if (Settings.SHOW_DRAGONS_DIALOG)
+                RenderingManager.AddToPostDrawQueue(AGOS_GUI_WINDOW_ID + 1, OnDraw_Dragons);
         }
 
         private void OnGUIApplicationLauncherReady()
@@ -199,7 +201,7 @@ namespace AGroupOnStage.Main
 
         public void toggleGUI()
         {
-            if (guiVisible)
+            if (guiVisible && linkPart == null)
             {
                 guiVisible = false;
                 RenderingManager.RemoveFromPostDrawQueue(AGOS_GUI_WINDOW_ID, OnDraw);
@@ -498,6 +500,7 @@ namespace AGroupOnStage.Main
 
         }
 
+        [Obsolete("Use findHomesForPartLockedGroups() instead", true)]
         public void updatePartLockedStages(bool suppressLog = false)
         {
             List<IActionGroup> toUpdate = actionGroups.FindAll(a => a.linkedPart != null);
@@ -521,7 +524,7 @@ namespace AGroupOnStage.Main
         {
             if (vessel.Count() == 0) // Empty parts list
                 return;
-            Logger.Log("Finding homes for part locked action group configurations");
+            //Logger.Log("Finding homes for part locked action group configurations");
             List<IActionGroup> partLinkedGroups = actionGroups.FindAll(a => a.isPartLocked && a.linkedPart == null);
             Logger.Log("{0} homeless part(s)", partLinkedGroups.Count());
             foreach (IActionGroup g in partLinkedGroups)
@@ -529,20 +532,21 @@ namespace AGroupOnStage.Main
                 Part part = AGOSUtils.findPartByReference(g.partRef, vessel);
                 if (part == null)
                 {
-                    Logger.LogWarning("Action group supplied invalid part reference '{0}', skipping.", g.partRef);
+                    Logger.LogWarning("Action group '{1}' supplied invalid part reference '{0}', skipping.", g.partRef, g.Group);
                     continue;
                 }
                 g.linkedPart = part;
                 Logger.Log("Action group '{2}' and part '{0}' ({1}) have been paired", part.partInfo.title, String.Format("{0}_{1}", part.name, part.craftID), g.Group);
             }
-            Logger.Log("Finished finding homes for all part locked action group configurations");
+            //Logger.Log("Finished finding homes for all part locked action group configurations");
         }
 
         #endregion
 
         internal void onVesselLoaded(Vessel data)
         {
-            findHomesForPartLockedGroups(data);
+            if (AGOSUtils.isLoadedSceneOneOf(GameScenes.EDITOR))
+                findHomesForPartLockedGroups(data);
         }
 
         private void onSceneLoadRequested(GameScenes scene)
@@ -559,8 +563,48 @@ namespace AGroupOnStage.Main
 
         private void onLevelWasLoaded(GameScenes level)
         {
-            if (AGOSUtils.isLoadedSceneOneOf(GameScenes.EDITOR, GameScenes.FLIGHT))
+            if (AGOSUtils.isLoadedSceneOneOf(GameScenes.EDITOR))
                 findHomesForPartLockedGroups(AGOSUtils.getVesselPartsList());
         }
+
+        #region herebedragons
+        // Here be dragons GUI on startup
+
+        private void OnDraw_Dragons()
+        {
+
+            if (!hasSetupStyles)
+                setUpStyles();
+            _windowPos = GUILayout.Window(AGOS_GUI_WINDOW_ID + 1, _windowPos, OnWindow_Dragons, "Roar!", HighLogic.Skin.window);
+
+            _windowPos.x = Screen.width / 2 - _windowPos.width / 2;
+            _windowPos.y = Screen.height / 2 - _windowPos.height / 2;
+
+        }
+
+        public void OnWindow_Dragons(int wID)
+        {
+            GUIStyle label = HighLogic.Skin.label;
+            label.stretchWidth = true;
+
+            GUILayout.BeginHorizontal(GUILayout.Width(250f));
+
+            GUILayout.Label("HERE BE DRAGONS!\nThis is a *very* early experimental release of the new AGOS. Things are going to be broken.\n\nIf you find a bug, which is really quite likely, please report it on AGOS' GitHub issues page.\n\nYou can get to this page by clicking the \"Issues Page\" button below.\n\nWhen reporting a bug, please include your output_log file and a craft file  and/or persistant file (stock only, please!) if you feel it will help with the report.\n\nPlease check back at the releases page regularly to see if there's a new release!\n\nThis message will only display once.", label, GUILayout.Width(245f));
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal(GUILayout.Width(250f));
+            if (GUILayout.Button("Issues Page"))
+                Application.OpenURL("https://github.com/iPeer/AGroupOnStage/issues");
+            if (GUILayout.Button("Okay, okay, I get it!"))
+            {
+                Settings.SHOW_DRAGONS_DIALOG = false;
+                Settings.save();
+                RenderingManager.RemoveFromPostDrawQueue(AGOS_GUI_WINDOW_ID + 1, OnDraw_Dragons);
+            }
+
+            GUILayout.EndHorizontal();
+            GUI.DragWindow();
+        }
+
+        #endregion
     }
 }

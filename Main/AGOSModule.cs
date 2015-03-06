@@ -14,7 +14,7 @@ namespace AGroupOnStage.Main
 
         private bool isRoot = false;
 
-        [KSPEvent(active = true, guiActive = true, guiActiveEditor = true, guiName = "Link action group config to this part")]
+        [KSPEvent(active = true, guiActive = true, guiActiveEditor = true, guiName = "Action group control")]
         private void toggleGUI() { AGOSMain.Instance.linkPart = this.part; AGOSMain.Instance.toggleGUI(); }
 
         public override void OnAwake()
@@ -41,7 +41,7 @@ namespace AGroupOnStage.Main
                 foreach (IActionGroup ag in AGOSMain.Instance.actionGroups)
                 {
                     ConfigNode node_group = node_agos.GetNode("GROUPS");
-                    AGOSUtils.printActionGroupInfo(ag);
+                    //AGOSUtils.printActionGroupInfo(ag);
                     string agName = "";
                     agName = ag.Group.ToString();
                     if (!node_group.HasNode(agName))

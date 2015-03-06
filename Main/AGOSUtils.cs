@@ -130,10 +130,13 @@ namespace AGroupOnStage.Main
             // TODO: Fix not returning part after revert to launch/editor redo
             //Logger.Log("{0}", parts.Count == 0 || parts == null);
             string[] refData = _ref.Split('_');
-            printArray<string>(refData);
+            //printArray<string>(refData);
             Part p = parts.Find(a => a.craftID == Convert.ToUInt32(refData[1]));
             //Part p = parts.Find(a => String.Format("{0}_{1}", a.name, a.craftID).Equals(_ref) || (a.name.Equals(refData[0]) && a.craftID == Convert.ToUInt32(refData[1])));
-            Logger.Log("{0}, {1} / {2} | {3}, {4} / {5}", refData[0], p.name, p.name.Equals(refData[0]), refData[1], p.craftID, p.craftID == Convert.ToUInt32(refData[1]));
+            if (p == null)
+                Logger.Log("Part is null.");
+            else
+                Logger.Log("{0}, {1} / {2} | {3}, {4} / {5}", refData[0], p.name, p.name.Equals(refData[0]), refData[1], p.craftID, p.craftID == Convert.ToUInt32(refData[1]));
             return p;
         }
 
