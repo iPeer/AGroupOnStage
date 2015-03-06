@@ -203,6 +203,7 @@ namespace AGroupOnStage.Main
         {
             if (guiVisible && linkPart == null)
             {
+                EditorLogic.fetch.Unlock("AGOS_INPUT_LOCK");
                 guiVisible = false;
                 RenderingManager.RemoveFromPostDrawQueue(AGOS_GUI_WINDOW_ID, OnDraw);
                 Settings.WIN_POS_X = _windowPos.x;
@@ -211,6 +212,8 @@ namespace AGroupOnStage.Main
             }
             else
             {
+                EditorTooltip.Instance.HideToolTip();
+                EditorLogic.fetch.Lock(true, true, true, "AGOS_INPUT_LOCK");
                 guiVisible = true;
                 RenderingManager.AddToPostDrawQueue(AGOS_GUI_WINDOW_ID, OnDraw);
             }
@@ -589,7 +592,7 @@ namespace AGroupOnStage.Main
 
             GUILayout.BeginHorizontal(GUILayout.Width(250f));
 
-            GUILayout.Label("HERE BE DRAGONS!\nThis is a *very* early experimental release of the new AGOS. Things are going to be broken.\n\nIf you find a bug, which is really quite likely, please report it on AGOS' GitHub issues page.\n\nYou can get to this page by clicking the \"Issues Page\" button below.\n\nWhen reporting a bug, please include your output_log file and a craft file  and/or persistant file (stock only, please!) if you feel it will help with the report.\n\nPlease check back at the releases page regularly to see if there's a new release!\n\nThis message will only display once.", label, GUILayout.Width(245f));
+            GUILayout.Label("HERE BE DRAGONS!\nThis is a *very* early experimental release of the new AGOS. Things are going to be broken.\n\nIf you find a bug, which is really quite likely, please report it on AGOS' GitHub issues page.\n\nYou can get to this page by clicking the \"Issues Page\" button below.\n\nWhen reporting a bug, please include your output_log file and a craft file  and/or persistent file (stock only, please!) if you feel it will help with the report.\n\nPlease check back at the releases page regularly to see if there's a new release!\n\nThis message will only display once.", label, GUILayout.Width(245f));
             GUILayout.EndHorizontal();
             GUILayout.BeginHorizontal(GUILayout.Width(250f));
             if (GUILayout.Button("Issues Page"))
