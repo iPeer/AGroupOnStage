@@ -41,7 +41,7 @@ namespace AGroupOnStage.Main
                 foreach (IActionGroup ag in AGOSMain.Instance.actionGroups)
                 {
                     ConfigNode node_group = node_agos.GetNode("GROUPS");
-                    //AGOSUtils.printActionGroupInfo(ag);
+                    AGOSUtils.printActionGroupInfo(ag);
                     string agName = "";
                     agName = ag.Group.ToString();
                     if (!node_group.HasNode(agName))
@@ -137,7 +137,7 @@ namespace AGroupOnStage.Main
 
                     //bool togglesFineControls = (id.HasNode("togglesFineControls") ? Convert.ToBoolean(id.GetValue("togglesFineControls")) : false);
                     //bool locksStaging = (id.HasNode("locksStaging") ? Convert.ToBoolean(id.GetValue("locksStaging")) : false);
-                    bool changesCamera = (id.HasNode("changesCamera") ? Convert.ToBoolean(id.GetValue("changesdCamera")) : false);
+                    bool changesCamera = (id.HasValue("changesCamera") ? Convert.ToBoolean(id.GetValue("changesCamera")) : false);
                     bool isThrottleControl = (id.HasValue("changesThrottle") ? Convert.ToBoolean(id.GetValue("changesThrottle")) : false);
                     float throttleLevel = (isThrottleControl ? Convert.ToSingle(id.GetValue("throttleLevel"), System.Globalization.CultureInfo.InvariantCulture) : 0f);
 

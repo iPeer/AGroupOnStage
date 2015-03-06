@@ -144,7 +144,7 @@ namespace AGroupOnStage.Main
         {
             foreach (FlightCamera.Modes a in Enum.GetValues(typeof(FlightCamera.Modes)))
             {
-                Logger.Log(a.ToString());
+                Logger.Log("{0} / {1}", a.ToString(), name);
                 if (a.ToString().Equals(name))
                     return a;
             }
