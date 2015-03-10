@@ -201,20 +201,29 @@ namespace AGroupOnStage.Main
 
         public void toggleGUI()
         {
-            if (guiVisible && linkPart == null)
+            toggleGUI(false);
+        }
+
+        public void toggleGUI(bool fromPart)
+        {
+            if (guiVisible && !fromPart)
             {
                 EditorLogic.fetch.Unlock("AGOS_INPUT_LOCK");
                 guiVisible = false;
+                agosButton.SetFalse(false);
                 RenderingManager.RemoveFromPostDrawQueue(AGOS_GUI_WINDOW_ID, OnDraw);
                 Settings.WIN_POS_X = _windowPos.x;
                 Settings.WIN_POS_Y = _windowPos.y;
                 Settings.save();
+                if (linkPart != null)
+                    linkPart = null;
             }
             else
             {
                 EditorTooltip.Instance.HideToolTip();
                 EditorLogic.fetch.Lock(true, true, true, "AGOS_INPUT_LOCK");
                 guiVisible = true;
+                agosButton.SetTrue(false);
                 _windowPos.x = Settings.WIN_POS_X;
                 _windowPos.y = Settings.WIN_POS_Y;
                 RenderingManager.AddToPostDrawQueue(AGOS_GUI_WINDOW_ID, OnDraw);
@@ -265,7 +274,11 @@ namespace AGroupOnStage.Main
             GUILayout.BeginVertical(GUILayout.Width(240f));
             if (linkPart != null)
             {
-                GUILayout.Label("Part: " + linkPart.name);
+                GUILayout.BeginHorizontal();
+                GUILayout.Label("Part: " + linkPart.name, _labelStyle);
+                if (GUILayout.Button("X", _buttonStyle, GUILayout.MaxWidth(30f)))
+                    linkPart = null;
+                GUILayout.EndHorizontal();
             }
             else
             {
@@ -319,8 +332,7 @@ namespace AGroupOnStage.Main
                 }
 
                 GUILayout.BeginHorizontal();
-
-                GUILayout.Label(actionGroupList[ag.Group], _labelStyle, GUILayout.MinWidth(150f));
+                GUILayout.Label(actionGroupList[ag.Group] + (ag.GetType() == typeof(ThrottleControlActionGroup) ? String.Format(" ({0:P0})", ag.ThrottleLevel) : ""), _labelStyle, GUILayout.MinWidth(150f));
 
                 GUIStyle __labelStyle = _labelStyle;
                 // TODO: Fix the nullref that this causes.
@@ -331,6 +343,8 @@ namespace AGroupOnStage.Main
                 GUILayout.Label(stagesString, __labelStyle);
                 if (GUILayout.Button("Edit", _buttonStyle, GUILayout.MaxWidth(40f)))
                 {
+                    if (linkPart != null)
+                        linkPart = null;
                     actionGroupSettings[ag.Group] = true;
                     throttleLevel = ag.ThrottleLevel;
                     if (ag.linkedPart != null)
@@ -349,6 +363,10 @@ namespace AGroupOnStage.Main
             }
 
             GUILayout.EndScrollView();
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Close", _buttonStyle))
+                toggleGUI();
             GUILayout.EndHorizontal();
 
             GUI.DragWindow(); // Make window dragable
@@ -531,7 +549,7 @@ namespace AGroupOnStage.Main
                 return;
             //Logger.Log("Finding homes for part locked action group configurations");
             List<IActionGroup> partLinkedGroups = actionGroups.FindAll(a => a.isPartLocked && a.linkedPart == null);
-            Logger.Log("{0} homeless part(s)", partLinkedGroups.Count());
+            Logger.Log("{0} homeless group(s)", partLinkedGroups.Count());
             foreach (IActionGroup g in partLinkedGroups)
             {
                 Part part = AGOSUtils.findPartByReference(g.partRef, vessel);

@@ -132,8 +132,10 @@ namespace AGroupOnStage.Main
                 CURRENT_TICK_COUNT++;
                 if (CURRENT_TICK_COUNT >= MAX_TICK_COUNT)
                 {
+                    Logger.Log("Locking staging");
                     CURRENT_TICK_COUNT = 0;
                     stageLockScheduled = false;
+                    Logger.Log("Stage lock: {0} -> {1}", FlightInputHandler.fetch.stageLock, !FlightInputHandler.fetch.stageLock);
                     FlightInputHandler.fetch.stageLock = !FlightInputHandler.fetch.stageLock;
                 }
             }
@@ -150,7 +152,8 @@ namespace AGroupOnStage.Main
                 else
                     r.material.color = new Color(0.976f, 0.451f, 0.024f);
             }
-
+            System.Random ra = new System.Random();
+            ScreenMessages.PostScreenMessage((ra.Next(10) == 10 ? "fINE cONTROLS" : "Fine Controls") + " have been "+(FlightInputHandler.fetch.precisionMode ? "enabled" : "disabled")+".", 5f, ScreenMessageStyle.UPPER_CENTER);
         }
     }
 }

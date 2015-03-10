@@ -15,7 +15,7 @@ namespace AGroupOnStage.Main
         private bool isRoot = false;
 
         [KSPEvent(active = true, guiActive = true, guiActiveEditor = true, guiName = "Action group control")]
-        private void toggleGUI() { AGOSMain.Instance.linkPart = this.part; AGOSMain.Instance.toggleGUI(); }
+        private void toggleGUI() { AGOSMain.Instance.linkPart = this.part; AGOSMain.Instance.toggleGUI(true); }
 
         public override void OnAwake()
         {
