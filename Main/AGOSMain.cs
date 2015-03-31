@@ -220,6 +220,7 @@ namespace AGroupOnStage.Main
             }
             else
             {
+                if (fromPart && guiVisible) { return; }
                 EditorTooltip.Instance.HideToolTip();
                 EditorLogic.fetch.Lock(true, true, true, "AGOS_INPUT_LOCK");
                 guiVisible = true;
@@ -265,7 +266,7 @@ namespace AGroupOnStage.Main
                 for (int x = AG_MIN; x < AG_MAX; x++)
                 {
                     //Logger.Log("AG {0}: {1}", x, actionGroupList[x]);
-                    if (x == 0 || x == 1) { continue; } // "None" and "Stage" action groups
+                    if (x == 0 || x == 1 || x == -7) { continue; } // "None", "Stage" and "Lock Staging" action groups
                     actionGroupSettings[x] = GUILayout.Toggle(actionGroupSettings.ContainsKey(x) ? actionGroupSettings[x] : false, actionGroupList[x], _buttonStyle);
                 }
                 GUILayout.EndScrollView();
