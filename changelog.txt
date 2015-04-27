@@ -1,3 +1,10 @@
+27/04/15, v2.0:
+	* Completely re-written code base!
+	* New "all-in-one" GUI - no more managing multiple GUIs while configuring groups!
+	* AGOS can now change the camera modes
+	* AGOS can toggle Fine Controls
+	* And most importantly: 1.0 compatibility!
+
 06/02/15, v1.2.5:
 	* Fixed AGOS modules not applying to stock launch clamps if Extraplanetary Launchpads is installed. [Reported by ShimmyTheJJ]
 

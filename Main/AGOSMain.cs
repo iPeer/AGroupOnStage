@@ -112,8 +112,10 @@ namespace AGroupOnStage.Main
             //GameEvents.onLevelWasLoaded.Add(onLevelWasLoaded);
             GameEvents.onEditorUndo.Add(OnEditorUndo);
             GameEvents.onEditorRedo.Add(OnEditorUndo);
+#if DEBUG
             if (Settings.SHOW_DRAGONS_DIALOG)
                 RenderingManager.AddToPostDrawQueue(AGOS_GUI_WINDOW_ID + 1, OnDraw_Dragons);
+#endif
         }
 
         private void OnGUIApplicationLauncherReady()
