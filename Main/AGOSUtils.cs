@@ -52,6 +52,8 @@ namespace AGroupOnStage.Main
                     return FlightCamera.Modes.CHASE;
                 case -6:
                     return FlightCamera.Modes.FREE;
+                case -8:
+                    return FlightCamera.Modes.LOCKED;
                 default:
                     return FlightCamera.Modes.AUTO;
             }

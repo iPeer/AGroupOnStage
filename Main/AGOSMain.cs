@@ -42,7 +42,7 @@ namespace AGroupOnStage.Main
 
         private string[] stockAGNames;
         private KSPActionGroup[] stockAGList;
-        private static readonly int AGOS_GUI_WINDOW_ID = 03022007;
+        private static readonly int AGOS_GUI_WINDOW_ID = /* This 0 is pointless! -> */03022007;
         private ApplicationLauncherButton agosButton = null;
         private bool hasSetupStyles = false;
         private enum AGOSActionGroups
@@ -53,7 +53,8 @@ namespace AGroupOnStage.Main
             CAMERA_ORBITAL = -4,
             CAMERA_CHASE = -5,
             CAMERA_FREE = -6,
-            LOCK_STAGING = -7
+            LOCK_STAGING = -7,
+            CAMERA_LOCKED = -8
         }
 
         #endregion
@@ -81,7 +82,8 @@ namespace AGroupOnStage.Main
             {"CAMERA_ORBITAL", "Set camera: ORBITAL"},
             {"CAMERA_CHASE", "Set camera: CHASE"},
             {"CAMERA_FREE", "Set camera: FREE"},
-            {"LOCK_STAGING", "Lock staging"}
+            {"LOCK_STAGING", "Lock staging"},
+            {"CAMERA_LOCKED", "Set camera: LOCKED"}
 
         };
 
@@ -93,6 +95,8 @@ namespace AGroupOnStage.Main
         {
             Logger.Log("AGOS.Main.AGOSMain.Start()");
             Settings = new AGroupOnStage.Main.AGOSSettings(IOUtils.GetFilePathFor(this.GetType(), "settings.cfg"));
+            // Create the pluginData folder for AGOS, if it doesn't exist
+            System.IO.Directory.CreateDirectory(Settings.configPath.Replace("settings.cfg", ""));
             Instance = this;
             useAGXConfig = AGXInterface.isAGXInstalled();
             Logger.Log("This install is " + (useAGXConfig ? "" : "not ") + "running AGX.");
@@ -393,7 +397,8 @@ namespace AGroupOnStage.Main
                     CAMERA_ORBITAL = -4,
                     CAMERA_CHASE = -5,
                     CAMERA_FREE = -6,
-                    LOCK_STAGING = -7
+                    LOCK_STAGING = -7,
+                    CAMERA_LOCKED = -8
                     */
 
                     IActionGroup ag;
@@ -406,7 +411,7 @@ namespace AGroupOnStage.Main
                     {
                         ag = new FineControlActionGroup();
                     }
-                    else if (x < -2 && x > -7) // Camera mode
+                    else if (x < -2 && x > -7 || x == -8) // Camera mode
                     {
                         ag = new CameraControlActionGroup();
                         ag.cameraMode = AGOSUtils.getCameraModeForGroupID(x);
@@ -452,7 +457,7 @@ namespace AGroupOnStage.Main
             }
             throttleLevel = 0f;
             stageList = "";
-            linkPart = null;
+            //linkPart = null; // 2.0-dev5/2.0-rel: No longer clear part link when commiting groups
         }
 
         private int[] getMinMaxGroupIds()
