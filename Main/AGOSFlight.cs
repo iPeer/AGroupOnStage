@@ -28,6 +28,8 @@ namespace AGroupOnStage.Main
                 GameEvents.onStageActivate.Add(onStageActivate);
                 GameEvents.onStageSeparation.Add(onStageSeparation);
                 GameEvents.onFlightReady.Add(onFlightReady);
+                //GameEvents.onLevelWasLoaded.Add(onLevelWasLoaded);
+                //GameEvents.onVesselGoOffRails.Add(onVesselUnpack);
                 AGOSMain.Instance.FlightEventsRegistered = true;
                 Logger.Log("Registered for Flight related GameEvents");
             }
@@ -35,9 +37,19 @@ namespace AGroupOnStage.Main
             //AGOSUtils.resetActionGroupConfig();
         }
 
+        private void onVesselUnpack(Vessel v)
+        {
+            Logger.Log("Vessel unpack");
+            AGOSMain.Instance.restoreBackedUpActionGroups();
+            AGOSMain.Instance.findHomesForPartLockedGroups(v);
+        }
+
         private void onFlightReady()
         {
+            Logger.Log("Flight ready");
+            AGOSMain.Instance.restoreBackedUpActionGroups();
             AGOSMain.Instance.findHomesForPartLockedGroups(FlightGlobals.fetch.activeVessel);
+            //AGOSMain.Instance.backupActionGroupList();
         }
 
         private void onVesselLoaded(Vessel data)
@@ -74,8 +86,8 @@ namespace AGroupOnStage.Main
             }
             processingStageEvent = true;
             List<IActionGroup> toFire = new List<IActionGroup>();
-            toFire.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.Stages != null && a.Stages.Length > 0 && a.Stages.Contains(s))); // Regular action groups
-            toFire.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.isPartLocked && a.linkedPart.inverseStage == s)); // Part locked groups
+            toFire.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.Stages != null && a.Stages.Length > 0 && a.Stages.Contains(s)/* && a.Vessel == FlightGlobals.fetch.activeVessel*/)); // Regular action groups
+            toFire.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.isPartLocked && a.linkedPart.inverseStage == s/* && a.Vessel == FlightGlobals.fetch.activeVessel*/)); // Part locked groups
             //List<IActionGroup> toFire = AGOSMain.Instance.actionGroups.FindAll(a => (a.Stages.Length > 0 && a.Stages.Contains(s)) || (a.isPartLocked && a.linkedPart.inverseStage == s));
             Logger.Log("{0} group(s) to fire", toFire.Count);
             foreach (IActionGroup ag in toFire) 

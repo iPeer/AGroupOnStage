@@ -43,6 +43,7 @@ namespace AGroupOnStage.Main
             if (!this.isRoot) { return; } // Only the root module can save
             if (AGOSMain.Instance.actionGroups.Count > 0)
             {
+                Logger.Log("{0} groups to save", AGOSMain.Instance.actionGroups.Count);
                 node.AddNode("AGOS");
                 ConfigNode node_agos = node.GetNode("AGOS");
                 node_agos.AddNode("GROUPS");
@@ -197,6 +198,7 @@ namespace AGroupOnStage.Main
                         ag.ThrottleLevel = throttleLevel;
 
                     ag.Group = groupID;
+                    ag.Vessel = this.part.vessel;
 
                     AGOSMain.Instance.actionGroups.Add(ag);
 

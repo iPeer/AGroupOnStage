@@ -26,12 +26,20 @@ namespace AGroupOnStage.Main
                 /*GameEvents.onNewVesselCreated.Add(onNewVesselCreated);*/
                 //GameEvents.onVesselLoaded.Add(AGOSMain.Instance.onVesselLoaded);
                 //AGOSUtils.resetActionGroupConfig();
+                GameEvents.onEditorRestart.Add(onEditorRestart);
                 GameEvents.onLevelWasLoaded.Add(onLevelWasLoaded); // Do you catch reverts? Yes you do! <3
                 GameEvents.onEditorLoad.Add(onEditorLoad); // Does this do what I think (hope) it does?
+
                 AGOSMain.Instance.EditorEventsRegistered = true;
                 Logger.Log("Registered for Editor related GameEvents");
             }
 
+        }
+
+        private void onEditorRestart()
+        {
+            Logger.Log("Editor restart.");
+            AGOSUtils.resetActionGroupConfig();
         }
 
         private void onEditorLoad(ShipConstruct data0, CraftBrowser.LoadType data1)
@@ -43,11 +51,8 @@ namespace AGroupOnStage.Main
 
         private void onLevelWasLoaded(GameScenes data)
         {
-            if (AGOSUtils.isLoadedSceneOneOf(GameScenes.EDITOR))
-            {
-                Logger.Log("Level loaded!");
-                AGOSMain.Instance.findHomesForPartLockedGroups(EditorLogic.fetch.ship.parts);
-            }
+            if (HighLogic.LoadedSceneIsEditor)
+                AGOSMain.Instance.handleLevelLoaded(data);
         }
 
         private void onVesselLoaded(Vessel data)

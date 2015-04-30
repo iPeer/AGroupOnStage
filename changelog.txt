@@ -1,3 +1,8 @@
+30/04/15, v2.0.4:
+	* Fixed an issue causing action group configs to duplicate massively on revert to editor.
+	* Confgurations are now cleared when starting a new vessel in the editor.
+	* Previous AGOS configurations are now cleared when starting a new vessel in the editor.
+
 30/04/15, v2.0.3:
 	* Fixed an issue with part locked configurations when reverting to the editor.
 

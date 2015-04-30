@@ -22,6 +22,7 @@ namespace AGroupOnStage.Main
         public bool useAGXConfig = false;
         public bool launcherButtonAdded = false;
         public List<IActionGroup> actionGroups = new List<IActionGroup>();
+        public static List<IActionGroup> backupActionGroups = new List<IActionGroup>();
         public Dictionary<int, string> actionGroupList = new Dictionary<int, string>();
         public Dictionary<int, bool> actionGroupSettings = new Dictionary<int, bool>();
         public Dictionary<int, KSPActionGroup> stockAGMap;
@@ -122,6 +123,32 @@ namespace AGroupOnStage.Main
         private void OnGUIApplicationLauncherReady()
         {
             setupToolbarButton();
+        }
+
+        public void backupActionGroupList()
+        {
+            foreach (IActionGroup a in this.actionGroups)
+                backupActionGroups.Add(a);
+            Logger.Log("Backed up {0} group(s)", backupActionGroups.Count);
+        }
+
+        public void restoreBackedUpActionGroups()
+        {
+            restoreBackedUpActionGroups(false);
+        }
+
+        public void restoreBackedUpActionGroups(bool clear)
+        {
+            if (backupActionGroups != null && backupActionGroups.Count > 0)
+            {
+                Logger.Log("B:{0} / L:{1}", backupActionGroups.Count, this.actionGroups.Count);
+                this.actionGroups.Clear();
+                foreach (IActionGroup a in backupActionGroups)
+                    this.actionGroups.Add(a);
+                Logger.Log("Restored {0} group(s)", backupActionGroups.Count);
+                if (clear)
+                    backupActionGroups.Clear();
+            }
         }
 
         private void loadActionGroups()
@@ -333,6 +360,7 @@ namespace AGroupOnStage.Main
             foreach (IActionGroup ag in groups)
             {
                 //AGOSUtils.printActionGroupInfo(ag);
+                //if (!HighLogic.LoadedSceneIsEditor && ag.Vessel != FlightGlobals.fetch.activeVessel) { continue; }
                 string stagesString;
                 if (ag.isPartLocked)
                 {
@@ -592,6 +620,19 @@ namespace AGroupOnStage.Main
 
         #endregion
 
+        public void handleLevelLoaded(GameScenes scene)
+        {
+            if (AGOSUtils.isLoadedSceneOneOf(GameScenes.EDITOR, GameScenes.FLIGHT))
+            {
+                //Logger.Log("Revert");
+                if (AGOSUtils.getVesselPartsList().Count > 0)
+                {
+                    AGOSMain.Instance.restoreBackedUpActionGroups(true);
+                    AGOSMain.Instance.findHomesForPartLockedGroups(AGOSUtils.getVesselPartsList());
+                }
+            }
+        }
+
         internal void onVesselLoaded(Vessel data)
         {
             Logger.Log("Vessel was loaded.");
@@ -601,12 +642,16 @@ namespace AGroupOnStage.Main
 
         private void onSceneLoadRequested(GameScenes scene)
         {
+            Logger.Log("Scene change to '{1}' from '{0}' requested", scene.ToString(), HighLogic.LoadedScene.ToString());
+            if (HighLogic.LoadedSceneIsEditor) // The crap I have to do to get reverting working...
+                backupActionGroupList();
             AGOSUtils.resetActionGroupConfig();
         }
 
 
         private void OnEditorUndo(ShipConstruct data)
         {
+            Logger.Log("Undo/Redo");
             //AGOSUtils.resetActionGroupConfig();
             findHomesForPartLockedGroups(data.parts);
         }
