@@ -26,7 +26,7 @@ namespace AGroupOnStage.Main
                 /*GameEvents.onNewVesselCreated.Add(onNewVesselCreated);*/
                 //GameEvents.onVesselLoaded.Add(AGOSMain.Instance.onVesselLoaded);
                 //AGOSUtils.resetActionGroupConfig();
-                /*GameEvents.onLevelWasLoaded.Add(onLevelWasLoaded);*/ // No longer works after 'initial load' in 1.0
+                GameEvents.onLevelWasLoaded.Add(onLevelWasLoaded); // Do you catch reverts? Yes you do! <3
                 GameEvents.onEditorLoad.Add(onEditorLoad); // Does this do what I think (hope) it does?
                 AGOSMain.Instance.EditorEventsRegistered = true;
                 Logger.Log("Registered for Editor related GameEvents");
