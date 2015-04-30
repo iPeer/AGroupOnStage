@@ -20,17 +20,25 @@ namespace AGroupOnStage.Main
         public override void OnAwake()
         {
             if (!AGOSUtils.isLoadedSceneOneOf(GameScenes.FLIGHT, GameScenes.EDITOR)) { return; } // Invalid scene
-            try
-            {
-                AGOSModule am = AGOSMain.Instance.getMasterAGOSModule(this.part.vessel);
-                if (am == null || this == am)
-                    this.isRoot = true;
-            }
-            catch { /*Logger.LogWarning("Caught exception on part awake (harmless)"); */this.isRoot = true; }
         }
+
+        public AGOSModule setRoot() { this.isRoot = true; return this; }
 
         public override void OnSave(ConfigNode node)
         {
+
+            try
+            {
+                AGOSModule am = AGOSMain.Instance.getMasterAGOSModule(this.part.vessel);
+                if (am == this)
+                    this.isRoot = true;
+                else
+                    this.isRoot = false;
+                if (this.isRoot)
+                    Logger.Log("Root AGOSModule is on part {0} ({1}/{2})", this.part.name, this.part.partInfo.title, this.part.partInfo.name);
+            }
+            catch { Logger.LogWarning("Caught exception on part awake (harmless)"); this.isRoot = true; }
+
             node.AddValue("isRoot", isRoot);
             if (!this.isRoot) { return; } // Only the root module can save
             if (AGOSMain.Instance.actionGroups.Count > 0)

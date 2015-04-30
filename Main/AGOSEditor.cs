@@ -43,6 +43,13 @@ namespace AGroupOnStage.Main
         {
             Logger.Log("Vessel loaded!");
             AGOSMain.Instance.findHomesForPartLockedGroups(data);
+            /*AGOSModule masterModule = AGOSMain.Instance.getMasterAGOSModule(data);
+            if (masterModule == null)
+            {
+                Logger.LogWarning("There is no master AGOS Module for this craft!");
+                AGOSModule agm = data.parts.First().Modules.GetModules<AGOSModule>().First().setRoot();
+                Logger.Log("Root AGOSModule is on part {0} ({1}/{2})", agm.part.ToString(), agm.part.partInfo.title, agm.part.partInfo.name);
+            }*/
         }
 
         /*private void onNewVesselCreated(Vessel data)

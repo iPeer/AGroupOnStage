@@ -105,7 +105,7 @@ namespace AGroupOnStage.Main
                     if (AGOSMain.Instance.useAGXConfig) { }
                     else
                     {
-                        Logger.Log("{0}", ag.Group);
+                        //Logger.Log("{0}", ag.Group);
                         KSPActionGroup g = AGOSMain.Instance.stockAGMap[ag.Group];
                         Logger.Log("Firing action group {0} ({1})", ag.Group, AGOSMain.Instance.actionGroupList[ag.Group]);
                         FlightGlobals.ActiveVessel.ActionGroups.ToggleGroup(g);
