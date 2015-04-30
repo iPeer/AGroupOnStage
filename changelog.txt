@@ -1,3 +1,6 @@
+30/04/15, v2.0.1:
+	* Fixes an issue with AGOS saving group configs on ships created before AGOS' installation.
+
 27/04/15, v2.0:
 	* Completely re-written code base!
 	* New "all-in-one" GUI - no more managing multiple GUIs while configuring groups!

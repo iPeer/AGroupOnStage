@@ -1,7 +1,0 @@
-﻿Now displays a notification when fine controls are enabled.
-Can now "cancel" locking specified action groups to a specific part.
-Added a "Close" button to the GUI.
-Fixed AGOS' AppLauncher Button not matching the state of the GUI.
-Fixed the label displaying the part name using incorrect styling when linking (a) group(s) to a part.
-AGOS now correctly unregisters any existing (pending) part link when editing an existing group.
-Throttle control groups now display their throttle level setting.
