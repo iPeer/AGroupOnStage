@@ -13,6 +13,7 @@ namespace AGroupOnStage.Main
         public bool INSTANT_CAMERA_TRANSITIONS = true;
         public bool SHOW_DRAGONS_DIALOG = true;
         public float WIN_POS_X = 0, WIN_POS_Y = 0f;
+        public bool LOG_NODE_SAVE = false;
 
         public AGOSSettings(string path) {
             this.configPath = path;
@@ -27,6 +28,7 @@ namespace AGroupOnStage.Main
             WIN_POS_X = Convert.ToSingle(node.GetValue("wPosX"));
             WIN_POS_Y = Convert.ToSingle(node.GetValue("wPosY"));
             SHOW_DRAGONS_DIALOG = Convert.ToBoolean(node.GetValue("HereBeDragons"));
+            LOG_NODE_SAVE = Convert.ToBoolean(node.GetValue("LogNodeSaving"));
         }
 
         public void save()
@@ -37,6 +39,7 @@ namespace AGroupOnStage.Main
             node.AddValue("wPosX", WIN_POS_X);
             node.AddValue("wPosY", WIN_POS_Y);
             node.AddValue("HereBeDragons", SHOW_DRAGONS_DIALOG);
+            node.AddValue("LogNodeSaving", LOG_NODE_SAVE);
             node.Save(configPath);
         }
 

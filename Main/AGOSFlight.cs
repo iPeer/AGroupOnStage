@@ -92,7 +92,10 @@ namespace AGroupOnStage.Main
                 }
                 else if (ag.GetType() == typeof(CameraControlActionGroup))
                 {
-                    FlightCamera.SetModeImmediate(ag.cameraMode);
+                    if (AGOSMain.Settings.INSTANT_CAMERA_TRANSITIONS)
+                        FlightCamera.SetModeImmediate(ag.cameraMode);
+                    else
+                        FlightCamera.SetMode(ag.cameraMode);
                     Logger.Log("Camera mode set to {0}", ag.cameraMode.ToString());
                 }
                 else if (ag.GetType() == typeof(FineControlActionGroup))
@@ -102,7 +105,10 @@ namespace AGroupOnStage.Main
                 }
                 else
                 {
-                    if (AGOSMain.Instance.useAGXConfig) { }
+                    if (AGOSMain.Instance.useAGXConfig) {
+                        AGX.AGXInterface.AGExtToggleGroup(ag.Group);
+                        Logger.Log("Firing AGX Action Group #{0}", ag.Group);
+                    }
                     else
                     {
                         //Logger.Log("{0}", ag.Group);

@@ -1,3 +1,7 @@
+30/04/15, v2.0.2:
+	* Added compatibility for Action Groups Extended.
+	* Fixed an issue causing part references to be lost when reloading a vessel.
+
 30/04/15, v2.0.1:
 	* Fixes an issue with AGOS saving group configs on ships created before AGOS' installation.
 

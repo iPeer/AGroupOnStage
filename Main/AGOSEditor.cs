@@ -26,17 +26,28 @@ namespace AGroupOnStage.Main
                 /*GameEvents.onNewVesselCreated.Add(onNewVesselCreated);*/
                 //GameEvents.onVesselLoaded.Add(AGOSMain.Instance.onVesselLoaded);
                 //AGOSUtils.resetActionGroupConfig();
-                GameEvents.onLevelWasLoaded.Add(onLevelWasLoaded);
+                /*GameEvents.onLevelWasLoaded.Add(onLevelWasLoaded);*/ // No longer works after 'initial load' in 1.0
+                GameEvents.onEditorLoad.Add(onEditorLoad); // Does this do what I think (hope) it does?
                 AGOSMain.Instance.EditorEventsRegistered = true;
                 Logger.Log("Registered for Editor related GameEvents");
             }
 
         }
 
+        private void onEditorLoad(ShipConstruct data0, CraftBrowser.LoadType data1)
+        {
+            Logger.Log("AGOS.Main.AGOSEditor.onEditorLoad()");
+            if (HighLogic.LoadedSceneIsEditor)
+                AGOSMain.Instance.findHomesForPartLockedGroups(data0.parts);
+        }
+
         private void onLevelWasLoaded(GameScenes data)
         {
             if (AGOSUtils.isLoadedSceneOneOf(GameScenes.EDITOR))
+            {
+                Logger.Log("Level loaded!");
                 AGOSMain.Instance.findHomesForPartLockedGroups(EditorLogic.fetch.ship.parts);
+            }
         }
 
         private void onVesselLoaded(Vessel data)

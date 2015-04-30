@@ -34,10 +34,10 @@ namespace AGroupOnStage.Main
                     this.isRoot = true;
                 else
                     this.isRoot = false;
-                if (this.isRoot)
-                    Logger.Log("Root AGOSModule is on part {0} ({1}/{2})", this.part.name, this.part.partInfo.title, this.part.partInfo.name);
+                /*if (this.isRoot)
+                    Logger.Log("Root AGOSModule is on part {0} ({1}/{2})", this.part.name, this.part.partInfo.title, this.part.partInfo.name);*/ // Spammy McSpammerson
             }
-            catch { Logger.LogWarning("Caught exception on part awake (harmless)"); this.isRoot = true; }
+            catch { /*Logger.LogWarning("Caught exception on part awake (harmless)");*/ this.isRoot = true; }
 
             node.AddValue("isRoot", isRoot);
             if (!this.isRoot) { return; } // Only the root module can save
@@ -49,7 +49,7 @@ namespace AGroupOnStage.Main
                 foreach (IActionGroup ag in AGOSMain.Instance.actionGroups)
                 {
                     ConfigNode node_group = node_agos.GetNode("GROUPS");
-                    AGOSUtils.printActionGroupInfo(ag);
+                    Logger.Log("Saving group config: {0}", AGOSUtils.getActionGroupInfo(ag));
                     string agName = "";
                     agName = ag.Group.ToString();
                     if (!node_group.HasNode(agName))
@@ -83,6 +83,10 @@ namespace AGroupOnStage.Main
                     
 
                 }
+
+                if (AGOSMain.Settings.LOG_NODE_SAVE)
+                    Logger.Log("{0}", node_agos.ToString());
+
             }
         }
 
@@ -106,6 +110,11 @@ namespace AGroupOnStage.Main
             {
                 //Logger.Log("{0}, {1}, {2}", group.name, Int32.Parse(group.name), Convert.ToInt32(group.name));
                 int groupID = Convert.ToInt32(group.name);
+                if (groupID > AGOSMain.Instance.getMinMaxGroupIds()[1])
+                {
+                    Logger.LogWarning("Loaded Action Group '{0}' has an ID higher than the maximum allowed ({1}). Skipping.", groupID, AGOSMain.Instance.getMinMaxGroupIds()[1]);
+                    continue;
+                }
                 int _id = 0;
                 foreach (ConfigNode id in group.nodes)
                 {

@@ -42,7 +42,8 @@ namespace AGroupOnStage.Main
 
         private string[] stockAGNames;
         private KSPActionGroup[] stockAGList;
-        private static readonly int AGOS_GUI_WINDOW_ID = /* This 0 is pointless! -> */03022007;
+        private static readonly int AGOS_GUI_WINDOW_ID = 03022007;
+        //                                               ^ pointless 0 is pointless
         private ApplicationLauncherButton agosButton = null;
         private bool hasSetupStyles = false;
         private enum AGOSActionGroups
@@ -155,7 +156,12 @@ namespace AGroupOnStage.Main
             if (useAGXConfig)
             {
                 Logger.Log("\tAGX...");
-                throw new NotImplementedException();
+                for (int x = 1; x <= 251; x++)
+                {
+                    actionGroupList.Add(x, x.ToString());
+                    actionGroupSettings.Add(x, false);
+                }
+                Logger.Log("\tDone!");
             }
             else
             {
@@ -254,35 +260,41 @@ namespace AGroupOnStage.Main
             GUILayout.BeginHorizontal();
 
             GUILayout.BeginVertical();
-            if (useAGXConfig)
+            _scrollPosGroups = GUILayout.BeginScrollView(_scrollPosGroups, _scrollStyle, GUILayout.Width(230f), GUILayout.Height(270f));
+            /*if (useAGXConfig)
             {
                 throw new NotImplementedException();
             }
             else
+            {*/
+            //_scrollPosGroups = GUILayout.BeginScrollView(_scrollPosGroups, false, false, _scrollStyle, _scrollStyle, _scrollStyle, GUILayout.Width(250f), GUILayout.Height(450f));
+
+            int[] AG_MIN_MAX = getMinMaxGroupIds();
+            int AG_MIN = AG_MIN_MAX[0];
+            int AG_MAX = AG_MIN_MAX[1];
+
+            //Logger.LogDebug("MAX: {0}, MIN: {1}", AG_MAX, AG_MIN);    
+
+            for (int x = AG_MIN; x < AG_MAX; x++)
             {
-                _scrollPosGroups = GUILayout.BeginScrollView(_scrollPosGroups, _scrollStyle, GUILayout.Width(230f), GUILayout.Height(270f));
-                //_scrollPosGroups = GUILayout.BeginScrollView(_scrollPosGroups, false, false, _scrollStyle, _scrollStyle, _scrollStyle, GUILayout.Width(250f), GUILayout.Height(450f));
-
-                int[] AG_MIN_MAX = getMinMaxGroupIds();
-                int AG_MIN = AG_MIN_MAX[0];
-                int AG_MAX = AG_MIN_MAX[1];
-
-                //Logger.LogDebug("MAX: {0}, MIN: {1}", AG_MAX, AG_MIN);    
-
-                for (int x = AG_MIN; x < AG_MAX; x++)
+                //Logger.Log("AG {0}: {1}", x, actionGroupList[x]);
+                if (x == 0 || (x == 1 && !useAGXConfig) || x == -7) { continue; } // "None", "Stage" and "Lock Staging" action groups
+                if (useAGXConfig)
                 {
-                    //Logger.Log("AG {0}: {1}", x, actionGroupList[x]);
-                    if (x == 0 || x == 1 || x == -7) { continue; } // "None", "Stage" and "Lock Staging" action groups
-                    actionGroupSettings[x] = GUILayout.Toggle(actionGroupSettings.ContainsKey(x) ? actionGroupSettings[x] : false, actionGroupList[x], _buttonStyle);
+                    string groupName = (x < 0 ? actionGroupList[x] : x + (AGX.AGXInterface.getAGXGroupDesc(x) != null ? ": " + AGX.AGXInterface.getAGXGroupDesc(x) : ""));
+                    actionGroupSettings[x] = GUILayout.Toggle(actionGroupSettings.ContainsKey(x) ? actionGroupSettings[x] : false, groupName, _buttonStyle);
                 }
-                GUILayout.EndScrollView();
+                else
+                    actionGroupSettings[x] = GUILayout.Toggle(actionGroupSettings.ContainsKey(x) ? actionGroupSettings[x] : false, actionGroupList[x], _buttonStyle);
             }
+            /*}*/
+            GUILayout.EndScrollView();
             GUILayout.EndVertical();
             GUILayout.BeginVertical(GUILayout.Width(240f));
             if (linkPart != null)
             {
                 GUILayout.BeginHorizontal();
-                GUILayout.Label("Part: " + linkPart.name, _labelStyle);
+                GUILayout.Label("Part: " + linkPart.name+"_"+linkPart.craftID, _labelStyle);
                 if (GUILayout.Button("X", _buttonStyle, GUILayout.MaxWidth(30f)))
                     linkPart = null;
                 GUILayout.EndHorizontal();
@@ -339,7 +351,12 @@ namespace AGroupOnStage.Main
                 }
 
                 GUILayout.BeginHorizontal();
-                GUILayout.Label(actionGroupList[ag.Group] + (ag.GetType() == typeof(ThrottleControlActionGroup) ? String.Format(" ({0:P0})", ag.ThrottleLevel) : ""), _labelStyle, GUILayout.MinWidth(150f));
+                string groupName;
+                if (useAGXConfig && ag.Group > 0)
+                    groupName = ag.Group+(AGX.AGXInterface.getAGXGroupDesc(ag.Group) != null ? ": "+AGX.AGXInterface.getAGXGroupDesc(ag.Group) : "");
+                else
+                    groupName = actionGroupList[ag.Group];
+                GUILayout.Label(groupName + (ag.GetType() == typeof(ThrottleControlActionGroup) ? String.Format(" ({0:P0})", ag.ThrottleLevel) : ""), _labelStyle, GUILayout.MinWidth(150f));
 
                 GUIStyle __labelStyle = _labelStyle;
                 // TODO: Fix the nullref that this causes.
@@ -389,6 +406,7 @@ namespace AGroupOnStage.Main
 
             for (int x = AG_MIN; x < AG_MAX; x++)
             {
+                if (x == 0 && useAGXConfig) { continue; } // No group '0' when using AGX
                 if (actionGroupSettings[x])
                 {
 
@@ -462,7 +480,7 @@ namespace AGroupOnStage.Main
             //linkPart = null; // 2.0-dev5/2.0-rel: No longer clear part link when commiting groups
         }
 
-        private int[] getMinMaxGroupIds()
+        public int[] getMinMaxGroupIds()
         {
             int[] ret = new int[2];
             int min = Enum.GetNames(typeof(AGOSActionGroups)).Length;
@@ -576,6 +594,7 @@ namespace AGroupOnStage.Main
 
         internal void onVesselLoaded(Vessel data)
         {
+            Logger.Log("Vessel was loaded.");
             if (AGOSUtils.isLoadedSceneOneOf(GameScenes.EDITOR))
                 findHomesForPartLockedGroups(data);
         }

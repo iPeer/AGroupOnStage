@@ -24,6 +24,21 @@ namespace AGroupOnStage.AGX
 
         }
 
+        public static string getAGXGroupDesc(int group)
+        {
+            Type calledType;
+            if (HighLogic.LoadedSceneIsEditor)
+                calledType = Type.GetType("ActionGroupsExtended.AGXEditor, AGExt");
+            else
+                calledType = Type.GetType("ActionGroupsExtended.AGXFlight, AGExt");
+
+            Dictionary<int, string> agxNames =
+                (Dictionary<int, string>)calledType.InvokeMember("AGXguiNames", BindingFlags.GetField | BindingFlags.Public | BindingFlags.Static, null, null, null);
+
+            if (agxNames.Count < 0 || !agxNames.ContainsKey(group) || agxNames[group] == "") { return null; }
+            return agxNames[group];
+        }
+
         public static void AGExtToggleGroup(int group)
         {
             Type calledType = Type.GetType("ActionGroupsExtended.AGExtExternal, AGExt");

@@ -97,9 +97,14 @@ namespace AGroupOnStage.Main
             return (HighLogic.LoadedSceneIsEditor ? EditorLogic.fetch.ship.parts : FlightGlobals.fetch.activeVessel.parts);
         }
 
+        public static string getActionGroupInfo(IActionGroup ag)
+        {
+            return String.Format("{0}, {1}, {2}, {3}, {4}, {5}, {6}", ag.Group.ToString(), (ag.Stages != null && ag.Stages.Length > 0 ? intArrayToString(ag.Stages, "|") : "none"), (ag.linkedPart != null ? ag.linkedPart.ToString() : "none"), ag.ThrottleLevel.ToString(), ag.cameraMode.ToString(), ag.isPartLocked, ag.partRef);
+        }
+
         public static void printActionGroupInfo(IActionGroup ag)
         {
-            Logger.Log("{0}, {1}, {2}, {3}, {4}, {5}, {6}", ag.Group.ToString(), (ag.Stages != null && ag.Stages.Length > 0 ? intArrayToString(ag.Stages, "|") : "none"), (ag.linkedPart != null ? ag.linkedPart.ToString() : "none"), ag.ThrottleLevel.ToString(), ag.cameraMode.ToString(), ag.isPartLocked, ag.partRef);
+            Logger.Log(getActionGroupInfo(ag));
         }
 
         public static bool checkSavedGroupIsValid(ConfigNode node, string groupType)
@@ -135,10 +140,12 @@ namespace AGroupOnStage.Main
             //printArray<string>(refData);
             Part p = parts.Find(a => a.craftID == Convert.ToUInt32(refData[1]));
             //Part p = parts.Find(a => String.Format("{0}_{1}", a.name, a.craftID).Equals(_ref) || (a.name.Equals(refData[0]) && a.craftID == Convert.ToUInt32(refData[1])));
+#if DEBUG
             if (p == null)
                 Logger.Log("Part is null.");
             else
                 Logger.Log("{0}, {1} / {2} | {3}, {4} / {5}", refData[0], p.name, p.name.Equals(refData[0]), refData[1], p.craftID, p.craftID == Convert.ToUInt32(refData[1]));
+#endif
             return p;
         }
 

@@ -147,9 +147,6 @@
   <ItemGroup>
     <Folder Include="Extensions\" />
   </ItemGroup>
-  <ItemGroup>
-    <Content Include="Changes.txt" />
-  </ItemGroup>
   <PropertyGroup>
     <PostBuildEvent>if $(ConfigurationName) == AGOS_Debug (
   xcopy $(TargetFileName) C:\KSPScratchpad\GameData\iPeer\AGroupOnStage\ /y
