@@ -1,6 +1,17 @@
+02/05/15, v2.0.6:
+	* Fixed an issue that could cause action group configs to be overridden by a previous flight's if the player transitioned to the FLIGHT scene without going through the editor first.
+	* Non-Custom (SAS, RCS, Lights, etc.) action groups are now correctly listed with AGX installed.
+		* Due to this change, some group IDs were changed. If you run with AGX, double check your group configs.
+	* Fixed an issue where action group configs could duplicate if the player reverted to launch and then reverted to the editor.
+	* Fixed action groups being fired multiple times when staging.
+	* All selected action groups and part links are now cleared when the GUI is closed in the editor if they're not commited.
+	* AGOS' GUI will no longer close on Part.OnDestroy() events.
+
+01/05/15, v2.0.5:
+	* Updated version files for KSP 1.0.1.
+
 30/04/15, v2.0.4:
 	* Fixed an issue causing action group configs to duplicate massively on revert to editor.
-	* Confgurations are now cleared when starting a new vessel in the editor.
 	* Previous AGOS configurations are now cleared when starting a new vessel in the editor.
 
 30/04/15, v2.0.3:

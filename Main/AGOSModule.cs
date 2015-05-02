@@ -212,8 +212,8 @@ namespace AGroupOnStage.Main
 
         public void OnDestroy()
         {
-            if (!AGOSUtils.isLoadedSceneOneOf(GameScenes.LOADING, GameScenes.LOADINGBUFFER, GameScenes.MAINMENU) && AGOSMain.Instance.guiVisible)
-                AGOSMain.Instance.toggleGUI();
+            /*if (!AGOSUtils.isLoadedSceneOneOf(GameScenes.LOADING, GameScenes.LOADINGBUFFER, GameScenes.MAINMENU) && AGOSMain.Instance.guiVisible)
+                AGOSMain.Instance.toggleGUI();*/
             //Dictionary<int, bool> ags = AGOSMain.Instance.actionGroupSettings
             //Logger.LogClassMethod(this, System.Reflection.MethodBase.GetCurrentMethod());
             //AGOSUtils.resetActionGroupConfig();

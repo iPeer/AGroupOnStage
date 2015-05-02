@@ -151,12 +151,10 @@
     <PostBuildEvent>if $(ConfigurationName) == AGOS_Debug (
   xcopy $(TargetFileName) C:\KSPScratchpad\GameData\iPeer\AGroupOnStage\ /y
   xcopy $(ProjectDir)GameData C:\KSPScratchPad\GameData\ /y /e
-  xcopy $(SolutionDir)iPeerLib\bin\$(ConfigurationName)\iPeerLib.dll C:\KSPScratchpad\GameData\iPeer\AGroupOnStage\ /y
 )
 if $(ConfigurationName) == AGOS_Release (
   xcopy $(TargetFileName) H:\Dropbox\Public\KSP\mods\staging\AGroupOnStage\GameData\iPeer\AGroupOnStage /y
   xcopy $(ProjectDir)GameData H:\Dropbox\Public\KSP\mods\staging\AGroupOnStage\GameData\ /y /e
-  xcopy $(SolutionDir)iPeerLib\bin\$(ConfigurationName)\iPeerLib.dll H:\Dropbox\Public\KSP\mods\staging\AGroupOnStage\GameData\iPeer\AGroupOnStage /y
 )
 </PostBuildEvent>
   </PropertyGroup>

@@ -17,6 +17,7 @@ namespace AGroupOnStage.Main
         bool stageLockScheduled = false;
         private bool handledBySeparation = false;
         private bool processingStageEvent = false;
+        private Vessel lastVessel;
 
         public void Start()
         {
@@ -28,6 +29,7 @@ namespace AGroupOnStage.Main
                 GameEvents.onStageActivate.Add(onStageActivate);
                 GameEvents.onStageSeparation.Add(onStageSeparation);
                 GameEvents.onFlightReady.Add(onFlightReady);
+                GameEvents.onVesselChange.Add(onVesselChange);
                 //GameEvents.onLevelWasLoaded.Add(onLevelWasLoaded);
                 //GameEvents.onVesselGoOffRails.Add(onVesselUnpack);
                 AGOSMain.Instance.FlightEventsRegistered = true;
@@ -35,6 +37,20 @@ namespace AGroupOnStage.Main
             }
             //GameEvents.onVesselLoaded.Add(AGOSMain.Instance.onVesselLoaded);
             //AGOSUtils.resetActionGroupConfig();
+        }
+
+        private void onVesselChange(Vessel data)
+        {
+            if (data != this.lastVessel)
+            {
+                Logger.Log("Vessel changed");
+                if (lastVessel != null && isVesselInFlight())
+                {
+                    Logger.Log("Player switched vessel; reverts are now invalid. Removing action group backups.");
+                    AGOSMain.backupActionGroups.Clear();
+                }
+                this.lastVessel = data;
+            }
         }
 
         private void onVesselUnpack(Vessel v)
@@ -72,7 +88,7 @@ namespace AGroupOnStage.Main
         {
             handledBySeparation = true;
             int stage = e.stage - 1; // We take 1 to get the "real" stage number
-            activateGroupsForStage(stage);
+            //activateGroupsForStage(stage); // 2.0.6-dev1: Possible fix for AGs firing twice.
             Logger.Log("OnStageSeparation: " + stage);
             handledBySeparation = false;
         }
@@ -86,8 +102,9 @@ namespace AGroupOnStage.Main
             }
             processingStageEvent = true;
             List<IActionGroup> toFire = new List<IActionGroup>();
-            toFire.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.Stages != null && a.Stages.Length > 0 && a.Stages.Contains(s)/* && a.Vessel == FlightGlobals.fetch.activeVessel*/)); // Regular action groups
-            toFire.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.isPartLocked && a.linkedPart.inverseStage == s/* && a.Vessel == FlightGlobals.fetch.activeVessel*/)); // Part locked groups
+            int stageNum = (AGOSMain.Instance.useAGXConfig && s >= 8 ? s - 7 : s);
+            toFire.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.Stages != null && a.Stages.Length > 0 && a.Stages.Contains(stageNum)/* && a.Vessel == FlightGlobals.fetch.activeVessel*/)); // Regular action groups
+            toFire.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.isPartLocked && a.linkedPart.inverseStage == stageNum/* && a.Vessel == FlightGlobals.fetch.activeVessel*/)); // Part locked groups
             //List<IActionGroup> toFire = AGOSMain.Instance.actionGroups.FindAll(a => (a.Stages.Length > 0 && a.Stages.Contains(s)) || (a.isPartLocked && a.linkedPart.inverseStage == s));
             Logger.Log("{0} group(s) to fire", toFire.Count);
             foreach (IActionGroup ag in toFire) 
@@ -117,9 +134,9 @@ namespace AGroupOnStage.Main
                 }
                 else
                 {
-                    if (AGOSMain.Instance.useAGXConfig) {
-                        AGX.AGXInterface.AGExtToggleGroup(ag.Group);
-                        Logger.Log("Firing AGX Action Group #{0}", ag.Group);
+                    if (AGOSMain.Instance.useAGXConfig && ag.Group >= 8) {
+                        AGX.AGXInterface.AGExtToggleGroup(ag.Group - 7);
+                        Logger.Log("Firing AGX Action Group #{0}", ag.Group - 7);
                     }
                     else
                     {
@@ -172,6 +189,12 @@ namespace AGroupOnStage.Main
             }
             System.Random ra = new System.Random();
             ScreenMessages.PostScreenMessage((ra.Next(10) == 10 ? "fINE cONTROLS" : "Fine Controls") + " have been "+(FlightInputHandler.fetch.precisionMode ? "enabled" : "disabled")+".", 5f, ScreenMessageStyle.UPPER_CENTER);
+        }
+
+        public bool isVesselInFlight()
+        {
+            Vessel vessel = FlightGlobals.ActiveVessel;
+            return (vessel.situation != Vessel.Situations.PRELAUNCH && vessel.situation != Vessel.Situations.LANDED && vessel.situation != Vessel.Situations.SPLASHED && vessel.GetHeightFromSurface() > 10f);
         }
     }
 }

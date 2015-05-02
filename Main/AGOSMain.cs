@@ -111,7 +111,7 @@ namespace AGroupOnStage.Main
             GameEvents.onGUIApplicationLauncherReady.Add(OnGUIApplicationLauncherReady);
             GameEvents.onVesselChange.Add(onVesselLoaded);
             GameEvents.onGameSceneLoadRequested.Add(onSceneLoadRequested);
-            //GameEvents.onLevelWasLoaded.Add(onLevelWasLoaded);
+            GameEvents.onLevelWasLoaded.Add(onLevelWasLoaded);
             GameEvents.onEditorUndo.Add(OnEditorUndo);
             GameEvents.onEditorRedo.Add(OnEditorUndo);
 #if DEBUG
@@ -183,24 +183,24 @@ namespace AGroupOnStage.Main
             if (useAGXConfig)
             {
                 Logger.Log("\tAGX...");
-                for (int x = 1; x <= 251; x++)
+                for (int x = 8; x <= 257; x++)
                 {
                     actionGroupList.Add(x, x.ToString());
                     actionGroupSettings.Add(x, false);
                 }
                 Logger.Log("\tDone!");
             }
-            else
+            Logger.Log("\tStock...");
+            if (useAGXConfig)
+                Logger.Log("\tAGX is installed, limiting stock AG loading to non Customs");
+            for (int x = 0; x < (useAGXConfig ? 8 : stockAGNames.Length); x++)
             {
-                Logger.Log("\tStock...");
-                for (int x = 0; x < stockAGNames.Length; x++)
-                {
-                    stockAGMap.Add(x, stockAGList[x]);
-                    actionGroupList.Add(x, stockAGNames[x]);
-                    actionGroupSettings.Add(x, false);
-                }
-                Logger.Log("\tDone!");
+                stockAGMap.Add(x, stockAGList[x]);
+                actionGroupList.Add(x, stockAGNames[x]);
+                actionGroupSettings.Add(x, false);
             }
+            Logger.Log("\tDone!");
+
             Logger.Log("Finished loading action groups");
             Logger.Log("Loaded {0} action group(s)", actionGroupList.Count);
         }
@@ -213,6 +213,13 @@ namespace AGroupOnStage.Main
         {
             if (!launcherButtonAdded)
             {
+                string _texture = "iPeer/AGroupOnStage/Textures/Toolbar";
+                System.Random r = new System.Random();
+                if (r.Next(5) == 5) // 10
+                {
+                    Logger.Log("Are you hungry?");
+                    _texture = "iPeer/AGroupOnStage/Textures/Toolbar_alt";
+                }
                 Logger.Log("Adding ApplicationLauncher button");
                 agosButton = ApplicationLauncher.Instance.AddModApplication(
                     toggleGUI,
@@ -222,7 +229,7 @@ namespace AGroupOnStage.Main
                     null,
                     null,
                     ApplicationLauncher.AppScenes.FLIGHT | ApplicationLauncher.AppScenes.MAPVIEW | ApplicationLauncher.AppScenes.VAB,
-                    (Texture)GameDatabase.Instance.GetTexture("iPeer/AGroupOnStage/Textures/Toolbar", false)
+                    (Texture)GameDatabase.Instance.GetTexture(_texture, false)
                 );
                 launcherButtonAdded = true;
             }
@@ -254,8 +261,13 @@ namespace AGroupOnStage.Main
                 Settings.WIN_POS_X = _windowPos.x;
                 Settings.WIN_POS_Y = _windowPos.y;
                 Settings.save();
-                if (linkPart != null)
-                    linkPart = null;
+                if (HighLogic.LoadedSceneIsEditor)
+                {
+                    if (linkPart != null)
+                        linkPart = null;
+                    AGOSUtils.resetActionGroupConfig(false);
+                }
+
             }
             else
             {
@@ -305,14 +317,14 @@ namespace AGroupOnStage.Main
             for (int x = AG_MIN; x < AG_MAX; x++)
             {
                 //Logger.Log("AG {0}: {1}", x, actionGroupList[x]);
-                if (x == 0 || (x == 1 && !useAGXConfig) || x == -7) { continue; } // "None", "Stage" and "Lock Staging" action groups
-                if (useAGXConfig)
+                if (x == 0 || x == 1 || x == -7) { continue; } // "None", "Stage" and "Lock Staging" action groups
+                if (useAGXConfig && x >= 8)
                 {
-                    string groupName = (x < 0 ? actionGroupList[x] : x + (AGX.AGXInterface.getAGXGroupDesc(x) != null ? ": " + AGX.AGXInterface.getAGXGroupDesc(x) : ""));
-                    actionGroupSettings[x] = GUILayout.Toggle(actionGroupSettings.ContainsKey(x) ? actionGroupSettings[x] : false, groupName, _buttonStyle);
+                    string groupName = (x - 7 < 0 ? actionGroupList[x] : x - 7 + (AGX.AGXInterface.getAGXGroupDesc(x - 7) != null ? ": " + AGX.AGXInterface.getAGXGroupDesc(x - 7) : ""));
+                    actionGroupSettings[x] = GUILayout.Toggle(actionGroupSettings.ContainsKey(x) ? actionGroupSettings[x] : false, x+"/"+(x-7)+" "+groupName, _buttonStyle);
                 }
                 else
-                    actionGroupSettings[x] = GUILayout.Toggle(actionGroupSettings.ContainsKey(x) ? actionGroupSettings[x] : false, actionGroupList[x], _buttonStyle);
+                    actionGroupSettings[x] = GUILayout.Toggle(actionGroupSettings.ContainsKey(x) ? actionGroupSettings[x] : false, x+" "+actionGroupList[x], _buttonStyle);
             }
             /*}*/
             GUILayout.EndScrollView();
@@ -321,7 +333,7 @@ namespace AGroupOnStage.Main
             if (linkPart != null)
             {
                 GUILayout.BeginHorizontal();
-                GUILayout.Label("Part: " + linkPart.name+"_"+linkPart.craftID, _labelStyle);
+                GUILayout.Label("Part: " + linkPart.name + "_" + linkPart.craftID, _labelStyle);
                 if (GUILayout.Button("X", _buttonStyle, GUILayout.MaxWidth(30f)))
                     linkPart = null;
                 GUILayout.EndHorizontal();
@@ -380,8 +392,8 @@ namespace AGroupOnStage.Main
 
                 GUILayout.BeginHorizontal();
                 string groupName;
-                if (useAGXConfig && ag.Group > 0)
-                    groupName = ag.Group+(AGX.AGXInterface.getAGXGroupDesc(ag.Group) != null ? ": "+AGX.AGXInterface.getAGXGroupDesc(ag.Group) : "");
+                if (useAGXConfig && ag.Group >= 8)
+                    groupName = ag.Group - 7 + (AGX.AGXInterface.getAGXGroupDesc(ag.Group - 7) != null ? ": " + AGX.AGXInterface.getAGXGroupDesc(ag.Group - 7) : "");
                 else
                     groupName = actionGroupList[ag.Group];
                 GUILayout.Label(groupName + (ag.GetType() == typeof(ThrottleControlActionGroup) ? String.Format(" ({0:P0})", ag.ThrottleLevel) : ""), _labelStyle, GUILayout.MinWidth(150f));
@@ -627,7 +639,7 @@ namespace AGroupOnStage.Main
                 //Logger.Log("Revert");
                 if (AGOSUtils.getVesselPartsList().Count > 0)
                 {
-                    AGOSMain.Instance.restoreBackedUpActionGroups(true);
+                    AGOSMain.Instance.restoreBackedUpActionGroups(false); // 2.0.6-dev1: Changed to false to prevent duping if player reverts multiple times (-> launch [-> launch [-> ...]] -> editor)
                     AGOSMain.Instance.findHomesForPartLockedGroups(AGOSUtils.getVesselPartsList());
                 }
             }
@@ -636,15 +648,20 @@ namespace AGroupOnStage.Main
         internal void onVesselLoaded(Vessel data)
         {
             Logger.Log("Vessel was loaded.");
-            if (AGOSUtils.isLoadedSceneOneOf(GameScenes.EDITOR))
+            if (AGOSUtils.isLoadedSceneOneOf(GameScenes.EDITOR, GameScenes.FLIGHT))
                 findHomesForPartLockedGroups(data);
         }
 
         private void onSceneLoadRequested(GameScenes scene)
         {
-            Logger.Log("Scene change to '{1}' from '{0}' requested", scene.ToString(), HighLogic.LoadedScene.ToString());
-            if (HighLogic.LoadedSceneIsEditor) // The crap I have to do to get reverting working...
+            Logger.Log("Scene change to '{0}' from '{1}' requested", scene.ToString(), HighLogic.LoadedScene.ToString());
+            /*if (!FlightDriver.CanRevert)
+                Logger.Log("Player cannot revert, no group backup will be taken.");*/
+            if (HighLogic.LoadedSceneIsEditor/* && FlightDriver.CanRevert*/) // The crap I have to do to get reverting working...
+            {
+                backupActionGroups.Clear(); // 2.0.6-dev1 fix for yet another dupe (I hope)
                 backupActionGroupList();
+            }
             AGOSUtils.resetActionGroupConfig();
         }
 
@@ -658,8 +675,12 @@ namespace AGroupOnStage.Main
 
         private void onLevelWasLoaded(GameScenes level)
         {
-            if (AGOSUtils.isLoadedSceneOneOf(GameScenes.EDITOR))
-                findHomesForPartLockedGroups(AGOSUtils.getVesselPartsList());
+            if (HighLogic.LoadedScene == GameScenes.SPACECENTER && backupActionGroups.Count > 0)
+            {
+                Logger.Log("Player has left to the Space Centre, clearing AG config backups.");
+                backupActionGroups.Clear();
+            }
+
         }
 
         #region herebedragons

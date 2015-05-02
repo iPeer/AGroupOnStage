@@ -160,10 +160,15 @@ namespace AGroupOnStage.Main
             return FlightCamera.Modes.AUTO;
         }
 
-
         public static void resetActionGroupConfig()
         {
-            if (AGOSMain.Instance.actionGroups.Count() > 0)
+            resetActionGroupConfig(true);
+        }
+
+
+        public static void resetActionGroupConfig(bool clearCommited)
+        {
+            if (AGOSMain.Instance.actionGroups.Count() > 0 && clearCommited)
                 AGOSMain.Instance.actionGroups.Clear();
             int[] keys = AGOSMain.Instance.actionGroupSettings.Keys.ToArray();
             foreach (int k in keys)
