@@ -321,10 +321,10 @@ namespace AGroupOnStage.Main
                 if (useAGXConfig && x >= 8)
                 {
                     string groupName = (x - 7 < 0 ? actionGroupList[x] : x - 7 + (AGX.AGXInterface.getAGXGroupDesc(x - 7) != null ? ": " + AGX.AGXInterface.getAGXGroupDesc(x - 7) : ""));
-                    actionGroupSettings[x] = GUILayout.Toggle(actionGroupSettings.ContainsKey(x) ? actionGroupSettings[x] : false, x+"/"+(x-7)+" "+groupName, _buttonStyle);
+                    actionGroupSettings[x] = GUILayout.Toggle(actionGroupSettings.ContainsKey(x) ? actionGroupSettings[x] : false, groupName, _buttonStyle);
                 }
                 else
-                    actionGroupSettings[x] = GUILayout.Toggle(actionGroupSettings.ContainsKey(x) ? actionGroupSettings[x] : false, x+" "+actionGroupList[x], _buttonStyle);
+                    actionGroupSettings[x] = GUILayout.Toggle(actionGroupSettings.ContainsKey(x) ? actionGroupSettings[x] : false, actionGroupList[x], _buttonStyle);
             }
             /*}*/
             GUILayout.EndScrollView();
