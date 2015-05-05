@@ -40,6 +40,12 @@ namespace AGroupOnStage.Main
                 target.Add(s, this.SETTINGS_MAP[s]);
         }
 
+        public void setTo(Dictionary<string, object> newSettings)
+        {
+            foreach (string s in newSettings.Keys)
+                this.SETTINGS_MAP[s] = newSettings[s];
+        }
+
         public Dictionary<string, object> getCopy()
         {
             Dictionary<string, object> ret = new Dictionary<string, object>();
@@ -58,7 +64,21 @@ namespace AGroupOnStage.Main
         public T get<T>(string setting)
         {
             if (this.SETTINGS_MAP.ContainsKey(setting))
-                return (T)this.SETTINGS_MAP[setting];
+            {
+                if (this.SETTINGS_MAP[setting] is T)
+                    return (T)this.SETTINGS_MAP[setting];
+                else
+                {
+                    try
+                    {
+                        return (T)Convert.ChangeType(this.SETTINGS_MAP[setting], typeof(T));
+                    }
+                    catch (InvalidCastException)
+                    {
+                        return default(T);
+                    }
+                }
+            }
             Logger.LogWarning("Attempted to read invalid setting '{0}'!", setting);
             return default(T);
         }
@@ -71,19 +91,44 @@ namespace AGroupOnStage.Main
             return null;
         }
 
-        public void load() 
+        public void load()
         {
 
             Logger.Log("AGOS is loading settings");
+            ConfigNode node = ConfigNode.Load(this.configPath);
+            if (node == null || node.CountValues == 0) { Logger.Log("No settings to load!"); return; }
+
+            Dictionary<string, object> _new = new Dictionary<string, object>();
+
+            List<string> keys = new List<String>(this.SETTINGS_MAP.Keys);
+
+            foreach (string s in keys)
+                if (node.HasValue(s))
+                    _new.Add(s, node.GetValue(s));
+            this.setTo(_new);
+            Logger.Log("Done loading settings!");
+
+        }
+
+        /*public void load()
+        {
+
+            Logger.Log("AGOS is loading setting");
 
             ConfigNode node = ConfigNode.Load(this.configPath);
             if (node == null || node.CountValues == 0) { Logger.Log("No settings to load!"); return; }
-            foreach (string s in this.SETTINGS_MAP.Keys)
-                if (node.HasValue(s))
-                    this.SETTINGS_MAP[s] = node.GetValues(s);
+            Dictionary<string, object> mod = this.getCopy();
+            Dictionary<string, object>.KeyCollection keys = mod.Keys;
+
+            foreach (string s in keys)
+                if (mod.ContainsKey(s))
+                    mod[s] = node.GetValue(s);
+
+            this.setTo(mod);
+            Logger.Log(this.SETTINGS_MAP.ToString());
             Logger.Log("Done loading settings!");
-        
-        }
+
+        }*/
 
         public void save() 
         {
