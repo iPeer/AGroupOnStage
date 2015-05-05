@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using AGroupOnStage.Extensions;
 
 namespace AGroupOnStage.Main
 {
@@ -183,5 +184,27 @@ namespace AGroupOnStage.Main
                 Logger.Log("\t{0}", i);
             }
         }
+
+        public static float getTechLevel()
+        {
+            return getTechLevel(SpaceCenterFacility.VehicleAssemblyBuilding);
+        }
+
+        public static float getTechLevel(SpaceCenterFacility f)
+        {
+            return ScenarioUpgradeableFacilities.GetFacilityLevel(f);
+        }
+
+        public static bool techLevelEnoughForGroup(int group)
+        {
+            if (HighLogic.CurrentGame.Mode != Game.Modes.CAREER || (group >= 8 && AGOSMain.Instance.useAGXConfig))
+                return true;
+            if (group.isWithinRange(0, 7))
+                return getTechLevel(SpaceCenterFacility.VehicleAssemblyBuilding) >= 0.5f;
+            if (group > 7 && !AGOSMain.Instance.useAGXConfig)
+                return getTechLevel(SpaceCenterFacility.VehicleAssemblyBuilding) >= 1f;
+            return false;
+        }
+
     }
 }

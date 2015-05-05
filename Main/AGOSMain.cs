@@ -115,7 +115,7 @@ namespace AGroupOnStage.Main
             GameEvents.onEditorUndo.Add(OnEditorUndo);
             GameEvents.onEditorRedo.Add(OnEditorUndo);
 #if DEBUG
-            if (Settings.SHOW_DRAGONS_DIALOG)
+            if (Settings.get<bool>("HereBeDragons"))
                 RenderingManager.AddToPostDrawQueue(AGOS_GUI_WINDOW_ID + 1, OnDraw_Dragons);
 #endif
         }
@@ -215,7 +215,7 @@ namespace AGroupOnStage.Main
             {
                 string _texture = "iPeer/AGroupOnStage/Textures/Toolbar";
                 System.Random r = new System.Random();
-                if (r.Next(5) == 5) // 10
+                if (r.Next(5) == 0 && Settings.get<bool>("AllowEE")) // 2.0.7-dev1: This would never be true at its previous value (5) (C# Random is *weird*)
                 {
                     Logger.Log("Are you hungry?");
                     _texture = "iPeer/AGroupOnStage/Textures/Toolbar_alt";
@@ -252,14 +252,20 @@ namespace AGroupOnStage.Main
 
         public void toggleGUI(bool fromPart)
         {
+
+            if (AGOSUtils.getTechLevel(SpaceCenterFacility.VehicleAssemblyBuilding) == 0f)
+            {
+                ScreenMessages.PostScreenMessage("You do not have access to action groups yet! Upgrade your VAB to unlock them!", 5f, ScreenMessageStyle.UPPER_CENTER);
+                return;
+            }
             if (guiVisible && !fromPart)
             {
                 EditorLogic.fetch.Unlock("AGOS_INPUT_LOCK");
                 guiVisible = false;
                 agosButton.SetFalse(false);
                 RenderingManager.RemoveFromPostDrawQueue(AGOS_GUI_WINDOW_ID, OnDraw);
-                Settings.WIN_POS_X = _windowPos.x;
-                Settings.WIN_POS_Y = _windowPos.y;
+                Settings.set("wPosX", _windowPos.x);
+                Settings.set("wPosY", _windowPos.y);
                 Settings.save();
                 if (HighLogic.LoadedSceneIsEditor)
                 {
@@ -276,8 +282,8 @@ namespace AGroupOnStage.Main
                 EditorLogic.fetch.Lock(true, true, true, "AGOS_INPUT_LOCK");
                 guiVisible = true;
                 agosButton.SetTrue(false);
-                _windowPos.x = Settings.WIN_POS_X;
-                _windowPos.y = Settings.WIN_POS_Y;
+                _windowPos.x = Settings.get<float>("wPosX");
+                _windowPos.y = Settings.get<float>("wPosY");
                 RenderingManager.AddToPostDrawQueue(AGOS_GUI_WINDOW_ID, OnDraw);
             }
         }
@@ -313,11 +319,10 @@ namespace AGroupOnStage.Main
             int AG_MAX = AG_MIN_MAX[1];
 
             //Logger.LogDebug("MAX: {0}, MIN: {1}", AG_MAX, AG_MIN);    
-
             for (int x = AG_MIN; x < AG_MAX; x++)
             {
                 //Logger.Log("AG {0}: {1}", x, actionGroupList[x]);
-                if (x == 0 || x == 1 || x == -7) { continue; } // "None", "Stage" and "Lock Staging" action groups
+                if ((x == 0 || x == 1 || x == -7) || !AGOSUtils.techLevelEnoughForGroup(x)) { continue; } // "None", "Stage" and "Lock Staging" action groups
                 if (useAGXConfig && x >= 8)
                 {
                     string groupName = (x - 7 < 0 ? actionGroupList[x] : x - 7 + (AGX.AGXInterface.getAGXGroupDesc(x - 7) != null ? ": " + AGX.AGXInterface.getAGXGroupDesc(x - 7) : ""));
@@ -399,11 +404,12 @@ namespace AGroupOnStage.Main
                 GUILayout.Label(groupName + (ag.GetType() == typeof(ThrottleControlActionGroup) ? String.Format(" ({0:P0})", ag.ThrottleLevel) : ""), _labelStyle, GUILayout.MinWidth(150f));
 
                 GUIStyle __labelStyle = _labelStyle;
-                // TODO: Fix the nullref that this causes.
-                /*if ((ag.linkedPart != null || !AGOSUtils.getVesselPartsList().Contains(ag.linkedPart)) || ag.Stages.Count(a => a > Staging.StageCount) > 0)
-                    __labelStyle.normal.textColor = XKCDColors.Red;
-                else
-                    __labelStyle.normal.textColor = _labelStyle.normal.textColor;*/
+                // TODO: Make this work properly :c
+                /*bool validStage = (!ag.isPartLocked && ag.Stages.Count(a => a > Staging.StageCount) > 1);
+                bool validPart = (ag.isPartLocked && ag.linkedPart != null && !AGOSUtils.getVesselPartsList().Contains(ag.linkedPart));
+                if (!(validStage && validPart))
+                    __labelStyle = _labelStyleRed;*/
+
                 GUILayout.Label(stagesString, __labelStyle);
                 if (GUILayout.Button("Edit", _buttonStyle, GUILayout.MaxWidth(40f)))
                 {
@@ -429,6 +435,10 @@ namespace AGroupOnStage.Main
             GUILayout.EndScrollView();
             GUILayout.EndHorizontal();
             GUILayout.BeginHorizontal();
+#if DEBUG
+            if (GUILayout.Button("DEBUG: Dump groups", _buttonStyle))
+                AGOSGroupManager.dumpActionGroupConfig();
+#endif
             if (GUILayout.Button("Close", _buttonStyle))
                 toggleGUI();
             GUILayout.EndHorizontal();
@@ -542,6 +552,9 @@ namespace AGroupOnStage.Main
             _buttonStyle = new GUIStyle(skin.button);
             _labelStyle = new GUIStyle(skin.label);
             _labelStyle.stretchWidth = true;
+            _labelStyleRed = new GUIStyle(skin.label);
+            _labelStyleRed.stretchWidth = true;
+            _labelStyleRed.normal.textColor = XKCDColors.Red;
             _toggleStyle = new GUIStyle(skin.toggle);
             _sliderStyle = new GUIStyle(skin.horizontalSlider);
             _sliderSliderStyle = skin.horizontalSlider;
@@ -712,7 +725,7 @@ namespace AGroupOnStage.Main
                 Application.OpenURL("https://github.com/iPeer/AGroupOnStage/issues");
             if (GUILayout.Button("Okay, okay, I get it!"))
             {
-                Settings.SHOW_DRAGONS_DIALOG = false;
+                Settings.set("HereBeDragons", false);
                 Settings.save();
                 RenderingManager.RemoveFromPostDrawQueue(AGOS_GUI_WINDOW_ID + 1, OnDraw_Dragons);
             }

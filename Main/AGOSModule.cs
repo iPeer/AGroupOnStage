@@ -85,7 +85,7 @@ namespace AGroupOnStage.Main
 
                 }
 
-                if (AGOSMain.Settings.LOG_NODE_SAVE)
+                if (AGOSMain.Settings.get<bool>("LogNodeSaving"))
                     Logger.Log("{0}", node_agos.ToString());
 
             }

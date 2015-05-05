@@ -27,7 +27,7 @@ namespace AGroupOnStage.Main
             else
             {
                 GameEvents.onStageActivate.Add(onStageActivate);
-                GameEvents.onStageSeparation.Add(onStageSeparation);
+                //GameEvents.onStageSeparation.Add(onStageSeparation); // 2.0.6-dev1: Possible fix for AGs firing twice.
                 GameEvents.onFlightReady.Add(onFlightReady);
                 GameEvents.onVesselChange.Add(onVesselChange);
                 //GameEvents.onLevelWasLoaded.Add(onLevelWasLoaded);
@@ -88,7 +88,7 @@ namespace AGroupOnStage.Main
         {
             handledBySeparation = true;
             int stage = e.stage - 1; // We take 1 to get the "real" stage number
-            //activateGroupsForStage(stage); // 2.0.6-dev1: Possible fix for AGs firing twice.
+            activateGroupsForStage(stage); 
             Logger.Log("OnStageSeparation: " + stage);
             handledBySeparation = false;
         }
@@ -121,7 +121,7 @@ namespace AGroupOnStage.Main
                 }
                 else if (ag.GetType() == typeof(CameraControlActionGroup))
                 {
-                    if (AGOSMain.Settings.INSTANT_CAMERA_TRANSITIONS)
+                    if (AGOSMain.Settings.get<bool>("InstantCameraTransitions"))
                         FlightCamera.SetModeImmediate(ag.cameraMode);
                     else
                         FlightCamera.SetMode(ag.cameraMode);
@@ -188,7 +188,7 @@ namespace AGroupOnStage.Main
                     r.material.color = new Color(0.976f, 0.451f, 0.024f);
             }
             System.Random ra = new System.Random();
-            ScreenMessages.PostScreenMessage((ra.Next(10) == 10 ? "fINE cONTROLS" : "Fine Controls") + " have been "+(FlightInputHandler.fetch.precisionMode ? "enabled" : "disabled")+".", 5f, ScreenMessageStyle.UPPER_CENTER);
+            ScreenMessages.PostScreenMessage((ra.Next(10) == 0 && AGOSMain.Settings.get<bool>("AllowEE") ? "fINE cONTROLS" : "Fine Controls") + " have been "+(FlightInputHandler.fetch.precisionMode ? "enabled" : "disabled")+".", 5f, ScreenMessageStyle.UPPER_CENTER);
         }
 
         public bool isVesselInFlight()
