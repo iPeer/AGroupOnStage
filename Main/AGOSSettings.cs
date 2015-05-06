@@ -3,11 +3,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using UnityEngine;
 
 namespace AGroupOnStage.Main
 {
-    public class AGOSSettings
+    public class AGOSSettings : MonoBehaviour
     {
+
+        public bool guiVisible = false;
 
         public string configPath;
         /*public bool INSTANT_CAMERA_TRANSITIONS = true;
@@ -17,17 +20,37 @@ namespace AGroupOnStage.Main
         public bool ALLOW_EE = true;*/
 
         private Dictionary<string, object> SETTINGS_MAP;
+        private Rect _winPos = new Rect();
+        private GUIStyle _windowStyle;
+        private Dictionary<string, string> configPrettyNames = new Dictionary<string, string>
+        {
+            {"InstantCameraTransitions", "Use instant camera transitions"},
+            {"HereBeDragons", "Display 'Here Be Dragons' dialog at start up (pre-releases only)"},
+            {"wPosX", "Main window X pos"},
+            {"wPosY", "Main window Y pos"},
+            {"wPosSX", "Settings window X pos"},
+            {"wPosSY", "Settings window Y pos"},
+            {"LogNodeSaving", "Show AGOS' node saving in the debug log"},
+            {"AllowEE", "Allow Easter Eggs to activate"},
+            {"LockInputsOnGUIOpen", "Enable anti-clickthrough input locks while AGOS' GUI is open"},
+            {"SilenceWhenUIHidden", "Don't show notifications when the game's GUI is hidden"}
+
+        };
 
         public AGOSSettings(string path) {
             this.configPath = path;
 
             this.SETTINGS_MAP = new Dictionary<string, object> {
-                {"InstantCameraTransitions", false},
+                {"InstantCameraTransitions", true},
                 {"HereBeDragons", true},
                 {"wPosX", 0f},
                 {"wPosY", 0f},
+                {"wPosSX", 0f},
+                {"wPosSY", 0f},
                 {"LogNodeSaving", false},
-                {"AllowEE", true}
+                {"AllowEE", true},
+                {"LockInputsOnGUIOpen", true},
+                {"SilenceWhenUIHidden", true}
             };
 
         }
@@ -110,26 +133,6 @@ namespace AGroupOnStage.Main
 
         }
 
-        /*public void load()
-        {
-
-            Logger.Log("AGOS is loading setting");
-
-            ConfigNode node = ConfigNode.Load(this.configPath);
-            if (node == null || node.CountValues == 0) { Logger.Log("No settings to load!"); return; }
-            Dictionary<string, object> mod = this.getCopy();
-            Dictionary<string, object>.KeyCollection keys = mod.Keys;
-
-            foreach (string s in keys)
-                if (mod.ContainsKey(s))
-                    mod[s] = node.GetValue(s);
-
-            this.setTo(mod);
-            Logger.Log(this.SETTINGS_MAP.ToString());
-            Logger.Log("Done loading settings!");
-
-        }*/
-
         public void save() 
         {
 
@@ -137,35 +140,101 @@ namespace AGroupOnStage.Main
             ConfigNode node = new ConfigNode();
             foreach (string s in this.SETTINGS_MAP.Keys)
                 node.AddValue(s, this.SETTINGS_MAP[s]);
+            node.Save(this.configPath);
+            if (get<bool>("LogNodeSaving"))
+                Logger.Log("{0}", node.ToString());
             Logger.Log("Done saving settings!");
 
         }
 
-        /*public void load()
+        public void toggleGUI() 
         {
 
-            ConfigNode node = ConfigNode.Load(configPath);
-            if (node == null || node.CountValues == 0) { return; }
-            INSTANT_CAMERA_TRANSITIONS = Convert.ToBoolean(node.GetValue("InstantCameraTransitions"));
-            WIN_POS_X = Convert.ToSingle(node.GetValue("wPosX"));
-            WIN_POS_Y = Convert.ToSingle(node.GetValue("wPosY"));
-            SHOW_DRAGONS_DIALOG = Convert.ToBoolean(node.GetValue("HereBeDragons"));
-            LOG_NODE_SAVE = Convert.ToBoolean(node.GetValue("LogNodeSaving"));
-            ALLOW_EE = Convert.ToBoolean(node.GetValue("AllowEE"));
+            if (guiVisible)
+            {
+                RenderingManager.RemoveFromPostDrawQueue(AGOSMain.AGOS_GUI_WINDOW_ID + 1, OnDraw);
+                this.guiVisible = false;
+                AGOSMain.Instance.agosButton.SetFalse(false);
+            }
+            else
+            {
+                this.guiVisible = true;
+                _winPos.x = get<float>("wPosSX");
+                _winPos.y = get<float>("wPosSY");
+                RenderingManager.AddToPostDrawQueue(AGOSMain.AGOS_GUI_WINDOW_ID + 1, OnDraw);
+            }
+
         }
 
-        public void save()
+        public void OnDraw()
         {
-            Logger.Log("Saving AGOS config");
-            ConfigNode node = new ConfigNode();
-            node.AddValue("InstantCameraTransitions", INSTANT_CAMERA_TRANSITIONS);
-            node.AddValue("wPosX", WIN_POS_X);
-            node.AddValue("wPosY", WIN_POS_Y);
-            node.AddValue("HereBeDragons", SHOW_DRAGONS_DIALOG);
-            node.AddValue("LogNodeSaving", LOG_NODE_SAVE);
-            node.AddValue("AllowEE", ALLOW_EE);
-            node.Save(configPath);
-        }*/
+
+            if (!AGOSMain.Instance.hasSetupStyles)
+            {
+                AGOSMain.Instance.setUpStyles();
+                GUISkin skin = AGOSUtils.getBestAvailableSkin();
+                _windowStyle = new GUIStyle(skin.window);
+            }
+
+            _winPos = GUILayout.Window(AGOSMain.AGOS_GUI_WINDOW_ID + 1, _winPos, OnWindow, "AGOS: Settings", _windowStyle);
+        }
+
+        public void OnWindow(int id)
+        {
+
+            GUILayout.BeginVertical(GUILayout.MinWidth(300f), GUILayout.MaxWidth(300f));
+
+
+            List<string> keys = new List<string>(this.SETTINGS_MAP.Keys);
+
+            foreach (string s in keys)
+            {
+                if (s.StartsWith("wPos"))
+                    continue;
+#if !DEBUG
+                if (s.Equals("HereBeDragons"))
+                    continue;
+#endif
+                bool __;
+                if (Boolean.TryParse(this.SETTINGS_MAP[s].ToString(), out __))
+                {
+                    this.SETTINGS_MAP[s] = GUILayout.Toggle(get<bool>(s), configPrettyNames[s], AGOSMain.Instance._toggleStyle);
+                }
+                else
+                {
+                    GUILayout.BeginHorizontal(GUILayout.MinWidth(300f), GUILayout.MaxWidth(300f));
+
+                    GUILayout.Label(configPrettyNames[s]+": ", AGOSMain.Instance._labelStyle, GUILayout.ExpandWidth(true), GUILayout.MaxWidth(200f));
+                    this.SETTINGS_MAP[s] = GUILayout.TextField(get<string>(s), AGOSMain.Instance._textFieldStyle);
+
+                    GUILayout.EndHorizontal();
+                }
+
+            }
+
+            if (GUILayout.Button("Reset GUI positions"))
+            {
+                this.toggleGUI();
+                set("wPosX", 0f);
+                set("wPosY", 0f);
+                set("wPosSX", 0f);
+                set("wPosSY", 0f);
+                this.toggleGUI();
+            }
+
+            if (GUILayout.Button("Save & Close"))
+            {
+                set("wPosSX", _winPos.x);
+                set("wPosSY", _winPos.y);
+                this.toggleGUI();
+                this.save();
+            }
+
+            GUILayout.EndVertical();
+
+            GUI.DragWindow();
+
+        }
 
     }
 }

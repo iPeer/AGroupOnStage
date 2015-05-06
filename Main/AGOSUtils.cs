@@ -12,6 +12,8 @@ namespace AGroupOnStage.Main
     public static class AGOSUtils
     {
 
+        private static GUISkin currentSkin;
+
         public static bool isLoadedSceneOneOf(params GameScenes[] scenes)
         {
             foreach (GameScenes g in scenes)
@@ -62,6 +64,7 @@ namespace AGroupOnStage.Main
 
         public static GUISkin getBestAvailableSkin()
         {
+            if (currentSkin != null) { return currentSkin; }
             Dictionary<int, GUISkin> skinList = getSkinList();
             Logger.LogDebug("Skin list:");
             for (int x = 0; x < skinList.Count; x++)
@@ -75,12 +78,14 @@ namespace AGroupOnStage.Main
                 {
                     if (skinList[id].name == skinName)
                     {
-                        return skinList[id];
+                        currentSkin = skinList[id];
+                        return currentSkin;
                     }
                 }
             }
             Logger.LogWarning("No preferred skin found, defaulting to HighLogic.Skin");
-            return HighLogic.Skin;
+            currentSkin = HighLogic.Skin;
+            return currentSkin;
         }
 
         public static string intArrayToString(int[] array, string separator)

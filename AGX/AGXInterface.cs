@@ -35,7 +35,7 @@ namespace AGroupOnStage.AGX
             Dictionary<int, string> agxNames =
                 (Dictionary<int, string>)calledType.InvokeMember("AGXguiNames", BindingFlags.GetField | BindingFlags.Public | BindingFlags.Static, null, null, null);
 
-            if (agxNames.Count < 0 || !agxNames.ContainsKey(group) || agxNames[group] == "") { return null; }
+            if (agxNames.Count == 0 || !agxNames.ContainsKey(group) || agxNames[group] == "") { return null; }
             return agxNames[group];
         }
 

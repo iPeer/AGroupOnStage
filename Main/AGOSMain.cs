@@ -19,6 +19,7 @@ namespace AGroupOnStage.Main
         public static AGOSMain Instance { get; protected set; } // Protected set in case we need/want to extend this class in the future
         public Part linkPart { get; set; }
         public bool guiVisible = false;
+        public bool settingsGUIVisible = false;
         public bool useAGXConfig = false;
         public bool launcherButtonAdded = false;
         public List<IActionGroup> actionGroups = new List<IActionGroup>();
@@ -29,6 +30,11 @@ namespace AGroupOnStage.Main
         public static AGOSSettings Settings { get; protected set; }
         public bool FlightEventsRegistered { get; set; }
         public bool EditorEventsRegistered { get; set; }
+        public static readonly int AGOS_GUI_WINDOW_ID = 03022007;
+        //                                              ^ pointless 0 is pointless
+        public bool hasSetupStyles = false;
+        public ApplicationLauncherButton agosButton = null;
+        public bool isGameGUIHidden = false;
 
         #endregion
 
@@ -43,10 +49,6 @@ namespace AGroupOnStage.Main
 
         private string[] stockAGNames;
         private KSPActionGroup[] stockAGList;
-        private static readonly int AGOS_GUI_WINDOW_ID = 03022007;
-        //                                               ^ pointless 0 is pointless
-        private ApplicationLauncherButton agosButton = null;
-        private bool hasSetupStyles = false;
         private enum AGOSActionGroups
         {
             THROTTLE = -1,
@@ -65,7 +67,7 @@ namespace AGroupOnStage.Main
 
         private Rect _windowPos = new Rect();
         private Vector2 _scrollPosGroups = Vector2.zero, _scrollPosConfig = Vector2.zero;
-        private GUIStyle _buttonStyle,
+        public GUIStyle _buttonStyle,
             _scrollStyle,
             _windowStyle,
             _labelStyle,
@@ -95,6 +97,8 @@ namespace AGroupOnStage.Main
 
         public void Start()
         {
+            System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+            sw.Start();
             Logger.Log("AGOS.Main.AGOSMain.Start()");
             Settings = new AGroupOnStage.Main.AGOSSettings(IOUtils.GetFilePathFor(this.GetType(), "settings.cfg"));
             // Create the pluginData folder for AGOS, if it doesn't exist
@@ -108,16 +112,34 @@ namespace AGroupOnStage.Main
             Logger.Log("Loading AGOS' settings");
             Settings.load();
             Logger.Log("AGOS' Settings loaded");
-            GameEvents.onGUIApplicationLauncherReady.Add(OnGUIApplicationLauncherReady);
+            //GameEvents.onGUIApplicationLauncherReady.Add(OnGUIApplicationLauncherReady);
             GameEvents.onVesselChange.Add(onVesselLoaded);
             GameEvents.onGameSceneLoadRequested.Add(onSceneLoadRequested);
+            GameEvents.onGUIApplicationLauncherReady.Add(OnGUIApplicationLauncherReady);
             GameEvents.onLevelWasLoaded.Add(onLevelWasLoaded);
             GameEvents.onEditorUndo.Add(OnEditorUndo);
             GameEvents.onEditorRedo.Add(OnEditorUndo);
+            GameEvents.onShowUI.Add(onShowUI);
+            GameEvents.onHideUI.Add(onHideUI);
+            if (ApplicationLauncher.Ready)
+                setupToolbarButton();
+                
 #if DEBUG
             if (Settings.get<bool>("HereBeDragons"))
-                RenderingManager.AddToPostDrawQueue(AGOS_GUI_WINDOW_ID + 1, OnDraw_Dragons);
+                RenderingManager.AddToPostDrawQueue(AGOS_GUI_WINDOW_ID - 1, OnDraw_Dragons);
 #endif
+            sw.Stop();
+            Logger.Log("AGOS initalised in {0}s", sw.Elapsed.TotalSeconds);
+        }
+
+        private void onShowUI()
+        {
+            this.isGameGUIHidden = false;
+        }
+
+        private void onHideUI()
+        {
+            this.isGameGUIHidden = true;
         }
 
         private void OnGUIApplicationLauncherReady()
@@ -228,7 +250,8 @@ namespace AGroupOnStage.Main
                     null,
                     null,
                     null,
-                    ApplicationLauncher.AppScenes.FLIGHT | ApplicationLauncher.AppScenes.MAPVIEW | ApplicationLauncher.AppScenes.VAB,
+                    /*ApplicationLauncher.AppScenes.FLIGHT | ApplicationLauncher.AppScenes.MAPVIEW | ApplicationLauncher.AppScenes.VAB | ApplicationLauncher.AppScenes.SPH | ApplicationLauncher.AppScenes.SPACECENTER,*/
+                    ApplicationLauncher.AppScenes.ALWAYS,
                     (Texture)GameDatabase.Instance.GetTexture(_texture, false)
                 );
                 launcherButtonAdded = true;
@@ -253,7 +276,13 @@ namespace AGroupOnStage.Main
         public void toggleGUI(bool fromPart)
         {
 
-            if (AGOSUtils.getTechLevel(SpaceCenterFacility.VehicleAssemblyBuilding) == 0f)
+            if (AGOSUtils.isLoadedSceneOneOf(GameScenes.SPACECENTER))
+            {
+                Settings.toggleGUI();
+                return;
+            }
+
+            if (HighLogic.CurrentGame.Mode == Game.Modes.CAREER && AGOSUtils.getTechLevel(SpaceCenterFacility.VehicleAssemblyBuilding) == 0f)
             {
                 ScreenMessages.PostScreenMessage("You do not have access to action groups yet! Upgrade your VAB to unlock them!", 5f, ScreenMessageStyle.UPPER_CENTER);
                 return;
@@ -279,7 +308,8 @@ namespace AGroupOnStage.Main
             {
                 if (fromPart && guiVisible) { return; }
                 EditorTooltip.Instance.HideToolTip();
-                EditorLogic.fetch.Lock(true, true, true, "AGOS_INPUT_LOCK");
+                if (Settings.get<bool>("LockInputsOnGUIOpen"))
+                    EditorLogic.fetch.Lock(true, true, true, "AGOS_INPUT_LOCK");
                 guiVisible = true;
                 agosButton.SetTrue(false);
                 _windowPos.x = Settings.get<float>("wPosX");
@@ -539,7 +569,7 @@ namespace AGroupOnStage.Main
             return ret;
         }
 
-        private void setUpStyles()
+        public void setUpStyles()
         {
             Logger.Log("Setting up GUI styles");
             hasSetupStyles = true;
@@ -668,6 +698,8 @@ namespace AGroupOnStage.Main
         private void onSceneLoadRequested(GameScenes scene)
         {
             Logger.Log("Scene change to '{0}' from '{1}' requested", scene.ToString(), HighLogic.LoadedScene.ToString());
+            if (Settings.guiVisible && !scene.ToString().Equals("SPACECENTER"))
+                Settings.toggleGUI();
             /*if (!FlightDriver.CanRevert)
                 Logger.Log("Player cannot revert, no group backup will be taken.");*/
             if (HighLogic.LoadedSceneIsEditor/* && FlightDriver.CanRevert*/) // The crap I have to do to get reverting working...
@@ -702,9 +734,9 @@ namespace AGroupOnStage.Main
         private void OnDraw_Dragons()
         {
 
-            if (!hasSetupStyles)
-                setUpStyles();
-            _windowPos = GUILayout.Window(AGOS_GUI_WINDOW_ID + 1, _windowPos, OnWindow_Dragons, "Roar!", HighLogic.Skin.window);
+            /*if (!hasSetupStyles)
+                setUpStyles();*/
+            _windowPos = GUILayout.Window(AGOS_GUI_WINDOW_ID - 1, _windowPos, OnWindow_Dragons, "Roar!", HighLogic.Skin.window);
 
             _windowPos.x = Screen.width / 2 - _windowPos.width / 2;
             _windowPos.y = Screen.height / 2 - _windowPos.height / 2;
@@ -727,7 +759,7 @@ namespace AGroupOnStage.Main
             {
                 Settings.set("HereBeDragons", false);
                 Settings.save();
-                RenderingManager.RemoveFromPostDrawQueue(AGOS_GUI_WINDOW_ID + 1, OnDraw_Dragons);
+                RenderingManager.RemoveFromPostDrawQueue(AGOS_GUI_WINDOW_ID - 1, OnDraw_Dragons);
             }
 
             GUILayout.EndHorizontal();

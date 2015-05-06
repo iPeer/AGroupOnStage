@@ -187,8 +187,11 @@ namespace AGroupOnStage.Main
                 else
                     r.material.color = new Color(0.976f, 0.451f, 0.024f);
             }
-            System.Random ra = new System.Random();
-            ScreenMessages.PostScreenMessage((ra.Next(10) == 0 && AGOSMain.Settings.get<bool>("AllowEE") ? "fINE cONTROLS" : "Fine Controls") + " have been "+(FlightInputHandler.fetch.precisionMode ? "enabled" : "disabled")+".", 5f, ScreenMessageStyle.UPPER_CENTER);
+            if (!(AGOSMain.Instance.isGameGUIHidden && AGOSMain.Settings.get<bool>("SilenceWhenUIHidden")))
+            {
+                System.Random ra = new System.Random();
+                ScreenMessages.PostScreenMessage((ra.Next(10) == 0 && AGOSMain.Settings.get<bool>("AllowEE") ? "fINE cONTROLS" : "Fine Controls") + " have been " + (FlightInputHandler.fetch.precisionMode ? "enabled" : "disabled") + ".", 5f, ScreenMessageStyle.UPPER_CENTER);
+            }
         }
 
         public bool isVesselInFlight()
