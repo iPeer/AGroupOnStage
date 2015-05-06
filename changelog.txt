@@ -1,8 +1,9 @@
-??, v2.0.7:
+06/05/2015, v2.0.7:
 	* Art pass on toolbar button
 	* Fixed a couple of things that relied on statements that would never fire.
 	* Rewritten AGOS' settings code
 	* Action groups are now limited by tech level in Career mode.
+	* AGOS now has a settings GUI (click AGOS' toolbar button to open)
 
 02/05/15, v2.0.6:
 	* Fixed an issue that could cause action group configs to be overridden by a previous flight's if the player transitioned to the FLIGHT scene without going through the editor first.
