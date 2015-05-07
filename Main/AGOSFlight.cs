@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using System.Threading;
 
 namespace AGroupOnStage.Main
 {
@@ -18,6 +19,8 @@ namespace AGroupOnStage.Main
         private bool handledBySeparation = false;
         private bool processingStageEvent = false;
         private Vessel lastVessel;
+        //private List<Timer> groupTimers = new List<Timer>();
+        private Dictionary<IActionGroup, DateTime> groupTimers = new Dictionary<IActionGroup, DateTime>();
 
         public void Start()
         {
@@ -132,19 +135,17 @@ namespace AGroupOnStage.Main
                     toggleFineControls();
                     Logger.Log("Fine controls toggled");
                 }
+                else if (ag.GetType() == typeof(TimeDelayedActionGroup) && ag.timerDelay > -1)
+                {
+
+                    Logger.Log("Group '{0}' will be fired in {1}'s", ag.fireGroupID, ag.timerDelay);
+                    DateTime dt = DateTime.Now.AddSeconds(ag.timerDelay);
+                    this.groupTimers.Add(ag, dt);
+
+                }
                 else
                 {
-                    if (AGOSMain.Instance.useAGXConfig && ag.Group >= 8) {
-                        AGX.AGXInterface.AGExtToggleGroup(ag.Group - 7);
-                        Logger.Log("Firing AGX Action Group #{0}", ag.Group - 7);
-                    }
-                    else
-                    {
-                        //Logger.Log("{0}", ag.Group);
-                        KSPActionGroup g = AGOSMain.Instance.stockAGMap[ag.Group];
-                        Logger.Log("Firing action group {0} ({1})", ag.Group, AGOSMain.Instance.actionGroupList[ag.Group]);
-                        FlightGlobals.ActiveVessel.ActionGroups.ToggleGroup(g);
-                    }
+                    fireActionGroup(ag.GetType() == typeof(TimeDelayedActionGroup) ? ag.fireGroupID : ag.Group);
                 }
                 if (ag.isPartLocked || ag.Stages.Count(a => a < FlightGlobals.fetch.activeVessel.currentStage) == 1)
                 {
@@ -153,6 +154,24 @@ namespace AGroupOnStage.Main
                 }
             }
             processingStageEvent = false;
+        }
+
+        public void fireActionGroup(int g)
+        {
+
+            if (AGOSMain.Instance.useAGXConfig && g >= 8)
+            {
+                AGX.AGXInterface.AGExtToggleGroup(g - 7);
+                Logger.Log("Firing AGX Action Group #{0}", g - 7);
+            }
+            else
+            {
+                //Logger.Log("{0}", ag.Group);
+                KSPActionGroup _g = AGOSMain.Instance.stockAGMap[g];
+                Logger.Log("Firing action group {0} ({1})", g, AGOSMain.Instance.actionGroupList[g]);
+                FlightGlobals.ActiveVessel.ActionGroups.ToggleGroup(_g);
+            }
+
         }
 
         /* 
@@ -175,6 +194,25 @@ namespace AGroupOnStage.Main
                 }
             }
 
+        }
+
+        public void Update()
+        {
+            if (this.groupTimers.Count > 0)
+            {
+                List<IActionGroup> groups = new List<IActionGroup>(this.groupTimers.Keys);
+
+                foreach (IActionGroup a in groups)
+                {
+                    if (DateTime.Compare(DateTime.Now, this.groupTimers[a]) >= 0)
+                    {
+                        Logger.Log("Delay for group '{0}' ('{1}') has expired.", a.Group, a.fireGroupID);
+                        fireActionGroup(a.fireGroupID);
+                        this.groupTimers.Remove(a);
+                    }
+                }
+
+            }
         }
 
         public void toggleFineControls()

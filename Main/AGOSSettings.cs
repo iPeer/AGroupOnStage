@@ -33,7 +33,8 @@ namespace AGroupOnStage.Main
             {"LogNodeSaving", "Show AGOS' node saving in the debug log"},
             {"AllowEE", "Allow Easter Eggs to activate"},
             {"LockInputsOnGUIOpen", "Enable anti-clickthrough input locks while AGOS' GUI is open"},
-            {"SilenceWhenUIHidden", "Don't show notifications when the game's GUI is hidden"}
+            {"SilenceWhenUIHidden", "Don't show notifications when the game's GUI is hidden"},
+            {"UseStockToolbar", "Use the stock game's toolbar"}
 
         };
 
@@ -50,7 +51,8 @@ namespace AGroupOnStage.Main
                 {"LogNodeSaving", false},
                 {"AllowEE", true},
                 {"LockInputsOnGUIOpen", true},
-                {"SilenceWhenUIHidden", true}
+                {"SilenceWhenUIHidden", true},
+                {"UseStockToolbar", true}
             };
 
         }
@@ -154,7 +156,8 @@ namespace AGroupOnStage.Main
             {
                 RenderingManager.RemoveFromPostDrawQueue(AGOSMain.AGOS_GUI_WINDOW_ID + 1, OnDraw);
                 this.guiVisible = false;
-                AGOSMain.Instance.agosButton.SetFalse(false);
+                if (!AGOSMain.Instance.using000Toolbar)
+                    AGOSMain.Instance.agosButton.SetFalse(false);
             }
             else
             {
@@ -189,10 +192,13 @@ namespace AGroupOnStage.Main
 
             foreach (string s in keys)
             {
-                if (s.StartsWith("wPos"))
+                if (s.StartsWith("wPos")) // "Uneditable" settings
+                    continue;
+
+                if (s.Equals("UseStockToolbar") && !_000Toolbar.ToolbarManager.ToolbarAvailable) // Don't display the toolbar option if the player doesn't have 000toolbar installed
                     continue;
 #if !DEBUG
-                if (s.Equals("HereBeDragons"))
+                if (s.Equals("HereBeDragons")) // Hide HBD dialog option if this is NOT a debug build
                     continue;
 #endif
                 bool __;
@@ -212,7 +218,7 @@ namespace AGroupOnStage.Main
 
             }
 
-            if (GUILayout.Button("Reset GUI positions"))
+            if (GUILayout.Button("Reset GUI positions", AGOSMain.Instance._buttonStyle))
             {
                 this.toggleGUI();
                 set("wPosX", 0f);
@@ -222,12 +228,13 @@ namespace AGroupOnStage.Main
                 this.toggleGUI();
             }
 
-            if (GUILayout.Button("Save & Close"))
+            if (GUILayout.Button("Save & Close", AGOSMain.Instance._buttonStyle))
             {
                 set("wPosSX", _winPos.x);
                 set("wPosSY", _winPos.y);
                 this.toggleGUI();
                 this.save();
+                AGOSMain.Instance.switchToolbarsIfNeeded();
             }
 
             GUILayout.EndVertical();

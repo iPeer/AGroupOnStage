@@ -1,6 +1,8 @@
-﻿using AGroupOnStage.ActionGroups;
+﻿using AGroupOnStage._000Toolbar;
+using AGroupOnStage.ActionGroups;
 using AGroupOnStage.AGX;
 using AGroupOnStage.Logging;
+using AGroupOnStage.Extensions;
 using KSP.IO;
 using System;
 using System.Collections.Generic;
@@ -21,6 +23,7 @@ namespace AGroupOnStage.Main
         public bool guiVisible = false;
         public bool settingsGUIVisible = false;
         public bool useAGXConfig = false;
+        public bool using000Toolbar = false;
         public bool launcherButtonAdded = false;
         public List<IActionGroup> actionGroups = new List<IActionGroup>();
         public static List<IActionGroup> backupActionGroups = new List<IActionGroup>();
@@ -34,6 +37,7 @@ namespace AGroupOnStage.Main
         //                                              ^ pointless 0 is pointless
         public bool hasSetupStyles = false;
         public ApplicationLauncherButton agosButton = null;
+        public IButton _000agosButton = null;
         public bool isGameGUIHidden = false;
 
         #endregion
@@ -41,7 +45,11 @@ namespace AGroupOnStage.Main
         #region GUI control vars
 
         private float throttleLevel = 0f;
+        private float timerDelay = 1f;
+        private int delayedGroup = 2;
+        private string manualGroup = "";
         private string stageList = "";
+        private bool useAGXGroup = false;
 
         #endregion
 
@@ -58,7 +66,8 @@ namespace AGroupOnStage.Main
             CAMERA_CHASE = -5,
             CAMERA_FREE = -6,
             LOCK_STAGING = -7,
-            CAMERA_LOCKED = -8
+            CAMERA_LOCKED = -8,
+            TIMED_ACTION_GROUP = -9
         }
 
         #endregion
@@ -87,7 +96,8 @@ namespace AGroupOnStage.Main
             {"CAMERA_CHASE", "Set camera: CHASE"},
             {"CAMERA_FREE", "Set camera: FREE"},
             {"LOCK_STAGING", "Lock staging"},
-            {"CAMERA_LOCKED", "Set camera: LOCKED"}
+            {"CAMERA_LOCKED", "Set camera: LOCKED"},
+            {"TIMED_ACTION_GROUP", "Time-delayed Action Group"}
 
         };
 
@@ -121,8 +131,7 @@ namespace AGroupOnStage.Main
             GameEvents.onEditorRedo.Add(OnEditorUndo);
             GameEvents.onShowUI.Add(onShowUI);
             GameEvents.onHideUI.Add(onHideUI);
-            if (ApplicationLauncher.Ready)
-                setupToolbarButton();
+            addToolbarButton();
                 
 #if DEBUG
             if (Settings.get<bool>("HereBeDragons"))
@@ -130,6 +139,16 @@ namespace AGroupOnStage.Main
 #endif
             sw.Stop();
             Logger.Log("AGOS initalised in {0}s", sw.Elapsed.TotalSeconds);
+        }
+
+        public void addToolbarButton()
+        {
+            if ((ApplicationLauncher.Ready && Settings.get<bool>("UseStockToolbar")) || !ToolbarManager.ToolbarAvailable)
+                setupToolbarButton();
+            else
+            {
+                setup000ToolbarButton();
+            }
         }
 
         private void onShowUI()
@@ -144,6 +163,7 @@ namespace AGroupOnStage.Main
 
         private void OnGUIApplicationLauncherReady()
         {
+            if (Settings.get<bool>("UseStockToolbar") || !ToolbarManager.ToolbarAvailable)
             setupToolbarButton();
         }
 
@@ -231,6 +251,47 @@ namespace AGroupOnStage.Main
 
         #region GUI
 
+        public void switchToolbarsIfNeeded()
+        {
+            if (ToolbarManager.ToolbarAvailable && !Settings.get<bool>("UseStockToolbar") && !using000Toolbar)
+            {
+                if (launcherButtonAdded)
+                    removeToolbarButton();
+                setup000ToolbarButton();
+            }
+            else if ((Settings.get<bool>("UseStockToolbar") && !launcherButtonAdded) || !ToolbarManager.ToolbarAvailable)
+            {
+                if (using000Toolbar)
+                    remove000ToolbarButton();
+                setupToolbarButton();
+            }
+        }
+
+        private void setup000ToolbarButton()
+        {
+            Logger.Log("Setting up 000Toolbar");
+            _000agosButton = ToolbarManager.Instance.add("AGOS", "AGroupOnStage");
+            string _texture = "iPeer/AGroupOnStage/Textures/Toolbar000";
+            System.Random r = new System.Random();
+            if (r.Next(5) == 0 && Settings.get<bool>("AllowEE")) // 2.0.7-dev1: This would never be true at its previous value (5) (C# Random is *weird*)
+            {
+                Logger.Log("Are you hungry?");
+                _texture = "iPeer/AGroupOnStage/Textures/Toolbar_alt000";
+            }
+            _000agosButton.TexturePath = _texture;
+            _000agosButton.OnClick += (e) => { if (e.MouseButton == 1) { Settings.toggleGUI(); } else { toggleGUI(false); } };
+            using000Toolbar = true;
+
+        }
+
+        private void remove000ToolbarButton()
+        {
+            Logger.Log("Removing 000Toolbar button");
+            _000agosButton.Destroy();
+            _000agosButton = null;
+            using000Toolbar = false;
+        }
+
         private void setupToolbarButton()
         {
             if (!launcherButtonAdded)
@@ -291,7 +352,8 @@ namespace AGroupOnStage.Main
             {
                 EditorLogic.fetch.Unlock("AGOS_INPUT_LOCK");
                 guiVisible = false;
-                agosButton.SetFalse(false);
+                if (!using000Toolbar)
+                    agosButton.SetFalse(false);
                 RenderingManager.RemoveFromPostDrawQueue(AGOS_GUI_WINDOW_ID, OnDraw);
                 Settings.set("wPosX", _windowPos.x);
                 Settings.set("wPosY", _windowPos.y);
@@ -311,7 +373,8 @@ namespace AGroupOnStage.Main
                 if (Settings.get<bool>("LockInputsOnGUIOpen"))
                     EditorLogic.fetch.Lock(true, true, true, "AGOS_INPUT_LOCK");
                 guiVisible = true;
-                agosButton.SetTrue(false);
+                if (!using000Toolbar)
+                    agosButton.SetTrue(false);
                 _windowPos.x = Settings.get<float>("wPosX");
                 _windowPos.y = Settings.get<float>("wPosY");
                 RenderingManager.AddToPostDrawQueue(AGOS_GUI_WINDOW_ID, OnDraw);
@@ -380,12 +443,68 @@ namespace AGroupOnStage.Main
                 GUILayout.Label("Separate multiple by a comma (,)", _labelStyle);
             }
             GUILayout.Space(4);
-            if (actionGroupSettings[actionGroupList.First(a => a.Value.Contains("Throttle")).Key])
+            if (actionGroupSettings[actionGroupList.First(a => a.Value.Contains("Throttle")).Key] || actionGroupSettings[actionGroupList.First(a => a.Value.Contains("Time-delayed")).Key])
             {
-                GUILayout.Label("Throttle control:", _labelStyle);
+                bool isThrottle = actionGroupSettings[actionGroupList.First(a => a.Value.Contains("Throttle")).Key];
+                
+                GUILayout.Label((isThrottle ? "Throttle control:" : "Time delay"), _labelStyle);
                 GUILayout.BeginHorizontal(GUILayout.Width(240f));
-                throttleLevel = GUILayout.HorizontalSlider(throttleLevel, 0f, 1f, _sliderSliderStyle, _sliderThumbStyle);
-                GUILayout.Label(String.Format("{0:P0}", throttleLevel), _labelStyle);
+                if (isThrottle)
+                {
+                    throttleLevel = GUILayout.HorizontalSlider(throttleLevel, 0f, 1f, _sliderSliderStyle, _sliderThumbStyle);
+                    GUILayout.Label(String.Format("{0:P0}", throttleLevel), _labelStyle);
+                }
+                else
+                {
+                    GUILayout.BeginVertical();
+                    GUILayout.BeginHorizontal();
+
+                    timerDelay = GUILayout.HorizontalSlider(timerDelay, 1f, 10f, _sliderSliderStyle, _sliderThumbStyle);
+                    GUILayout.Label(String.Format("Delay: {0:N0}s", timerDelay), _labelStyle);
+
+                    GUILayout.EndHorizontal();
+ 
+
+                    if (useAGXConfig && !isThrottle)
+                    {
+                        useAGXGroup = GUILayout.Toggle(useAGXGroup, "Fire an AGX group", _toggleStyle);
+                    }
+
+                    if (useAGXGroup)
+                    {
+
+                        GUILayout.BeginVertical();
+                        GUILayout.Label("Enter which AGX group to fire:", _labelStyle);
+                        manualGroup = GUILayout.TextField(manualGroup, _textFieldStyle);
+
+                        if (manualGroup.toInt32() < 1 && manualGroup != "")
+                            manualGroup = "1";
+                        else if (manualGroup.toInt32() > 250)
+                            manualGroup = "250";
+
+                        string groupLabel = "INVALID";
+                        if (manualGroup.isInt32())
+                            groupLabel = manualGroup.toInt32() + (AGXInterface.getAGXGroupDesc(manualGroup.toInt32()) != null ? " [" + AGXInterface.getAGXGroupDesc(manualGroup.toInt32()) + "]" : "");
+
+                        GUILayout.Label(String.Format("Group: {0}", groupLabel), _labelStyle);
+                        GUILayout.EndVertical();
+
+                    }
+                    else {
+                        
+                        int[] groupBoundries = getMinMaxGroupIds();
+                        float max = (useAGXConfig ? 7f : Convert.ToSingle(groupBoundries[1] - 1f));
+
+                        delayedGroup = Convert.ToInt32(GUILayout.HorizontalSlider(Convert.ToSingle(delayedGroup), 2f, max, _sliderSliderStyle, _sliderThumbStyle));
+                        GUILayout.Label(String.Format("Group: {0}", actionGroupList[delayedGroup]), _labelStyle);
+
+                    }
+
+                    GUILayout.EndVertical();
+
+
+
+                }
                 GUILayout.EndHorizontal();
                 GUILayout.Space(4);
             }
@@ -427,11 +546,16 @@ namespace AGroupOnStage.Main
 
                 GUILayout.BeginHorizontal();
                 string groupName;
-                if (useAGXConfig && ag.Group >= 8)
-                    groupName = ag.Group - 7 + (AGX.AGXInterface.getAGXGroupDesc(ag.Group - 7) != null ? ": " + AGX.AGXInterface.getAGXGroupDesc(ag.Group - 7) : "");
+                string groupDescription = "";
+                if (ag.GetType() == typeof(TimeDelayedActionGroup))
+                    groupName = String.Format("Fire group '{0}' after {1}s", (useAGXConfig && ag.fireGroupID >= 8 ? ""+(ag.fireGroupID - 7) : actionGroupList[ag.fireGroupID]), String.Format("{0:N0}", ag.timerDelay));
+                else if (useAGXConfig && ag.Group >= 8)
+                    groupName = ag.Group - 7 + (AGXInterface.getAGXGroupDesc(ag.Group - 7) != null ? ": " + AGXInterface.getAGXGroupDesc(ag.Group - 7) : "");
                 else
                     groupName = actionGroupList[ag.Group];
-                GUILayout.Label(groupName + (ag.GetType() == typeof(ThrottleControlActionGroup) ? String.Format(" ({0:P0})", ag.ThrottleLevel) : ""), _labelStyle, GUILayout.MinWidth(150f));
+                if (ag.GetType() == typeof(ThrottleControlActionGroup))
+                    groupDescription = String.Format(" ({0:P0})", ag.ThrottleLevel);
+                GUILayout.Label(groupName+(groupDescription.Length > 0 ? " "+groupDescription : ""), _labelStyle, GUILayout.MinWidth(150f));
 
                 GUIStyle __labelStyle = _labelStyle;
                 // TODO: Make this work properly :c
@@ -447,6 +571,8 @@ namespace AGroupOnStage.Main
                         linkPart = null;
                     actionGroupSettings[ag.Group] = true;
                     throttleLevel = ag.ThrottleLevel;
+                    delayedGroup = ag.fireGroupID;
+                    timerDelay = ag.timerDelay;
                     if (ag.linkedPart != null)
                     {
                         linkPart = ag.linkedPart;
@@ -498,7 +624,8 @@ namespace AGroupOnStage.Main
                     CAMERA_CHASE = -5,
                     CAMERA_FREE = -6,
                     LOCK_STAGING = -7,
-                    CAMERA_LOCKED = -8
+                    CAMERA_LOCKED = -8,
+                    TIMED_ACTION_GROUP = -9
                     */
 
                     IActionGroup ag;
@@ -519,6 +646,12 @@ namespace AGroupOnStage.Main
                     else if (x == -7)
                     {
                         ag = new StageLockActionGroup();
+                    }
+                    else if (x == -9)
+                    {
+                        ag = new TimeDelayedActionGroup();
+                        ag.timerDelay = Convert.ToInt32(Math.Floor(timerDelay));
+                        ag.fireGroupID = delayedGroup;
                     }
                     else
                     {
@@ -547,7 +680,21 @@ namespace AGroupOnStage.Main
                         ag.Stages = stages;
                     }
 
-                    ag.Group = x;
+                    if (useAGXGroup)
+                    {
+                        if (!manualGroup.isInt32())
+                        {
+                            Logger.LogWarning("Action group was configured to use an AGX group ID, but provided ID ('{0}') was invalid. Skipping.", manualGroup);
+                            continue;
+                        }
+
+                        ag.Group = manualGroup.toInt32();
+
+                    }
+                    else 
+                    {
+                        ag.Group = x;
+                    }
 
                     Logger.Log("\t{0}", ag.ToString());
                     actionGroups.Add(ag);
@@ -556,7 +703,10 @@ namespace AGroupOnStage.Main
                 }
             }
             throttleLevel = 0f;
+            delayedGroup = 2;
+            timerDelay = 1f;
             stageList = "";
+            manualGroup = "";
             //linkPart = null; // 2.0-dev5/2.0-rel: No longer clear part link when commiting groups
         }
 
@@ -755,13 +905,16 @@ namespace AGroupOnStage.Main
             GUILayout.BeginHorizontal(GUILayout.Width(250f));
             if (GUILayout.Button("Issues Page"))
                 Application.OpenURL("https://github.com/iPeer/AGroupOnStage/issues");
-            if (GUILayout.Button("Okay, okay, I get it!"))
+            if (GUILayout.Button("Do not anger dragons. Got it."))
             {
-                Settings.set("HereBeDragons", false);
-                Settings.save();
+                //Settings.set("HereBeDragons", false);
+                //Settings.save();
                 RenderingManager.RemoveFromPostDrawQueue(AGOS_GUI_WINDOW_ID - 1, OnDraw_Dragons);
             }
 
+            GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("You can stop this GUI popping up in AGOS' settings!");
             GUILayout.EndHorizontal();
             GUI.DragWindow();
         }

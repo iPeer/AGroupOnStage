@@ -15,5 +15,7 @@ namespace AGroupOnStage.ActionGroups
         public Part linkedPart { get; set; }
         public bool isPartLocked { get; set; }
         public string partRef { get; set; }
+        public int timerDelay { get; set; }
+        public int fireGroupID { get; set; }
     }
 }

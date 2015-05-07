@@ -5,7 +5,7 @@ using System.Text;
 
 namespace AGroupOnStage.ActionGroups
 {
-    class CameraControlActionGroup : IActionGroup
+    class TimeDelayedActionGroup : IActionGroup
     {
         public Vessel Vessel { get; set; }
         public int[] Stages { get; set; }

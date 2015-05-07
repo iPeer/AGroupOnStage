@@ -76,6 +76,13 @@ namespace AGroupOnStage.Main
                         node_n.AddValue("changesThrottle", true);
                         node_n.AddValue("throttleLevel", ag.ThrottleLevel.ToString());
                     }
+                    if (ag.GetType() == typeof(TimeDelayedActionGroup))
+                    {
+                        node_n.AddValue("firesDelayed", true);
+                        node_n.AddValue("delay", ag.timerDelay);
+                        node_n.AddValue("firesGroupID", ag.fireGroupID);
+                    }
+
                     if (ag.GetType() == typeof(CameraControlActionGroup))
                     {
                         node_n.AddValue("changesCamera", true);
@@ -129,6 +136,8 @@ namespace AGroupOnStage.Main
                         ag = new StageLockActionGroup();
                     else if (groupType.Equals("ThrottleControlActionGroup"))
                         ag = new ThrottleControlActionGroup();
+                    else if (groupType.Equals("TimeDelayedActionGroup"))
+                        ag = new TimeDelayedActionGroup();
                     else
                         ag = new BasicActionGroup();
 
@@ -157,6 +166,7 @@ namespace AGroupOnStage.Main
                     //bool locksStaging = (id.HasNode("locksStaging") ? Convert.ToBoolean(id.GetValue("locksStaging")) : false);
                     bool changesCamera = (id.HasValue("changesCamera") ? Convert.ToBoolean(id.GetValue("changesCamera")) : false);
                     bool isThrottleControl = (id.HasValue("changesThrottle") ? Convert.ToBoolean(id.GetValue("changesThrottle")) : false);
+                    bool isDelayedGroup = id.HasValue("firesDelayed");
                     float throttleLevel = (isThrottleControl ? Convert.ToSingle(id.GetValue("throttleLevel"), System.Globalization.CultureInfo.InvariantCulture) : 0f);
 
                     // Throttle sanity checks
@@ -189,6 +199,12 @@ namespace AGroupOnStage.Main
                     {
                         int[] stageList = id.GetValue("stages").Split(',').Select(a => int.Parse(a)).ToArray();
                         ag.Stages = stageList;
+                    }
+
+                    if (isDelayedGroup)
+                    {
+                        ag.timerDelay = Convert.ToInt32(id.GetValue("delay"));
+                        ag.fireGroupID = Convert.ToInt32(id.GetValue("firesGroupID"));
                     }
 
                     if (changesCamera)

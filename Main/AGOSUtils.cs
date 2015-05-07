@@ -123,6 +123,8 @@ namespace AGroupOnStage.Main
                 return (node.HasValue("locksStaging") && Convert.ToBoolean(node.GetValue("locksStaging")));
             else if (groupType.Equals(typeof(CameraControlActionGroup).Name))
                 return (node.HasValue("changesCamera") && node.HasValue("cameraMode"));
+            else if (groupType.Equals(typeof(TimeDelayedActionGroup)) && Convert.ToBoolean(node.GetValue("firesDelayed")))
+                return (node.HasValue("delay") && node.HasValue("firesGroupID"));
             else
                 return true;
         }
