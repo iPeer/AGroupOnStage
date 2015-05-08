@@ -24,6 +24,7 @@ namespace AGroupOnStage.AGX
 
         }
 
+        [Obsolete("Deprecated, use getAGXGroupName() instead", true)]
         public static string getAGXGroupDesc(int group)
         {
             Type calledType;
@@ -37,6 +38,12 @@ namespace AGroupOnStage.AGX
 
             if (agxNames.Count == 0 || !agxNames.ContainsKey(group) || agxNames[group] == "") { return null; }
             return agxNames[group];
+        }
+
+        public static string getAGXGroupName(int group)
+        {
+            Type calledType = Type.GetType("ActionGroupsExtended.AGXExternal, AGExt");
+            return (string)calledType.InvokeMember("AGXGroupNameSingle", BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Static, null, null, new System.Object[] { group });
         }
 
         public static void AGExtToggleGroup(int group)

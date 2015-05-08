@@ -418,7 +418,7 @@ namespace AGroupOnStage.Main
                 if ((x == 0 || x == 1 || x == -7) || !AGOSUtils.techLevelEnoughForGroup(x)) { continue; } // "None", "Stage" and "Lock Staging" action groups
                 if (useAGXConfig && x >= 8)
                 {
-                    string groupName = (x - 7 < 0 ? actionGroupList[x] : x - 7 + (AGX.AGXInterface.getAGXGroupDesc(x - 7) != null ? ": " + AGX.AGXInterface.getAGXGroupDesc(x - 7) : ""));
+                    string groupName = (x - 7 < 0 ? actionGroupList[x] : x - 7 + (AGXInterface.getAGXGroupName(x - 7) != "" ? ": " + AGXInterface.getAGXGroupName(x - 7) : ""));
                     actionGroupSettings[x] = GUILayout.Toggle(actionGroupSettings.ContainsKey(x) ? actionGroupSettings[x] : false, groupName, _buttonStyle);
                 }
                 else
@@ -484,7 +484,7 @@ namespace AGroupOnStage.Main
 
                         string groupLabel = "INVALID";
                         if (manualGroup.isInt32())
-                            groupLabel = manualGroup.toInt32() + (AGXInterface.getAGXGroupDesc(manualGroup.toInt32()) != null ? " [" + AGXInterface.getAGXGroupDesc(manualGroup.toInt32()) + "]" : "");
+                            groupLabel = manualGroup.toInt32() + (AGXInterface.getAGXGroupName(manualGroup.toInt32()) != "" ? " [" + AGXInterface.getAGXGroupName(manualGroup.toInt32()) + "]" : "");
 
                         GUILayout.Label(String.Format("Group: {0}", groupLabel), _labelStyle);
                         GUILayout.EndVertical();
@@ -550,7 +550,7 @@ namespace AGroupOnStage.Main
                 if (ag.GetType() == typeof(TimeDelayedActionGroup))
                     groupName = String.Format("Fire group '{0}' after {1}s", (useAGXConfig && ag.fireGroupID >= 8 ? ""+(ag.fireGroupID - 7) : actionGroupList[ag.fireGroupID]), String.Format("{0:N0}", ag.timerDelay));
                 else if (useAGXConfig && ag.Group >= 8)
-                    groupName = ag.Group - 7 + (AGXInterface.getAGXGroupDesc(ag.Group - 7) != null ? ": " + AGXInterface.getAGXGroupDesc(ag.Group - 7) : "");
+                    groupName = ag.Group - 7 + (AGXInterface.getAGXGroupName(ag.Group - 7) != "" ? ": " + AGXInterface.getAGXGroupName(ag.Group - 7) : "");
                 else
                     groupName = actionGroupList[ag.Group];
                 if (ag.GetType() == typeof(ThrottleControlActionGroup))
