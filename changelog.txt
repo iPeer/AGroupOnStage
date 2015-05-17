@@ -1,3 +1,11 @@
+17/05/15, v2.0.8:
+	* Added support for Blizzy's toolbar
+	* Added a new action group that can be told to fire after so many seconds.
+	* Updated AGX intergration to use new external methods for getting group names.
+	* Fixed an issue that could cause AGOS' input locks to persist through scene changes
+	* Vastly improved AGOS' vessel switching logic. Action group configs should now display correctly when switching vessels.
+	* Improved how AGOS handles action group duplication on flight reverts. There should be *no* circumstances in which this happens now.
+
 06/05/2015, v2.0.7:
 	* Art pass on toolbar button
 	* Fixed a couple of things that relied on statements that would never fire.

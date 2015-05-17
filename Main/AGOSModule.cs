@@ -126,9 +126,6 @@ namespace AGroupOnStage.Main
                 }
             }
 
-
-            Logger.Log("GROUP FLIGHTID: {0}/{1}", this.flightID, this.tempFlightID);
-
             //AGOSUtils.resetActionGroupConfig(); // Clear the list and reset all settings if neccessary
 
             ConfigNode node_agos = node.GetNode("AGOS");
