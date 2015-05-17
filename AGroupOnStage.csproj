@@ -124,7 +124,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="000Toolbar\ToolbarWrapper.cs" />
-    <Compile Include="ActionGroups\ActionGroupDuplicateComparer.cs" />
+    <Compile Include="ActionGroups\ActionGroupFlightState.cs" />
     <Compile Include="ActionGroups\BasicActionGroup.cs" />
     <Compile Include="ActionGroups\StageLockActionGroup.cs" />
     <Compile Include="ActionGroups\IActionGroup.cs" />
@@ -135,7 +135,7 @@
     <Compile Include="Extensions\IntegerExtensions.cs" />
     <Compile Include="Extensions\RandomExtensions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
-    <Compile Include="Main\ActionGroupDuplicateFinder.cs" />
+    <Compile Include="Main\AGOSDebug.cs" />
     <Compile Include="Main\AGOSEditor.cs" />
     <Compile Include="Main\AGOSFlight.cs" />
     <Compile Include="Main\AGOSGroupManager.cs" />

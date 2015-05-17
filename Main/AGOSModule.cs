@@ -43,14 +43,17 @@ namespace AGroupOnStage.Main
 
             node.AddValue("isRoot", isRoot);
             if (!this.isRoot) { return; } // Only the root module can save
-            //node.AddValue("flightID", this.flightID);
-            if (AGOSMain.Instance.actionGroups.Count > 0)
+            //AGOSDebug.printAllActionGroups();
+            node.AddValue("flightID", this.flightID);
+            List<IActionGroup> groupsToSave = new List<IActionGroup>();
+            groupsToSave.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.FlightID == this.flightID));
+            if (groupsToSave.Count > 0)
             {
-                Logger.Log("{0} groups to save", AGOSMain.Instance.actionGroups.Count);
+                Logger.Log("{0} groups to save", groupsToSave.Count);
                 node.AddNode("AGOS");
                 ConfigNode node_agos = node.GetNode("AGOS");
                 node_agos.AddNode("GROUPS");
-                foreach (IActionGroup ag in AGOSMain.Instance.actionGroups)
+                foreach (IActionGroup ag in groupsToSave)
                 {
                     ConfigNode node_group = node_agos.GetNode("GROUPS");
                     Logger.Log("Saving group config: {0}", AGOSUtils.getActionGroupInfo(ag));
@@ -114,7 +117,7 @@ namespace AGroupOnStage.Main
             }
             if (HighLogic.LoadedSceneIsFlight)
             {
-                if (node.HasValue("flightID"))
+                if (node.HasValue("flightID") && Convert.ToUInt32(node.GetValue("flightID")) != 0)
                     this.flightID = Convert.ToUInt32(node.GetValue("flightID"));
                 else
                 {
@@ -122,6 +125,9 @@ namespace AGroupOnStage.Main
                     this.tempFlightID = Math.Abs(this.GetHashCode());
                 }
             }
+
+
+            Logger.Log("GROUP FLIGHTID: {0}/{1}", this.flightID, this.tempFlightID);
 
             //AGOSUtils.resetActionGroupConfig(); // Clear the list and reset all settings if neccessary
 
@@ -263,7 +269,7 @@ namespace AGroupOnStage.Main
         {
 
             this.flightID = id;
-            Logger.Log("Set flightID to '{0}' from external update", id);
+            Logger.Log("Processing flightID update from external source ({0})", id);
             List<IActionGroup> groupsToUpdate = new List<IActionGroup>();
             groupsToUpdate.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.FlightID == this.tempFlightID));
             foreach (IActionGroup b in groupsToUpdate)

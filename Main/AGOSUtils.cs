@@ -112,7 +112,7 @@ namespace AGroupOnStage.Main
 
         public static string getActionGroupInfo(IActionGroup ag)
         {
-            return String.Format("{0}, {1}, {2}, {3}, {4}, {5}, {6}", ag.Group.ToString(), (ag.Stages != null && ag.Stages.Length > 0 ? intArrayToString(ag.Stages, "|") : "none"), (ag.linkedPart != null ? ag.linkedPart.ToString() : "none"), ag.ThrottleLevel.ToString(), ag.cameraMode.ToString(), ag.isPartLocked, ag.partRef);
+            return String.Format("[{7}] {0}, {1}, {2}, {3}, {4}, {5}, {6}", ag.Group.ToString(), (ag.Stages != null && ag.Stages.Length > 0 ? intArrayToString(ag.Stages, "|") : "none"), (ag.linkedPart != null ? ag.linkedPart.ToString() : "none"), ag.ThrottleLevel.ToString(), ag.cameraMode.ToString(), ag.isPartLocked, ag.partRef, ag.FlightID);
         }
 
         public static void printActionGroupInfo(IActionGroup ag)

@@ -59,11 +59,11 @@ namespace AGroupOnStage.Main
             {
                 Logger.Log("Vessel changed");
                 onFlightReady();
-                if (lastVessel != null && isVesselInFlight())
+                /*if (lastVessel != null && isVesselInFlight())
                 {
                     Logger.Log("Player switched vessel; reverts are now invalid. Removing action group backups.");
                     AGOSMain.backupActionGroups.Clear();
-                }
+                }*/
                 this.lastVessel = data;
             }
         }
@@ -72,8 +72,9 @@ namespace AGroupOnStage.Main
         {
             Logger.Log("Vessel unpack");
             AGOSMain.Instance.removeDuplicateActionGroups();
+            //AGOSMain.Instance.removeInvalidActionGroups();
+            AGOSMain.Instance.getMasterAGOSModule(v).setFlightID(v.rootPart.flightID);
             AGOSMain.Instance.findHomesForPartLockedGroups(v);
-            //AGOSMain.Instance.getMasterAGOSModule(FlightGlobals.fetch.activeVessel).setFlightID(AGOSUtils.getFlightID());
         }
 
         private void onFlightReady()
@@ -81,14 +82,20 @@ namespace AGroupOnStage.Main
             Logger.Log("Flight ready");
             //AGOSMain.Instance.restoreBackedUpActionGroups();
             AGOSMain.Instance.removeDuplicateActionGroups();
-            AGOSMain.Instance.findHomesForPartLockedGroups(FlightGlobals.fetch.activeVessel);
+            //AGOSMain.Instance.removeInvalidActionGroups();
             AGOSMain.Instance.getMasterAGOSModule(FlightGlobals.fetch.activeVessel).setFlightID(AGOSUtils.getFlightID());
+            AGOSMain.Instance.findHomesForPartLockedGroups(FlightGlobals.fetch.activeVessel);
+            //AGOSDebug.printAllActionGroups();
+
             //AGOSMain.Instance.backupActionGroupList();
         }
 
         private void onVesselLoaded(Vessel data)
         {
+            AGOSMain.Instance.removeDuplicateActionGroups();
+            AGOSMain.Instance.getMasterAGOSModule(data).setFlightID(data.rootPart.flightID);
             AGOSMain.Instance.findHomesForPartLockedGroups(data);
+            //AGOSDebug.printAllActionGroups();
         }
 
         private void onStageActivate(int stage)

@@ -26,7 +26,6 @@ namespace AGroupOnStage.Main
         public bool using000Toolbar = false;
         public bool launcherButtonAdded = false;
         public List<IActionGroup> actionGroups = new List<IActionGroup>();
-        public static List<IActionGroup> backupActionGroups = new List<IActionGroup>();
         public Dictionary<int, string> actionGroupList = new Dictionary<int, string>();
         public Dictionary<int, bool> actionGroupSettings = new Dictionary<int, bool>();
         public Dictionary<int, KSPActionGroup> stockAGMap;
@@ -137,7 +136,7 @@ namespace AGroupOnStage.Main
             GameEvents.onVesselChange.Add(onVesselLoaded);
             GameEvents.onGameSceneLoadRequested.Add(onSceneLoadRequested);
             GameEvents.onGUIApplicationLauncherReady.Add(OnGUIApplicationLauncherReady);
-            GameEvents.onLevelWasLoaded.Add(onLevelWasLoaded);
+            //GameEvents.onLevelWasLoaded.Add(onLevelWasLoaded); // 2.0.8-dev2: No longer needed.
             GameEvents.onEditorUndo.Add(OnEditorUndo);
             GameEvents.onEditorRedo.Add(OnEditorUndo);
             GameEvents.onShowUI.Add(onShowUI);
@@ -251,14 +250,14 @@ namespace AGroupOnStage.Main
             setupToolbarButton();
         }
 
-        public void backupActionGroupList()
+        /*public void backupActionGroupList()
         {
             if (this.actionGroups.Count == 0)
                 return;
             foreach (IActionGroup a in this.actionGroups)
                 backupActionGroups.Add(a);
             Logger.Log("Backed up {0} group(s)", backupActionGroups.Count);
-        }
+        }*/
 
         public void removeDuplicateActionGroups()
         {
@@ -273,13 +272,22 @@ namespace AGroupOnStage.Main
             this.actionGroups = new List<IActionGroup>(newList);
         }
 
-        [Obsolete("Use removeDuplicateActionGroups instead", true)]
+        public void removeInvalidActionGroups()
+        {
+            int start = this.actionGroups.Count;
+            List<IActionGroup> newList = new List<IActionGroup>(this.actionGroups.RemoveAll(a => a.FlightID == 0));
+            int end = newList.Count;
+            Logger.Log("Removed {0} invalid action groups", (start - end));
+            this.actionGroups = new List<IActionGroup>(newList);
+        }
+
+        /*[Obsolete("Use removeDuplicateActionGroups instead", true)]
         public void restoreBackedUpActionGroups()
         {
             restoreBackedUpActionGroups(false);
-        }
+        }*/
 
-        [Obsolete("Use removeDuplicateActionGroups instead", true)]
+        /*[Obsolete("Use removeDuplicateActionGroups instead", true)]
         public void restoreBackedUpActionGroups(bool clear)
         {
             if (backupActionGroups != null && backupActionGroups.Count > 0)
@@ -296,7 +304,7 @@ namespace AGroupOnStage.Main
                 if (clear)
                     backupActionGroups.Clear();
             }
-        }
+        }*/
 
         private void loadActionGroups()
         {
@@ -948,8 +956,10 @@ namespace AGroupOnStage.Main
                 if (AGOSUtils.getVesselPartsList().Count > 0)
                 {
                     //AGOSMain.Instance.restoreBackedUpActionGroups(false); // 2.0.6-dev1: Changed to false to prevent duping if player reverts multiple times (-> launch [-> launch [-> ...]] -> editor)
-                    AGOSMain.Instance.removeDuplicateActionGroups(); // 2.0.8-dev2 : Updated code for removal of duplicated action groups
+                    AGOSMain.Instance.removeDuplicateActionGroups(); // 2.0.8-dev2: Updated code for removal of duplicated action groups
+                    //AGOSMain.Instance.removeInvalidActionGroups(); // 2.0.8-dev2: Fix for invalid (0 flightID) groups from pulluting nearby vessels
                     AGOSMain.Instance.findHomesForPartLockedGroups(AGOSUtils.getVesselPartsList());
+                    //AGOSDebug.printAllActionGroups();
                 }
             }
         }
@@ -988,11 +998,18 @@ namespace AGroupOnStage.Main
 
         private void onLevelWasLoaded(GameScenes level)
         {
-            if (HighLogic.LoadedScene == GameScenes.SPACECENTER && backupActionGroups.Count > 0)
+
+            /*if (HighLogic.LoadedSceneIsFlight && revertState != null && possibleRevertDetected)
             {
-                Logger.Log("Player has left to the Space Centre, clearing AG config backups.");
-                backupActionGroups.Clear();
-            }
+                if (FlightGlobals.ActiveVessel.Equals(revertState.Vessel) && FlightGlobals.ActiveVessel.situation == Vessel.Situations.PRELAUNCH)
+                {
+
+                    Logger.Log("A flight revert has been detected, resetting action group list to that of the revertState");
+                    this.actionGroups = new List<IActionGroup>(revertState.Groups);
+                    revertState = null;
+
+                }
+            }*/
 
         }
 
