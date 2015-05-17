@@ -35,10 +35,17 @@ namespace AGroupOnStage.Main
         public bool EditorEventsRegistered { get; set; }
         public static readonly int AGOS_GUI_WINDOW_ID = 03022007;
         //                                              ^ pointless 0 is pointless
+        public static readonly int AGOS_DRAGONS_GUI_WINDOW_ID = 13022007;
+        public static readonly int AGOS_SETTINGS_GUI_WINDOW_ID = 23022007;
+        public static readonly int AGOS_SETTINGS_CONFIRM_GUI_WINDOW_ID = 33022007;
+        public static readonly int AGOS_SETTINGS_ERROR_GUI_WINDOW_ID = 43022007;
+
         public bool hasSetupStyles = false;
         public ApplicationLauncherButton agosButton = null;
         public IButton _000agosButton = null;
         public bool isGameGUIHidden = false;
+        public static readonly List<string> agosKerbalNames = new List<string>() { "iPeer", "Roxy", "Shimmy" }; // You have to be super awesome to make it into this list
+
 
         #endregion
 
@@ -122,6 +129,10 @@ namespace AGroupOnStage.Main
             Logger.Log("Loading AGOS' settings");
             Settings.load();
             Logger.Log("AGOS' Settings loaded");
+
+            /*if (Settings.get<bool>("AddAGOSKerbals"))
+                addAGOSKerbals();*/
+
             //GameEvents.onGUIApplicationLauncherReady.Add(OnGUIApplicationLauncherReady);
             GameEvents.onVesselChange.Add(onVesselLoaded);
             GameEvents.onGameSceneLoadRequested.Add(onSceneLoadRequested);
@@ -139,6 +150,79 @@ namespace AGroupOnStage.Main
 #endif
             sw.Stop();
             Logger.Log("AGOS initalised in {0}s", sw.Elapsed.TotalSeconds);
+        }
+
+        public void addAGOSKerbals()
+        {
+            Logger.Log("Trying to add AGOS-related Kerbals to roster");
+            KerbalRoster roster = HighLogic.CurrentGame.CrewRoster;
+            //List<ProtoCrewMember> kerbals = new List<ProtoCrewMember>();
+            foreach (string s in agosKerbalNames)
+            {
+                string kName = s + " Kerman";
+                bool kerbalsPresent = roster.Crew.Count(i => i.name.Equals(kName)) > 0;
+                if (kerbalsPresent)
+                {
+                    Logger.LogWarning("{0} has already been signed up (harmless)", kName);
+                    continue;
+                }
+
+                /*
+                 * I don't want to force people to use these Kerbals, so I make them applicants. 
+                 * Though to be fair, you could just fire them...
+                 * 
+                 * Then again, it stops me having to comply with Career's crew limits :3
+                 */
+
+                /*
+                 * 
+                 * I was going to add kerbals to AGOS, but apparently you can only add them as Crew for some reason, so I'm putting that on hold.
+                 * 
+                 */
+
+                ProtoCrewMember kerbal = roster.GetNewKerbal(/*ProtoCrewMember.KerbalType.Applicant*/);
+                kerbal.name = kName;
+                // Pointless code below! Just leave it to the game to do it!
+                //kerbal.isBadass = (new System.Random()).NextBoolOneIn(10); // 10%
+                kerbal.gender = (kName.StartsWith("Roxy") ? ProtoCrewMember.Gender.Female : ProtoCrewMember.Gender.Male);
+
+                //kerbal.type = ProtoCrewMember.KerbalType.Applicant;
+                kerbal.rosterStatus = ProtoCrewMember.RosterStatus.Available;
+
+                KerbalRoster.SetExperienceTrait(kerbal);
+
+                if (HighLogic.CurrentGame.Mode != Game.Modes.CAREER)
+                {
+                    kerbal.experienceLevel = 5;
+                    kerbal.experience = 1337;
+
+                }
+                roster.Update(Planetarium.fetch.time + 1d);
+                //kerbals.Add(kerbal);
+                Logger.Log("{0} has been voluntold that they're going to be a Kerbonaut (they're thrilled)!", kName);
+            }
+
+        }
+
+        public Dictionary<string, ProtoCrewMember.RosterStatus> removeAGOSKerbals()
+        {
+            Dictionary<string, ProtoCrewMember.RosterStatus> ret = new Dictionary<string, ProtoCrewMember.RosterStatus>();
+            foreach (string s in agosKerbalNames)
+            {
+                string name = s + " Kerman";
+                KerbalRoster r = HighLogic.CurrentGame.CrewRoster;
+                ProtoCrewMember c = r.Crew.First(k => k.name.Equals(name));
+                if (c == null) 
+                    continue;
+                if (c.rosterStatus == ProtoCrewMember.RosterStatus.Available)
+                {
+                    Logger.Log(name + " has been told they will not go to space today (or tomorrow, or ever) :(");
+                    r.Remove(c);
+                }
+                else
+                    ret.Add(name, c.rosterStatus);
+            }
+            return ret;
         }
 
         public void addToolbarButton()
@@ -169,25 +253,46 @@ namespace AGroupOnStage.Main
 
         public void backupActionGroupList()
         {
+            if (this.actionGroups.Count == 0)
+                return;
             foreach (IActionGroup a in this.actionGroups)
                 backupActionGroups.Add(a);
             Logger.Log("Backed up {0} group(s)", backupActionGroups.Count);
         }
 
+        public void removeDuplicateActionGroups()
+        {
+            int start = this.actionGroups.Count;
+            if (start < 2) // Don't bother if it's impossible for there to be duplicates
+                return;
+            List<IActionGroup> newList = this.actionGroups.GroupBy(o => 
+                new { o.cameraMode, o.fireGroupID, o.FlightID, o.Group, o.isPartLocked, o.linkedPart, o.partRef, o.StagesAsString, o.ThrottleLevel, o.timerDelay, o.Vessel }
+                ).Select(n => n.First()).ToList<IActionGroup>();
+            int end = newList.Count;
+            Logger.Log("Removed {0} duplicate action groups(s)", (start - end));
+            this.actionGroups = new List<IActionGroup>(newList);
+        }
+
+        [Obsolete("Use removeDuplicateActionGroups instead", true)]
         public void restoreBackedUpActionGroups()
         {
             restoreBackedUpActionGroups(false);
         }
 
+        [Obsolete("Use removeDuplicateActionGroups instead", true)]
         public void restoreBackedUpActionGroups(bool clear)
         {
             if (backupActionGroups != null && backupActionGroups.Count > 0)
             {
-                Logger.Log("B:{0} / L:{1}", backupActionGroups.Count, this.actionGroups.Count);
-                this.actionGroups.Clear();
-                foreach (IActionGroup a in backupActionGroups)
+                int thisVesselsGroups = this.actionGroups.Count(a => a.FlightID == AGOSUtils.getFlightID());
+                Logger.Log("B:{0} / L:{1}", backupActionGroups.Count, thisVesselsGroups);
+                if (backupActionGroups.Count == this.actionGroups.Count)
+                    return;
+                this.actionGroups.RemoveAll(a => a.FlightID == AGOSUtils.getFlightID());
+                //this.actionGroups.Clear();
+                foreach (IActionGroup a in backupActionGroups.FindAll(a => a.FlightID == AGOSUtils.getFlightID()))
                     this.actionGroups.Add(a);
-                Logger.Log("Restored {0} group(s)", backupActionGroups.Count);
+                Logger.Log("Restored {0} group(s)", backupActionGroups.Count(a => a.FlightID == AGOSUtils.getFlightID()));
                 if (clear)
                     backupActionGroups.Clear();
             }
@@ -273,7 +378,7 @@ namespace AGroupOnStage.Main
             _000agosButton = ToolbarManager.Instance.add("AGOS", "AGroupOnStage");
             string _texture = "iPeer/AGroupOnStage/Textures/Toolbar000";
             System.Random r = new System.Random();
-            if (r.Next(5) == 0 && Settings.get<bool>("AllowEE")) // 2.0.7-dev1: This would never be true at its previous value (5) (C# Random is *weird*)
+            if (r.NextBoolOneIn(5) && Settings.get<bool>("AllowEE")) // 2.0.7-dev1: This would never be true at its previous value (5) (C# Random is *weird*)
             {
                 Logger.Log("Are you hungry?");
                 _texture = "iPeer/AGroupOnStage/Textures/Toolbar_alt000";
@@ -298,7 +403,7 @@ namespace AGroupOnStage.Main
             {
                 string _texture = "iPeer/AGroupOnStage/Textures/Toolbar";
                 System.Random r = new System.Random();
-                if (r.Next(5) == 0 && Settings.get<bool>("AllowEE")) // 2.0.7-dev1: This would never be true at its previous value (5) (C# Random is *weird*)
+                if (r.NextBoolOneIn(5) && Settings.get<bool>("AllowEE")) // 2.0.7-dev1: This would never be true at its previous value (5) (C# Random is *weird*)
                 {
                     Logger.Log("Are you hungry?");
                     _texture = "iPeer/AGroupOnStage/Textures/Toolbar_alt";
@@ -311,8 +416,8 @@ namespace AGroupOnStage.Main
                     null,
                     null,
                     null,
-                    /*ApplicationLauncher.AppScenes.FLIGHT | ApplicationLauncher.AppScenes.MAPVIEW | ApplicationLauncher.AppScenes.VAB | ApplicationLauncher.AppScenes.SPH | ApplicationLauncher.AppScenes.SPACECENTER,*/
-                    ApplicationLauncher.AppScenes.ALWAYS,
+                    ApplicationLauncher.AppScenes.FLIGHT | ApplicationLauncher.AppScenes.MAPVIEW | ApplicationLauncher.AppScenes.VAB | ApplicationLauncher.AppScenes.SPH | ApplicationLauncher.AppScenes.SPACECENTER,
+                    //ApplicationLauncher.AppScenes.ALWAYS,
                     (Texture)GameDatabase.Instance.GetTexture(_texture, false)
                 );
                 launcherButtonAdded = true;
@@ -459,7 +564,7 @@ namespace AGroupOnStage.Main
                     GUILayout.BeginVertical();
                     GUILayout.BeginHorizontal();
 
-                    timerDelay = GUILayout.HorizontalSlider(timerDelay, 1f, 10f, _sliderSliderStyle, _sliderThumbStyle);
+                    timerDelay = GUILayout.HorizontalSlider(timerDelay, 1f, Settings.get<float>("MaxGroupTimeDelay"), _sliderSliderStyle, _sliderThumbStyle);
                     GUILayout.Label(String.Format("Delay: {0:N0}s", timerDelay), _labelStyle);
 
                     GUILayout.EndHorizontal();
@@ -477,10 +582,10 @@ namespace AGroupOnStage.Main
                         GUILayout.Label("Enter which AGX group to fire:", _labelStyle);
                         manualGroup = GUILayout.TextField(manualGroup, _textFieldStyle);
 
-                        if (manualGroup.toInt32() < 1 && manualGroup != "")
+                        /*if (manualGroup.toInt32() < 1 && manualGroup != "")
                             manualGroup = "1";
                         else if (manualGroup.toInt32() > 250)
-                            manualGroup = "250";
+                            manualGroup = "250";*/
 
                         string groupLabel = "INVALID";
                         if (manualGroup.isInt32())
@@ -521,7 +626,9 @@ namespace AGroupOnStage.Main
             GUILayout.BeginHorizontal();
             _scrollPosConfig = GUILayout.BeginScrollView(_scrollPosConfig, _scrollStyle);
 
-            IActionGroup[] groups = actionGroups.ToArray();
+            //IActionGroup[] groups = actionGroups.ToArray();
+            List<IActionGroup> groups = new List<IActionGroup>(); //                              2.0.8-dev2: Filter action groups to the current flightID only.
+            groups.AddRange(actionGroups.FindAll(g => g.FlightID == AGOSUtils.getFlightID())); // ^
 
             foreach (IActionGroup ag in groups)
             {
@@ -594,6 +701,12 @@ namespace AGroupOnStage.Main
 #if DEBUG
             if (GUILayout.Button("DEBUG: Dump groups", _buttonStyle))
                 AGOSGroupManager.dumpActionGroupConfig();
+
+            if (GUILayout.Button("DEBUG: Print flightID", _buttonStyle))
+                Logger.Log("FLIGHTID: {0}", AGOSUtils.getFlightID());
+
+            if (GUILayout.Button("DEBUG: REM DUP", _buttonStyle))
+                removeDuplicateActionGroups();
 #endif
             if (GUILayout.Button("Close", _buttonStyle))
                 toggleGUI();
@@ -695,6 +808,8 @@ namespace AGroupOnStage.Main
                     {
                         ag.Group = x;
                     }
+
+                    ag.FlightID = AGOSUtils.getFlightID();
 
                     Logger.Log("\t{0}", ag.ToString());
                     actionGroups.Add(ag);
@@ -832,7 +947,8 @@ namespace AGroupOnStage.Main
                 //Logger.Log("Revert");
                 if (AGOSUtils.getVesselPartsList().Count > 0)
                 {
-                    AGOSMain.Instance.restoreBackedUpActionGroups(false); // 2.0.6-dev1: Changed to false to prevent duping if player reverts multiple times (-> launch [-> launch [-> ...]] -> editor)
+                    //AGOSMain.Instance.restoreBackedUpActionGroups(false); // 2.0.6-dev1: Changed to false to prevent duping if player reverts multiple times (-> launch [-> launch [-> ...]] -> editor)
+                    AGOSMain.Instance.removeDuplicateActionGroups(); // 2.0.8-dev2 : Updated code for removal of duplicated action groups
                     AGOSMain.Instance.findHomesForPartLockedGroups(AGOSUtils.getVesselPartsList());
                 }
             }
@@ -848,15 +964,17 @@ namespace AGroupOnStage.Main
         private void onSceneLoadRequested(GameScenes scene)
         {
             Logger.Log("Scene change to '{0}' from '{1}' requested", scene.ToString(), HighLogic.LoadedScene.ToString());
+            if (this.guiVisible)
+                toggleGUI();
             if (Settings.guiVisible && !scene.ToString().Equals("SPACECENTER"))
                 Settings.toggleGUI();
             /*if (!FlightDriver.CanRevert)
                 Logger.Log("Player cannot revert, no group backup will be taken.");*/
-            if (HighLogic.LoadedSceneIsEditor/* && FlightDriver.CanRevert*/) // The crap I have to do to get reverting working...
+            /*if (HighLogic.LoadedSceneIsEditor) // No longer required as of 2.0.8-dev2
             {
                 backupActionGroups.Clear(); // 2.0.6-dev1 fix for yet another dupe (I hope)
                 backupActionGroupList();
-            }
+            }*/
             AGOSUtils.resetActionGroupConfig();
         }
 

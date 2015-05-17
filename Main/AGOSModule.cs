@@ -13,6 +13,8 @@ namespace AGroupOnStage.Main
     {
 
         private bool isRoot = false;
+        private uint flightID = 0;
+        private int tempFlightID = 0;
 
         [KSPEvent(active = true, guiActive = true, guiActiveEditor = true, guiName = "Action group control")]
         private void toggleGUI() { AGOSMain.Instance.linkPart = this.part; AGOSMain.Instance.toggleGUI(true); }
@@ -41,6 +43,7 @@ namespace AGroupOnStage.Main
 
             node.AddValue("isRoot", isRoot);
             if (!this.isRoot) { return; } // Only the root module can save
+            //node.AddValue("flightID", this.flightID);
             if (AGOSMain.Instance.actionGroups.Count > 0)
             {
                 Logger.Log("{0} groups to save", AGOSMain.Instance.actionGroups.Count);
@@ -93,7 +96,7 @@ namespace AGroupOnStage.Main
                 }
 
                 if (AGOSMain.Settings.get<bool>("LogNodeSaving"))
-                    Logger.Log("{0}", node_agos.ToString());
+                    Logger.Log("{0}", node.ToString());
 
             }
         }
@@ -108,6 +111,16 @@ namespace AGroupOnStage.Main
             {
                 Logger.Log("No config to load for this vessel.");
                 return;
+            }
+            if (HighLogic.LoadedSceneIsFlight)
+            {
+                if (node.HasValue("flightID"))
+                    this.flightID = Convert.ToUInt32(node.GetValue("flightID"));
+                else
+                {
+                    Logger.LogWarning("No flightID found for this config, assigning temp value.");
+                    this.tempFlightID = Math.Abs(this.GetHashCode());
+                }
             }
 
             //AGOSUtils.resetActionGroupConfig(); // Clear the list and reset all settings if neccessary
@@ -214,7 +227,8 @@ namespace AGroupOnStage.Main
                         ag.ThrottleLevel = throttleLevel;
 
                     ag.Group = groupID;
-                    ag.Vessel = this.part.vessel;
+                    ag.Vessel = this.vessel;
+                    ag.FlightID = (this.tempFlightID != 0 ? Convert.ToUInt32(this.tempFlightID) : flightID);
 
                     AGOSMain.Instance.actionGroups.Add(ag);
 
@@ -244,5 +258,19 @@ namespace AGroupOnStage.Main
         {
             return "Able to fire action groups on stage.";
         }
+
+        public void setFlightID(uint id)
+        {
+
+            this.flightID = id;
+            Logger.Log("Set flightID to '{0}' from external update", id);
+            List<IActionGroup> groupsToUpdate = new List<IActionGroup>();
+            groupsToUpdate.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.FlightID == this.tempFlightID));
+            foreach (IActionGroup b in groupsToUpdate)
+                b.FlightID = id;
+            Logger.Log("Updated {0} groups to new flightID", groupsToUpdate.Count);
+
+        }
+
     }
 }

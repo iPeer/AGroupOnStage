@@ -11,12 +11,13 @@ namespace AGroupOnStage.Main
     class AGOSEditor : MonoBehaviour
     {
 
-        private int UPDATE_LIST_AFTER = 150; // ~5 seconds, 30 = 1 sec
-        private int CURRENT_TICK_COUNT = 0;
+        public static AGOSEditor Instance { get; protected set; }
 
         public void Start()
         {
             Logger.Log("AGOS.Main.AGOSEditor.Start()");
+            if (Instance == null)
+                Instance = this;
             if (AGOSMain.Instance.EditorEventsRegistered)
                 Logger.LogWarning("GameEvents for Editor are already registered (harmless)");
             else
@@ -68,6 +69,12 @@ namespace AGroupOnStage.Main
             }*/
         }
 
+        /*public void updateFlightIDOnLoadComplete(AGOSModule m)
+        {
+            this.updateFlightID = true;
+            this.rootAM = m;
+        }*/
+
         /*private void onNewVesselCreated(Vessel data)
         {
             AGOSMain.Instance.actionGroups.Clear();
@@ -86,14 +93,9 @@ namespace AGroupOnStage.Main
         public void OnSave(ConfigNode c) { AGOSMain.Instance.OnSave(c); }
         public void OnLoad(ConfigNode c) { AGOSMain.Instance.OnLoad(c); }*/
 
-        public void OnUpdate()
+        /*public void OnUpdate()
         {
-            /*CURRENT_TICK_COUNT++;
-            if (CURRENT_TICK_COUNT >= UPDATE_LIST_AFTER)
-            {
-                CURRENT_TICK_COUNT = 0;
-                AGOSMain.Instance.updatePartLockedStages(true);
-            }*/
-        }
+
+        }*/
     }
 }

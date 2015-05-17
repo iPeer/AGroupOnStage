@@ -17,5 +17,13 @@ namespace AGroupOnStage.ActionGroups
         public string partRef { get; set; }
         public int timerDelay { get; set; }
         public int fireGroupID { get; set; }
+        public uint FlightID { get; set; }
+        public string StagesAsString
+        {
+            get
+            {
+                return AGroupOnStage.Main.AGOSUtils.intArrayToString(Stages);
+            }
+        }
     }
 }

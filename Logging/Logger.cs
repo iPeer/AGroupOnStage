@@ -15,6 +15,7 @@ namespace AGroupOnStage.Logging
         public static void LogWarning(String message, params object[] data) { Log(message, LogLevel.WARNING, data); }
         public static void Error(Exception e) { LogError(e); }
         public static void Log(Exception e) { LogError(e); }
+        public static void LogError(String message, params object[] data) { Log(message, LogLevel.ERROR, data); }
         public static void LogError(Exception e) { Log("{0}", LogLevel.ERROR, e.StackTrace); }
         public static void LogClassMethod(object o, MethodBase m) { Log("{0}.{1}", LogLevel.NORMAL, o.GetType().FullName, m.Name); }
         [System.Diagnostics.Conditional("DEBUG")]

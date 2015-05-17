@@ -1,5 +1,6 @@
 ﻿using AGroupOnStage.ActionGroups;
 using AGroupOnStage.Logging;
+using AGroupOnStage.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,9 +23,13 @@ namespace AGroupOnStage.Main
         //private List<Timer> groupTimers = new List<Timer>();
         private Dictionary<IActionGroup, DateTime> groupTimers = new Dictionary<IActionGroup, DateTime>();
 
+        public static AGOSFlight Instance { get; protected set; }
+
         public void Start()
         {
             Logger.Log("AGOS.Main.AGOSFlight.Start()");
+            if (Instance == null)
+                Instance = this;
             if (AGOSMain.Instance.FlightEventsRegistered)
                 Logger.LogWarning("GameEvents for Flight are already registered (harmless)");
             else
@@ -33,6 +38,7 @@ namespace AGroupOnStage.Main
                 //GameEvents.onStageSeparation.Add(onStageSeparation); // 2.0.6-dev1: Possible fix for AGs firing twice.
                 GameEvents.onFlightReady.Add(onFlightReady);
                 GameEvents.onVesselChange.Add(onVesselChange);
+                GameEvents.onVesselWillDestroy.Add(onVesselDestroy);
                 //GameEvents.onLevelWasLoaded.Add(onLevelWasLoaded);
                 //GameEvents.onVesselGoOffRails.Add(onVesselUnpack);
                 AGOSMain.Instance.FlightEventsRegistered = true;
@@ -42,11 +48,17 @@ namespace AGroupOnStage.Main
             //AGOSUtils.resetActionGroupConfig();
         }
 
+        private void onVesselDestroy(Vessel data)
+        {
+            Logger.Log("Vessel destroy");
+        }
+
         private void onVesselChange(Vessel data)
         {
             if (data != this.lastVessel)
             {
                 Logger.Log("Vessel changed");
+                onFlightReady();
                 if (lastVessel != null && isVesselInFlight())
                 {
                     Logger.Log("Player switched vessel; reverts are now invalid. Removing action group backups.");
@@ -59,15 +71,18 @@ namespace AGroupOnStage.Main
         private void onVesselUnpack(Vessel v)
         {
             Logger.Log("Vessel unpack");
-            AGOSMain.Instance.restoreBackedUpActionGroups();
+            AGOSMain.Instance.removeDuplicateActionGroups();
             AGOSMain.Instance.findHomesForPartLockedGroups(v);
+            //AGOSMain.Instance.getMasterAGOSModule(FlightGlobals.fetch.activeVessel).setFlightID(AGOSUtils.getFlightID());
         }
 
         private void onFlightReady()
         {
             Logger.Log("Flight ready");
-            AGOSMain.Instance.restoreBackedUpActionGroups();
+            //AGOSMain.Instance.restoreBackedUpActionGroups();
+            AGOSMain.Instance.removeDuplicateActionGroups();
             AGOSMain.Instance.findHomesForPartLockedGroups(FlightGlobals.fetch.activeVessel);
+            AGOSMain.Instance.getMasterAGOSModule(FlightGlobals.fetch.activeVessel).setFlightID(AGOSUtils.getFlightID());
             //AGOSMain.Instance.backupActionGroupList();
         }
 
@@ -105,9 +120,11 @@ namespace AGroupOnStage.Main
             }
             processingStageEvent = true;
             List<IActionGroup> toFire = new List<IActionGroup>();
+            List<IActionGroup> thisVesselsGroups = new List<IActionGroup>();
+            thisVesselsGroups.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.FlightID == AGOSUtils.getFlightID()));
             int stageNum = (AGOSMain.Instance.useAGXConfig && s >= 8 ? s - 7 : s);
-            toFire.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.Stages != null && a.Stages.Length > 0 && a.Stages.Contains(stageNum)/* && a.Vessel == FlightGlobals.fetch.activeVessel*/)); // Regular action groups
-            toFire.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.isPartLocked && a.linkedPart.inverseStage == stageNum/* && a.Vessel == FlightGlobals.fetch.activeVessel*/)); // Part locked groups
+            toFire.AddRange(thisVesselsGroups.FindAll(a => a.Stages != null && a.Stages.Length > 0 && a.Stages.Contains(stageNum)/* && a.Vessel == FlightGlobals.fetch.activeVessel*/)); // Regular action groups
+            toFire.AddRange(thisVesselsGroups.FindAll(a => a.isPartLocked && a.linkedPart.inverseStage == stageNum/* && a.Vessel == FlightGlobals.fetch.activeVessel*/)); // Part locked groups
             //List<IActionGroup> toFire = AGOSMain.Instance.actionGroups.FindAll(a => (a.Stages.Length > 0 && a.Stages.Contains(s)) || (a.isPartLocked && a.linkedPart.inverseStage == s));
             Logger.Log("{0} group(s) to fire", toFire.Count);
             foreach (IActionGroup ag in toFire) 
@@ -228,7 +245,7 @@ namespace AGroupOnStage.Main
             if (!(AGOSMain.Instance.isGameGUIHidden && AGOSMain.Settings.get<bool>("SilenceWhenUIHidden")))
             {
                 System.Random ra = new System.Random();
-                ScreenMessages.PostScreenMessage((ra.Next(10) == 0 && AGOSMain.Settings.get<bool>("AllowEE") ? "fINE cONTROLS" : "Fine Controls") + " have been " + (FlightInputHandler.fetch.precisionMode ? "enabled" : "disabled") + ".", 5f, ScreenMessageStyle.UPPER_CENTER);
+                ScreenMessages.PostScreenMessage((ra.NextBoolOneIn(10) && AGOSMain.Settings.get<bool>("AllowEE") ? "fINE cONTROLS" : "Fine Controls") + " have been " + (FlightInputHandler.fetch.precisionMode ? "enabled" : "disabled") + ".", 5f, ScreenMessageStyle.UPPER_CENTER);
             }
         }
 

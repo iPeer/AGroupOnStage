@@ -42,8 +42,15 @@ namespace AGroupOnStage.AGX
 
         public static string getAGXGroupName(int group)
         {
-            Type calledType = Type.GetType("ActionGroupsExtended.AGXExternal, AGExt");
-            return (string)calledType.InvokeMember("AGXGroupNameSingle", BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Static, null, null, new System.Object[] { group });
+            try
+            {
+                Type calledType = Type.GetType("ActionGroupsExtended.AGExtExternal, AGExt");
+                return (string)calledType.InvokeMember("AGXGroupNameSingle", BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Static, null, null, new System.Object[] { group });
+            }
+            catch (MissingMethodException)
+            {
+                return "UPDATE AGX";
+            }
         }
 
         public static void AGExtToggleGroup(int group)

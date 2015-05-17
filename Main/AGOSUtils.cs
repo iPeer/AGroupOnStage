@@ -88,8 +88,15 @@ namespace AGroupOnStage.Main
             return currentSkin;
         }
 
+        public static string intArrayToString(int[] array)
+        {
+            return intArrayToString(array, ", ");
+        }
+
         public static string intArrayToString(int[] array, string separator)
         {
+            if (array == null)
+                return "";
             string returnString = "";
             foreach(int o in array)
             {
@@ -211,6 +218,14 @@ namespace AGroupOnStage.Main
             if (group > 7 && !AGOSMain.Instance.useAGXConfig)
                 return getTechLevel(SpaceCenterFacility.VehicleAssemblyBuilding) >= 1f;
             return false;
+        }
+
+        public static uint getFlightID()
+        {
+            if (HighLogic.LoadedSceneIsEditor)
+                return 0; // No flight IDs in the editor, for kind of obvious reasons, perhaps.
+            else
+                return FlightGlobals.ActiveVessel.rootPart.flightID;
         }
 
     }

@@ -18,6 +18,8 @@ namespace AGroupOnStage.ActionGroups
         string partRef { get; set; }
         int timerDelay { get; set; }
         int fireGroupID { get; set; }
+        uint FlightID { get; set; }
+        string StagesAsString { get; }
 
     }
 }
