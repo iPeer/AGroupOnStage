@@ -1,3 +1,9 @@
+??, v2.0.9:
+	* Added an option to always use the 'alternate' AGOS button textures.
+	* Added an option to have AGOS' custom action groups appear at the bottom of the configuration window's list.
+	* Added an option to allow AGOS to create AGOSrelated Kerbals in new (and existing) non-Career saves.
+	* Duplicated actions groups are now removed before saving as well as on vessel switch and flight ready events.
+
 17/05/15, v2.0.8:
 	* Added support for Blizzy's toolbar
 	* Added a new action group that can be told to fire after so many seconds.

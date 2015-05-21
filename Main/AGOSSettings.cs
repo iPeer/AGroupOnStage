@@ -33,12 +33,14 @@ namespace AGroupOnStage.Main
             {"wPosSX", "Settings window X pos"},
             {"wPosSY", "Settings window Y pos"},
             {"LogNodeSaving", "Show AGOS' node saving in the debug log"},
-            {"AllowEE", "Allow Easter Eggs to activate"},
+            {"AllowEE", "Allow AGOS' Easter Eggs to activate"},
             {"LockInputsOnGUIOpen", "Enable anti-clickthrough input locks while AGOS' GUI is open"},
             {"SilenceWhenUIHidden", "Don't show notifications when the game's GUI is hidden"},
             {"UseStockToolbar", "Use the stock game's toolbar"},
             {"MaxGroupTimeDelay", "Maximum time (in seconds) an action group can be delayed for"},
-            {"AddAGOSKerbals", "Add AGOS-related Kerbals to the applicants list"}
+            {"AddAGOSKerbals", "Add AGOS-related Kerbals to the applicants list"},
+            {"TacosAllDayErrDay", "Always use the 'shimmyTaco' AGOS button image"},
+            {"AGOSGroupsLast", "Show AGOS' custom groups last in the group list in the group config window"}
             /*{"COntextMenuString", "The text displayed for AGOS' button when right clicking on a part."}*/
 
         };
@@ -55,13 +57,17 @@ namespace AGroupOnStage.Main
                 {"wPosY", 0f},
                 {"wPosSX", 0f},
                 {"wPosSY", 0f},
+                {"wPosGX", 0f},
+                {"wPosGY", 0f},
                 {"LogNodeSaving", false},
                 {"AllowEE", true},
                 {"LockInputsOnGUIOpen", true},
                 {"SilenceWhenUIHidden", true},
                 {"UseStockToolbar", true},
                 {"MaxGroupTimeDelay", 10f},
-                {"AddAGOSKerbals", true}
+                {"AddAGOSKerbals", true},
+                {"TacosAllDayErrDay", false},
+                {"AGOSGroupsLast", false}
                 /*{"ContextMenuString", "Action group control"}*/
             };
 
@@ -170,6 +176,8 @@ namespace AGroupOnStage.Main
                     AGOSMain.Instance.agosButton.SetFalse(false);
                 if (this.lastAGOSKSetting && !get<bool>("AddAGOSKerbals"))
                     RenderingManager.AddToPostDrawQueue(this.otherWinID = AGOSMain.AGOS_SETTINGS_CONFIRM_GUI_WINDOW_ID, OnDrawOther);
+                else if (!this.lastAGOSKSetting && get<bool>("AddAGOSKerbals"))
+                    AGOSMain.Instance.addAGOSKerbals();
             }
             else
             {
@@ -237,7 +245,10 @@ namespace AGroupOnStage.Main
                     continue;
 #endif
 
-                    if (s.Equals("AddAGOSKerbals")) // Disabled for now
+                    if (s.StartsWith("Taco") && !get<bool>("AllowEE")) // Don't show the shimmyTaco option if AGOS' EEs are disabled.
+                        continue;
+
+                    if (s.Equals("AddAGOSKerbals") && HighLogic.CurrentGame.Mode == Game.Modes.CAREER) // Don't show Kerbal options on Career saves.
                         continue;
 
                     bool __;
@@ -294,7 +305,6 @@ namespace AGroupOnStage.Main
 
                 if (GUILayout.Button("Yes", AGOSMain.Instance._buttonStyle))
                 {
-                    Logger.Log("YES CLICKED");
                     this.failedKerbalRemovals = AGOSMain.Instance.removeAGOSKerbals();
                     if (failedKerbalRemovals.Count > 0)
                     {
@@ -304,7 +314,6 @@ namespace AGroupOnStage.Main
                 }
                 if (GUILayout.Button("No", AGOSMain.Instance._buttonStyle))
                 {
-                    Logger.Log("NO CLICKED!");
                     RenderingManager.RemoveFromPostDrawQueue(AGOSMain.AGOS_SETTINGS_CONFIRM_GUI_WINDOW_ID, OnDrawOther);
                 }
 

@@ -44,6 +44,7 @@ namespace AGroupOnStage.Main
             node.AddValue("isRoot", isRoot);
             if (!this.isRoot) { return; } // Only the root module can save
             //AGOSDebug.printAllActionGroups();
+            AGOSMain.Instance.removeDuplicateActionGroups();
             node.AddValue("flightID", this.flightID);
             List<IActionGroup> groupsToSave = new List<IActionGroup>();
             groupsToSave.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.FlightID == this.flightID));

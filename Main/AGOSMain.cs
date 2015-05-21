@@ -30,6 +30,7 @@ namespace AGroupOnStage.Main
         public Dictionary<int, bool> actionGroupSettings = new Dictionary<int, bool>();
         public Dictionary<int, KSPActionGroup> stockAGMap;
         public static AGOSSettings Settings { get; protected set; }
+        public static AGOSGroupManager GroupManager { get; protected set; }
         public bool FlightEventsRegistered { get; set; }
         public bool EditorEventsRegistered { get; set; }
         public static readonly int AGOS_GUI_WINDOW_ID = 03022007;
@@ -38,12 +39,14 @@ namespace AGroupOnStage.Main
         public static readonly int AGOS_SETTINGS_GUI_WINDOW_ID = 23022007;
         public static readonly int AGOS_SETTINGS_CONFIRM_GUI_WINDOW_ID = 33022007;
         public static readonly int AGOS_SETTINGS_ERROR_GUI_WINDOW_ID = 43022007;
+        public static readonly int AGOS_GROUP_LIST_WINDOW_ID = 53022007;
+        public static readonly int AGOS_DEBUG_GUI_WINDOW_ID = 23022007;
 
         public bool hasSetupStyles = false;
         public ApplicationLauncherButton agosButton = null;
         public IButton _000agosButton = null;
         public bool isGameGUIHidden = false;
-        public static readonly List<string> agosKerbalNames = new List<string>() { "iPeer", "Roxy", "Shimmy" }; // You have to be super awesome to make it into this list
+        public static readonly List<string> agosKerbalNames = new List<string>() { "iPeer", "Roxy", "Shimmy", "Addle", "Gav", "Kofeyh" }; // You have to be super awesome to make it into this list
 
 
         #endregion
@@ -128,9 +131,10 @@ namespace AGroupOnStage.Main
             Logger.Log("Loading AGOS' settings");
             Settings.load();
             Logger.Log("AGOS' Settings loaded");
+            GroupManager = new AGOSGroupManager();
 
-            /*if (Settings.get<bool>("AddAGOSKerbals"))
-                addAGOSKerbals();*/
+            if (Settings.get<bool>("AddAGOSKerbals"))
+                addAGOSKerbals();
 
             //GameEvents.onGUIApplicationLauncherReady.Add(OnGUIApplicationLauncherReady);
             GameEvents.onVesselChange.Add(onVesselLoaded);
@@ -142,7 +146,7 @@ namespace AGroupOnStage.Main
             GameEvents.onShowUI.Add(onShowUI);
             GameEvents.onHideUI.Add(onHideUI);
             addToolbarButton();
-                
+
 #if DEBUG
             if (Settings.get<bool>("HereBeDragons"))
                 RenderingManager.AddToPostDrawQueue(AGOS_GUI_WINDOW_ID - 1, OnDraw_Dragons);
@@ -154,6 +158,11 @@ namespace AGroupOnStage.Main
         public void addAGOSKerbals()
         {
             Logger.Log("Trying to add AGOS-related Kerbals to roster");
+            if (HighLogic.CurrentGame.Mode == Game.Modes.CAREER)
+            {
+                Logger.LogError("Current game is Career mode. Aborting adding Kerbals.");
+                return;
+            }
             KerbalRoster roster = HighLogic.CurrentGame.CrewRoster;
             //List<ProtoCrewMember> kerbals = new List<ProtoCrewMember>();
             foreach (string s in agosKerbalNames)
@@ -166,19 +175,6 @@ namespace AGroupOnStage.Main
                     continue;
                 }
 
-                /*
-                 * I don't want to force people to use these Kerbals, so I make them applicants. 
-                 * Though to be fair, you could just fire them...
-                 * 
-                 * Then again, it stops me having to comply with Career's crew limits :3
-                 */
-
-                /*
-                 * 
-                 * I was going to add kerbals to AGOS, but apparently you can only add them as Crew for some reason, so I'm putting that on hold.
-                 * 
-                 */
-
                 ProtoCrewMember kerbal = roster.GetNewKerbal(/*ProtoCrewMember.KerbalType.Applicant*/);
                 kerbal.name = kName;
                 // Pointless code below! Just leave it to the game to do it!
@@ -190,14 +186,9 @@ namespace AGroupOnStage.Main
 
                 KerbalRoster.SetExperienceTrait(kerbal);
 
-                if (HighLogic.CurrentGame.Mode != Game.Modes.CAREER)
-                {
-                    kerbal.experienceLevel = 5;
-                    kerbal.experience = 1337;
+                kerbal.experienceLevel = 5;
+                kerbal.experience = 1337;
 
-                }
-                roster.Update(Planetarium.fetch.time + 1d);
-                //kerbals.Add(kerbal);
                 Logger.Log("{0} has been voluntold that they're going to be a Kerbonaut (they're thrilled)!", kName);
             }
 
@@ -205,13 +196,14 @@ namespace AGroupOnStage.Main
 
         public Dictionary<string, ProtoCrewMember.RosterStatus> removeAGOSKerbals()
         {
+
             Dictionary<string, ProtoCrewMember.RosterStatus> ret = new Dictionary<string, ProtoCrewMember.RosterStatus>();
             foreach (string s in agosKerbalNames)
             {
                 string name = s + " Kerman";
                 KerbalRoster r = HighLogic.CurrentGame.CrewRoster;
                 ProtoCrewMember c = r.Crew.First(k => k.name.Equals(name));
-                if (c == null) 
+                if (c == null)
                     continue;
                 if (c.rosterStatus == ProtoCrewMember.RosterStatus.Available)
                 {
@@ -247,7 +239,7 @@ namespace AGroupOnStage.Main
         private void OnGUIApplicationLauncherReady()
         {
             if (Settings.get<bool>("UseStockToolbar") || !ToolbarManager.ToolbarAvailable)
-            setupToolbarButton();
+                setupToolbarButton();
         }
 
         /*public void backupActionGroupList()
@@ -264,7 +256,7 @@ namespace AGroupOnStage.Main
             int start = this.actionGroups.Count;
             if (start < 2) // Don't bother if it's impossible for there to be duplicates
                 return;
-            List<IActionGroup> newList = this.actionGroups.GroupBy(o => 
+            List<IActionGroup> newList = this.actionGroups.GroupBy(o =>
                 new { o.cameraMode, o.fireGroupID, o.FlightID, o.Group, o.isPartLocked, o.linkedPart, o.partRef, o.StagesAsString, o.ThrottleLevel, o.timerDelay, o.Vessel }
                 ).Select(n => n.First()).ToList<IActionGroup>();
             int end = newList.Count;
@@ -386,7 +378,7 @@ namespace AGroupOnStage.Main
             _000agosButton = ToolbarManager.Instance.add("AGOS", "AGroupOnStage");
             string _texture = "iPeer/AGroupOnStage/Textures/Toolbar000";
             System.Random r = new System.Random();
-            if (r.NextBoolOneIn(5) && Settings.get<bool>("AllowEE")) // 2.0.7-dev1: This would never be true at its previous value (5) (C# Random is *weird*)
+            if ((r.NextBoolOneIn(5) || Settings.get<bool>("TacosAllDayErrDay")) && Settings.get<bool>("AllowEE")) // 2.0.7-dev1: This would never be true at its previous value (5) (C# Random is *weird*)
             {
                 Logger.Log("Are you hungry?");
                 _texture = "iPeer/AGroupOnStage/Textures/Toolbar_alt000";
@@ -411,7 +403,7 @@ namespace AGroupOnStage.Main
             {
                 string _texture = "iPeer/AGroupOnStage/Textures/Toolbar";
                 System.Random r = new System.Random();
-                if (r.NextBoolOneIn(5) && Settings.get<bool>("AllowEE")) // 2.0.7-dev1: This would never be true at its previous value (5) (C# Random is *weird*)
+                if ((r.NextBoolOneIn(5) || Settings.get<bool>("TacosAllDayErrDay")) && Settings.get<bool>("AllowEE")) // 2.0.7-dev1: This would never be true at its previous value (5) (C# Random is *weird*)
                 {
                     Logger.Log("Are you hungry?");
                     _texture = "iPeer/AGroupOnStage/Textures/Toolbar_alt";
@@ -504,6 +496,18 @@ namespace AGroupOnStage.Main
 
         }
 
+        public void renderGroupButton(int x)
+        {
+            if ((x == 0 || x == 1 || x == -7) || !AGOSUtils.techLevelEnoughForGroup(x)) { return; } // "None", "Stage" and "Lock Staging" action groups
+            if (useAGXConfig && x >= 8)
+            {
+                string groupName = (x - 7 < 0 ? actionGroupList[x] : x - 7 + (AGXInterface.getAGXGroupName(x - 7) != "" ? ": " + AGXInterface.getAGXGroupName(x - 7) : ""));
+                actionGroupSettings[x] = GUILayout.Toggle(actionGroupSettings.ContainsKey(x) ? actionGroupSettings[x] : false, groupName, _buttonStyle);
+            }
+            else
+                actionGroupSettings[x] = GUILayout.Toggle(actionGroupSettings.ContainsKey(x) ? actionGroupSettings[x] : false, actionGroupList[x], _buttonStyle);
+        }
+
 
         private void OnWindow(int windowID)
         {
@@ -524,18 +528,31 @@ namespace AGroupOnStage.Main
             int AG_MIN = AG_MIN_MAX[0];
             int AG_MAX = AG_MIN_MAX[1];
 
-            //Logger.LogDebug("MAX: {0}, MIN: {1}", AG_MAX, AG_MIN);    
-            for (int x = AG_MIN; x < AG_MAX; x++)
+            //Logger.LogDebug("MAX: {0}, MIN: {1}", AG_MAX, AG_MIN);  
+            if (Settings.get<bool>("AGOSGroupsLast"))
             {
-                //Logger.Log("AG {0}: {1}", x, actionGroupList[x]);
-                if ((x == 0 || x == 1 || x == -7) || !AGOSUtils.techLevelEnoughForGroup(x)) { continue; } // "None", "Stage" and "Lock Staging" action groups
-                if (useAGXConfig && x >= 8)
+                bool hasLooped = false;
+                for (int x = 0; x <= AG_MAX; x++)
                 {
-                    string groupName = (x - 7 < 0 ? actionGroupList[x] : x - 7 + (AGXInterface.getAGXGroupName(x - 7) != "" ? ": " + AGXInterface.getAGXGroupName(x - 7) : ""));
-                    actionGroupSettings[x] = GUILayout.Toggle(actionGroupSettings.ContainsKey(x) ? actionGroupSettings[x] : false, groupName, _buttonStyle);
+                    if (x == AG_MAX)
+                    {
+                        x = AG_MIN;
+                        hasLooped = true;
+                    }
+                    if (x == 0 && hasLooped)
+                        break;
+
+                    renderGroupButton(x);
                 }
-                else
-                    actionGroupSettings[x] = GUILayout.Toggle(actionGroupSettings.ContainsKey(x) ? actionGroupSettings[x] : false, actionGroupList[x], _buttonStyle);
+            }
+            else
+            {
+                for (int x = AG_MIN; x < AG_MAX; x++)
+                {
+                    //Logger.Log("AG {0}: {1}", x, actionGroupList[x]);
+                    renderGroupButton(x);
+
+                }
             }
             /*}*/
             GUILayout.EndScrollView();
@@ -559,7 +576,7 @@ namespace AGroupOnStage.Main
             if (actionGroupSettings[actionGroupList.First(a => a.Value.Contains("Throttle")).Key] || actionGroupSettings[actionGroupList.First(a => a.Value.Contains("Time-delayed")).Key])
             {
                 bool isThrottle = actionGroupSettings[actionGroupList.First(a => a.Value.Contains("Throttle")).Key];
-                
+
                 GUILayout.Label((isThrottle ? "Throttle control:" : "Time delay"), _labelStyle);
                 GUILayout.BeginHorizontal(GUILayout.Width(240f));
                 if (isThrottle)
@@ -576,7 +593,7 @@ namespace AGroupOnStage.Main
                     GUILayout.Label(String.Format("Delay: {0:N0}s", timerDelay), _labelStyle);
 
                     GUILayout.EndHorizontal();
- 
+
 
                     if (useAGXConfig && !isThrottle)
                     {
@@ -603,8 +620,9 @@ namespace AGroupOnStage.Main
                         GUILayout.EndVertical();
 
                     }
-                    else {
-                        
+                    else
+                    {
+
                         int[] groupBoundries = getMinMaxGroupIds();
                         float max = (useAGXConfig ? 7f : Convert.ToSingle(groupBoundries[1] - 1f));
 
@@ -663,14 +681,14 @@ namespace AGroupOnStage.Main
                 string groupName;
                 string groupDescription = "";
                 if (ag.GetType() == typeof(TimeDelayedActionGroup))
-                    groupName = String.Format("Fire group '{0}' after {1}s", (useAGXConfig && ag.fireGroupID >= 8 ? ""+(ag.fireGroupID - 7) : actionGroupList[ag.fireGroupID]), String.Format("{0:N0}", ag.timerDelay));
+                    groupName = String.Format("Fire group '{0}' after {1}s", (useAGXConfig && ag.fireGroupID >= 8 ? "" + (ag.fireGroupID - 7) : actionGroupList[ag.fireGroupID]), String.Format("{0:N0}", ag.timerDelay));
                 else if (useAGXConfig && ag.Group >= 8)
                     groupName = ag.Group - 7 + (AGXInterface.getAGXGroupName(ag.Group - 7) != "" ? ": " + AGXInterface.getAGXGroupName(ag.Group - 7) : "");
                 else
                     groupName = actionGroupList[ag.Group];
                 if (ag.GetType() == typeof(ThrottleControlActionGroup))
                     groupDescription = String.Format(" ({0:P0})", ag.ThrottleLevel);
-                GUILayout.Label(groupName+(groupDescription.Length > 0 ? " "+groupDescription : ""), _labelStyle, GUILayout.MinWidth(150f));
+                GUILayout.Label(groupName + (groupDescription.Length > 0 ? " " + groupDescription : ""), _labelStyle, GUILayout.MinWidth(150f));
 
                 GUIStyle __labelStyle = _labelStyle;
                 // TODO: Make this work properly :c
@@ -710,11 +728,13 @@ namespace AGroupOnStage.Main
             if (GUILayout.Button("DEBUG: Dump groups", _buttonStyle))
                 AGOSGroupManager.dumpActionGroupConfig();
 
-            if (GUILayout.Button("DEBUG: Print flightID", _buttonStyle))
-                Logger.Log("FLIGHTID: {0}", AGOSUtils.getFlightID());
+            if (GUILayout.Button("DEBUG: Toggle debug window", _buttonStyle))
+                AGOSDebug.toggleGUI();
 
-            if (GUILayout.Button("DEBUG: REM DUP", _buttonStyle))
-                removeDuplicateActionGroups();
+            if (GUILayout.Button("DEBUG: Show AGs", _buttonStyle))
+            {
+                GroupManager.toggleGUI();
+            }
 #endif
             if (GUILayout.Button("Close", _buttonStyle))
                 toggleGUI();
@@ -812,7 +832,7 @@ namespace AGroupOnStage.Main
                         ag.Group = manualGroup.toInt32();
 
                     }
-                    else 
+                    else
                     {
                         ag.Group = x;
                     }
