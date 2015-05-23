@@ -19,18 +19,39 @@ namespace AGroupOnStage.Main
         #region public vars
 
         public static AGOSMain Instance { get; protected set; } // Protected set in case we need/want to extend this class in the future
+        public static readonly Dictionary<string, string> specialOccasionDates = new Dictionary<string, string>() 
+        {
+
+            {"66", "Today is iPeer's birthday!"},
+            {"244", "Today is Roxy's birthday!"},
+            {"89", "Today is AGroupOnStage's birthday!"},
+            {"2412", "Santa Claus is coming to town!"},
+            {"2515", "Merry Christmas!"},
+            {"11", "Happy New Year!"}
+
+
+        };
+        public bool SpecialOccasion { 
+            get {
+                DateTime today = DateTime.Now;
+                string dayMonth = String.Format("{0}{1}", today.Day, today.Month);
+                //Logger.Log(dayMonth);
+                return specialOccasionDates.ContainsKey(dayMonth) || (AGOSDebug.isDebugBuild() && Settings.get<bool>("DEBUGForceSpecialOccasion"));
+            } 
+        }
         public Part linkPart { get; set; }
         public bool guiVisible = false;
         public bool settingsGUIVisible = false;
         public bool useAGXConfig = false;
-        public bool using000Toolbar = false;
-        public bool launcherButtonAdded = false;
+        /*public bool using000Toolbar = false;
+        public bool launcherButtonAdded = false;*/
         public List<IActionGroup> actionGroups = new List<IActionGroup>();
         public Dictionary<int, string> actionGroupList = new Dictionary<int, string>();
         public Dictionary<int, bool> actionGroupSettings = new Dictionary<int, bool>();
         public Dictionary<int, KSPActionGroup> stockAGMap;
         public static AGOSSettings Settings { get; protected set; }
         public static AGOSGroupManager GroupManager { get; protected set; }
+        public static AGOSToolbarManager ToolbarManager { get; protected set; }
         public bool FlightEventsRegistered { get; set; }
         public bool EditorEventsRegistered { get; set; }
         public static readonly int AGOS_GUI_WINDOW_ID = 03022007;
@@ -40,11 +61,11 @@ namespace AGroupOnStage.Main
         public static readonly int AGOS_SETTINGS_CONFIRM_GUI_WINDOW_ID = 33022007;
         public static readonly int AGOS_SETTINGS_ERROR_GUI_WINDOW_ID = 43022007;
         public static readonly int AGOS_GROUP_LIST_WINDOW_ID = 53022007;
-        public static readonly int AGOS_DEBUG_GUI_WINDOW_ID = 23022007;
+        public static readonly int AGOS_DEBUG_GUI_WINDOW_ID = 63022007;
 
         public bool hasSetupStyles = false;
-        public ApplicationLauncherButton agosButton = null;
-        public IButton _000agosButton = null;
+        /*public ApplicationLauncherButton agosButton = null;
+        public IButton _000agosButton = null;*/
         public bool isGameGUIHidden = false;
         public static readonly List<string> agosKerbalNames = new List<string>() { "iPeer", "Roxy", "Shimmy", "Addle", "Gav", "Kofeyh" }; // You have to be super awesome to make it into this list
 
@@ -94,7 +115,9 @@ namespace AGroupOnStage.Main
             _sliderStyle,
             _sliderSliderStyle,
             _sliderThumbStyle,
-            _textFieldStyle;
+            _textFieldStyle,
+            _labelCenteredYellow,
+            _tinyButtonStyle;
 
         private Dictionary<string, string> agosGroupPrettyNames = new Dictionary<string, string>() {
 
@@ -130,8 +153,11 @@ namespace AGroupOnStage.Main
             loadActionGroups();
             Logger.Log("Loading AGOS' settings");
             Settings.load();
+            if (Settings.get<bool>("EnableDebugOptions"))
+                Logger.Log("Debug options are enabled.");
             Logger.Log("AGOS' Settings loaded");
             GroupManager = new AGOSGroupManager();
+            ToolbarManager = new AGOSToolbarManager();
 
             if (Settings.get<bool>("AddAGOSKerbals"))
                 addAGOSKerbals();
@@ -145,7 +171,7 @@ namespace AGroupOnStage.Main
             GameEvents.onEditorRedo.Add(OnEditorUndo);
             GameEvents.onShowUI.Add(onShowUI);
             GameEvents.onHideUI.Add(onHideUI);
-            addToolbarButton();
+            ToolbarManager.addToolbarButton();
 
 #if DEBUG
             if (Settings.get<bool>("HereBeDragons"))
@@ -216,16 +242,6 @@ namespace AGroupOnStage.Main
             return ret;
         }
 
-        public void addToolbarButton()
-        {
-            if ((ApplicationLauncher.Ready && Settings.get<bool>("UseStockToolbar")) || !ToolbarManager.ToolbarAvailable)
-                setupToolbarButton();
-            else
-            {
-                setup000ToolbarButton();
-            }
-        }
-
         private void onShowUI()
         {
             this.isGameGUIHidden = false;
@@ -238,8 +254,8 @@ namespace AGroupOnStage.Main
 
         private void OnGUIApplicationLauncherReady()
         {
-            if (Settings.get<bool>("UseStockToolbar") || !ToolbarManager.ToolbarAvailable)
-                setupToolbarButton();
+            if (Settings.get<bool>("UseStockToolbar") || !_000Toolbar.ToolbarManager.ToolbarAvailable)
+                ToolbarManager.setupToolbarButton();
         }
 
         /*public void backupActionGroupList()
@@ -356,84 +372,6 @@ namespace AGroupOnStage.Main
 
         #region GUI
 
-        public void switchToolbarsIfNeeded()
-        {
-            if (ToolbarManager.ToolbarAvailable && !Settings.get<bool>("UseStockToolbar") && !using000Toolbar)
-            {
-                if (launcherButtonAdded)
-                    removeToolbarButton();
-                setup000ToolbarButton();
-            }
-            else if ((Settings.get<bool>("UseStockToolbar") && !launcherButtonAdded) || !ToolbarManager.ToolbarAvailable)
-            {
-                if (using000Toolbar)
-                    remove000ToolbarButton();
-                setupToolbarButton();
-            }
-        }
-
-        private void setup000ToolbarButton()
-        {
-            Logger.Log("Setting up 000Toolbar");
-            _000agosButton = ToolbarManager.Instance.add("AGOS", "AGroupOnStage");
-            string _texture = "iPeer/AGroupOnStage/Textures/Toolbar000";
-            System.Random r = new System.Random();
-            if ((r.NextBoolOneIn(5) || Settings.get<bool>("TacosAllDayErrDay")) && Settings.get<bool>("AllowEE")) // 2.0.7-dev1: This would never be true at its previous value (5) (C# Random is *weird*)
-            {
-                Logger.Log("Are you hungry?");
-                _texture = "iPeer/AGroupOnStage/Textures/Toolbar_alt000";
-            }
-            _000agosButton.TexturePath = _texture;
-            _000agosButton.OnClick += (e) => { if (e.MouseButton == 1) { Settings.toggleGUI(); } else { toggleGUI(false); } };
-            using000Toolbar = true;
-
-        }
-
-        private void remove000ToolbarButton()
-        {
-            Logger.Log("Removing 000Toolbar button");
-            _000agosButton.Destroy();
-            _000agosButton = null;
-            using000Toolbar = false;
-        }
-
-        private void setupToolbarButton()
-        {
-            if (!launcherButtonAdded)
-            {
-                string _texture = "iPeer/AGroupOnStage/Textures/Toolbar";
-                System.Random r = new System.Random();
-                if ((r.NextBoolOneIn(5) || Settings.get<bool>("TacosAllDayErrDay")) && Settings.get<bool>("AllowEE")) // 2.0.7-dev1: This would never be true at its previous value (5) (C# Random is *weird*)
-                {
-                    Logger.Log("Are you hungry?");
-                    _texture = "iPeer/AGroupOnStage/Textures/Toolbar_alt";
-                }
-                Logger.Log("Adding ApplicationLauncher button");
-                agosButton = ApplicationLauncher.Instance.AddModApplication(
-                    toggleGUI,
-                    toggleGUI,
-                    null,
-                    null,
-                    null,
-                    null,
-                    ApplicationLauncher.AppScenes.FLIGHT | ApplicationLauncher.AppScenes.MAPVIEW | ApplicationLauncher.AppScenes.VAB | ApplicationLauncher.AppScenes.SPH | ApplicationLauncher.AppScenes.SPACECENTER,
-                    //ApplicationLauncher.AppScenes.ALWAYS,
-                    (Texture)GameDatabase.Instance.GetTexture(_texture, false)
-                );
-                launcherButtonAdded = true;
-            }
-            else
-                Logger.LogWarning("ApplicationLauncher button is already present (harmless)");
-
-        }
-
-        private void removeToolbarButton()
-        {
-            Logger.Log("Removing ApplicationLauncher button");
-            ApplicationLauncher.Instance.RemoveModApplication(agosButton);
-            launcherButtonAdded = false;
-        }
-
         public void toggleGUI()
         {
             toggleGUI(false);
@@ -457,8 +395,8 @@ namespace AGroupOnStage.Main
             {
                 EditorLogic.fetch.Unlock("AGOS_INPUT_LOCK");
                 guiVisible = false;
-                if (!using000Toolbar)
-                    agosButton.SetFalse(false);
+                if (!ToolbarManager.using000Toolbar)
+                    ToolbarManager.agosButton.SetFalse(false);
                 RenderingManager.RemoveFromPostDrawQueue(AGOS_GUI_WINDOW_ID, OnDraw);
                 Settings.set("wPosX", _windowPos.x);
                 Settings.set("wPosY", _windowPos.y);
@@ -467,7 +405,7 @@ namespace AGroupOnStage.Main
                 {
                     if (linkPart != null)
                         linkPart = null;
-                    AGOSUtils.resetActionGroupConfig(false);
+                    AGOSUtils.resetActionGroupConfig();
                 }
 
             }
@@ -478,8 +416,8 @@ namespace AGroupOnStage.Main
                 if (Settings.get<bool>("LockInputsOnGUIOpen"))
                     EditorLogic.fetch.Lock(true, true, true, "AGOS_INPUT_LOCK");
                 guiVisible = true;
-                if (!using000Toolbar)
-                    agosButton.SetTrue(false);
+                if (!ToolbarManager.using000Toolbar)
+                    ToolbarManager.agosButton.SetTrue(false);
                 _windowPos.x = Settings.get<float>("wPosX");
                 _windowPos.y = Settings.get<float>("wPosY");
                 RenderingManager.AddToPostDrawQueue(AGOS_GUI_WINDOW_ID, OnDraw);
@@ -491,7 +429,7 @@ namespace AGroupOnStage.Main
 
             if (!hasSetupStyles)
                 setUpStyles();
-            _windowPos = GUILayout.Window(AGOS_GUI_WINDOW_ID, _windowPos, OnWindow, "Action group control", _windowStyle);
+            _windowPos = GUILayout.Window(AGOS_GUI_WINDOW_ID, _windowPos, OnWindow, "Action group control", _windowStyle, GUILayout.MinHeight(500f));
             // TODO: GUI position sanity checks
 
         }
@@ -511,7 +449,26 @@ namespace AGroupOnStage.Main
 
         private void OnWindow(int windowID)
         {
+            if (SpecialOccasion)
+            {
+                GUILayout.BeginVertical();
+                GUILayout.BeginHorizontal();
+                DateTime dt = DateTime.Now;
+                string form = String.Format("{0}{1}", dt.Day, dt.Month);
+                string occasionMessage = "Today is a special day!";
+                if (specialOccasionDates.ContainsKey(form))
+                    occasionMessage = specialOccasionDates[form];
+                GUILayout.Label(occasionMessage, _labelCenteredYellow);
+                GUILayout.EndHorizontal();
+                GUILayout.EndVertical();
 
+            }
+
+            // Draw settings button
+            if (GUI.Button(new Rect(_windowPos.width - 50, 3, 45, 12), "...", _tinyButtonStyle))
+            {
+                Settings.toggleGUI();
+            }
             GUILayout.BeginHorizontal();
 
             GUILayout.BeginVertical();
@@ -678,6 +635,9 @@ namespace AGroupOnStage.Main
                 }
 
                 GUILayout.BeginHorizontal();
+                GUIStyle __labelStyle = _labelStyle;
+                if (!AGOSUtils.isGroupValidForVessel(ag))
+                    __labelStyle = _labelStyleRed;
                 string groupName;
                 string groupDescription = "";
                 if (ag.GetType() == typeof(TimeDelayedActionGroup))
@@ -688,14 +648,7 @@ namespace AGroupOnStage.Main
                     groupName = actionGroupList[ag.Group];
                 if (ag.GetType() == typeof(ThrottleControlActionGroup))
                     groupDescription = String.Format(" ({0:P0})", ag.ThrottleLevel);
-                GUILayout.Label(groupName + (groupDescription.Length > 0 ? " " + groupDescription : ""), _labelStyle, GUILayout.MinWidth(150f));
-
-                GUIStyle __labelStyle = _labelStyle;
-                // TODO: Make this work properly :c
-                /*bool validStage = (!ag.isPartLocked && ag.Stages.Count(a => a > Staging.StageCount) > 1);
-                bool validPart = (ag.isPartLocked && ag.linkedPart != null && !AGOSUtils.getVesselPartsList().Contains(ag.linkedPart));
-                if (!(validStage && validPart))
-                    __labelStyle = _labelStyleRed;*/
+                GUILayout.Label(groupName + (groupDescription.Length > 0 ? " " + groupDescription : ""), __labelStyle, GUILayout.MinWidth(150f));
 
                 GUILayout.Label(stagesString, __labelStyle);
                 if (GUILayout.Button("Edit", _buttonStyle, GUILayout.MaxWidth(40f)))
@@ -723,22 +676,28 @@ namespace AGroupOnStage.Main
 
             GUILayout.EndScrollView();
             GUILayout.EndHorizontal();
-            GUILayout.BeginHorizontal();
-#if DEBUG
-            if (GUILayout.Button("DEBUG: Dump groups", _buttonStyle))
-                AGOSGroupManager.dumpActionGroupConfig();
-
-            if (GUILayout.Button("DEBUG: Toggle debug window", _buttonStyle))
-                AGOSDebug.toggleGUI();
-
-            if (GUILayout.Button("DEBUG: Show AGs", _buttonStyle))
+            GUILayout.BeginVertical();
+            if (AGOSDebug.isDebugBuild() || Settings.get<bool>("EnableDebugOptions"))
             {
-                GroupManager.toggleGUI();
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("DEBUG: Dump groups", _buttonStyle))
+                    AGOSGroupManager.dumpActionGroupConfig();
+
+                if (GUILayout.Button("DEBUG: Toggle debug window", _buttonStyle))
+                    AGOSDebug.toggleGUI();
+                GUILayout.EndHorizontal();
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("DEBUG: Show AGs", _buttonStyle))
+                {
+                    GroupManager.toggleGUI();
+                }
+                GUILayout.EndHorizontal();
             }
-#endif
+            GUILayout.BeginHorizontal();
             if (GUILayout.Button("Close", _buttonStyle))
                 toggleGUI();
             GUILayout.EndHorizontal();
+            GUILayout.EndVertical();
 
             GUI.DragWindow(); // Make window dragable
 
@@ -869,7 +828,7 @@ namespace AGroupOnStage.Main
             GUISkin skin = AGOSUtils.getBestAvailableSkin()/*HighLogic.Skin*/;
             Logger.LogDebug("Skin name: {0}", skin.name);
             _windowStyle = new GUIStyle(skin.window);
-            _windowStyle.fixedHeight = 500f;
+            _windowStyle.stretchHeight = true;
             _windowStyle.fixedWidth = 500f;
             _windowStyle.stretchWidth = true;
             _buttonStyle = new GUIStyle(skin.button);
@@ -887,6 +846,14 @@ namespace AGroupOnStage.Main
             _scrollStyle.stretchHeight = true;
             _textFieldStyle = new GUIStyle(skin.textField);
             _textFieldStyle.fixedWidth = 235f;
+            _labelCenteredYellow = new GUIStyle(skin.label);
+            _labelCenteredYellow.normal.textColor = Color.yellow;
+            _labelCenteredYellow.stretchWidth = true;
+            _labelCenteredYellow.alignment = TextAnchor.MiddleCenter;
+            _tinyButtonStyle = new GUIStyle(skin.button);
+            _tinyButtonStyle.clipping = TextClipping.Overflow;
+            _tinyButtonStyle.padding = new RectOffset(0, 2, 0, 3);
+            _tinyButtonStyle.margin = new RectOffset();
             Logger.Log("Done setting up GUI styles");
         }
 
@@ -1005,7 +972,7 @@ namespace AGroupOnStage.Main
                 backupActionGroups.Clear(); // 2.0.6-dev1 fix for yet another dupe (I hope)
                 backupActionGroupList();
             }*/
-            AGOSUtils.resetActionGroupConfig();
+            AGOSUtils.resetActionGroupConfig(true);
         }
 
 

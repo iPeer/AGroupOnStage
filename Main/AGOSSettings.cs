@@ -36,12 +36,13 @@ namespace AGroupOnStage.Main
             {"AllowEE", "Allow AGOS' Easter Eggs to activate"},
             {"LockInputsOnGUIOpen", "Enable anti-clickthrough input locks while AGOS' GUI is open"},
             {"SilenceWhenUIHidden", "Don't show notifications when the game's GUI is hidden"},
-            {"UseStockToolbar", "Use the stock game's toolbar"},
+            {"UseStockToolbar", "Use the stock game's toolbar (recommended)"},
             {"MaxGroupTimeDelay", "Maximum time (in seconds) an action group can be delayed for"},
             {"AddAGOSKerbals", "Add AGOS-related Kerbals to the applicants list"},
             {"TacosAllDayErrDay", "Always use the 'shimmyTaco' AGOS button image"},
-            {"AGOSGroupsLast", "Show AGOS' custom groups last in the group list in the group config window"}
-            /*{"COntextMenuString", "The text displayed for AGOS' button when right clicking on a part."}*/
+            {"AGOSGroupsLast", "Show AGOS' custom groups last in the group list in the group config window"},
+            {"EnableDebugOptions", "Display debug options within AGOS - MAY BREAK YOUR GAME! USE AT YOUR OWN RISK!"},
+            {"DEBUGForceSpecialOccasion", "DEBUG: Forces special occasion events to fire"}
 
         };
         private bool lastAGOSKSetting;
@@ -67,8 +68,9 @@ namespace AGroupOnStage.Main
                 {"MaxGroupTimeDelay", 10f},
                 {"AddAGOSKerbals", true},
                 {"TacosAllDayErrDay", false},
-                {"AGOSGroupsLast", false}
-                /*{"ContextMenuString", "Action group control"}*/
+                {"AGOSGroupsLast", false},
+                {"EnableDebugOptions", false},
+                {"DEBUGForceSpecialOccasion", false}
             };
 
         }
@@ -172,8 +174,8 @@ namespace AGroupOnStage.Main
             {
                 RenderingManager.RemoveFromPostDrawQueue(AGOSMain.AGOS_SETTINGS_GUI_WINDOW_ID, OnDraw);
                 this.guiVisible = false;
-                if (!AGOSMain.Instance.using000Toolbar)
-                    AGOSMain.Instance.agosButton.SetFalse(false);
+                if (!AGOSMain.ToolbarManager.Instance.using000Toolbar)
+                    AGOSMain.ToolbarManager.Instance.agosButton.SetFalse(false);
                 if (this.lastAGOSKSetting && !get<bool>("AddAGOSKerbals"))
                     RenderingManager.AddToPostDrawQueue(this.otherWinID = AGOSMain.AGOS_SETTINGS_CONFIRM_GUI_WINDOW_ID, OnDrawOther);
                 else if (!this.lastAGOSKSetting && get<bool>("AddAGOSKerbals"))
@@ -235,6 +237,7 @@ namespace AGroupOnStage.Main
 
                 foreach (string s in keys)
                 {
+                    if (s == null) { Logger.LogError("Settings string is null."); continue; }
                     if (s.StartsWith("wPos")) // "Uneditable" settings
                         continue;
 
@@ -251,10 +254,13 @@ namespace AGroupOnStage.Main
                     if (s.Equals("AddAGOSKerbals") && HighLogic.CurrentGame.Mode == Game.Modes.CAREER) // Don't show Kerbal options on Career saves.
                         continue;
 
+                    if (s.StartsWith("DEBUG") && (!AGOSDebug.isDebugBuild() && !get<bool>("EnableDebugOptions"))) // Skip debug options if this isn't a debug build or debug options are disabled
+                        continue;
+
                     bool __;
-                    if (Boolean.TryParse(this.SETTINGS_MAP[s].ToString(), out __))
+                    if (Boolean.TryParse(get(s), out __))
                     {
-                        this.SETTINGS_MAP[s] = GUILayout.Toggle(get<bool>(s), configPrettyNames[s], AGOSMain.Instance._toggleStyle);
+                        set(s, GUILayout.Toggle(get<bool>(s), configPrettyNames[s], AGOSMain.Instance._toggleStyle));
                     }
                     else
                     {
@@ -272,10 +278,11 @@ namespace AGroupOnStage.Main
                 if (GUILayout.Button("Reset GUI positions", AGOSMain.Instance._buttonStyle))
                 {
                     this.toggleGUI();
-                    set("wPosX", 0f);
-                    set("wPosY", 0f);
-                    set("wPosSX", 0f);
-                    set("wPosSY", 0f);
+                    foreach (string s in this.SETTINGS_MAP.Keys.ToList())
+                    {
+                        if (s.StartsWith("wPos"))
+                            set(s, 0f);
+                    }
                     this.toggleGUI();
                 }
 
@@ -285,7 +292,7 @@ namespace AGroupOnStage.Main
                     set("wPosSY", _winPos.y);
                     this.save();
                     this.toggleGUI();
-                    AGOSMain.Instance.switchToolbarsIfNeeded();
+                    AGOSMain.ToolbarManager.Instance.switchToolbarsIfNeeded();
                 }
 
                 GUILayout.EndVertical();

@@ -67,5 +67,15 @@ namespace AGroupOnStage.Main
 
         }
 
+        public static bool isDebugBuild()
+        {
+#if DEBUG
+            return true;
+#else
+            return false;
+#endif
+
+        }
+
     }
 }

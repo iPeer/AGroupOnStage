@@ -3,6 +3,12 @@
 	* Added an option to have AGOS' custom action groups appear at the bottom of the configuration window's list.
 	* Added an option to allow AGOS to create AGOSrelated Kerbals in new (and existing) non-Career saves.
 	* Duplicated actions groups are now removed before saving as well as on vessel switch and flight ready events.
+	* Invalid action groups are now highlighted in red. "Invalid" means if they're configured for stages above the stages the vessel has or are linked to a part that was removed.
+	* Tweaked how the main AGOS GUI works slightly.
+	* Added an options button to the main AGOS GUI (the ... button).
+	* All variations of AGOS' textures for the stock toolbar button are now contained in one file, meaning slightly less RAM usage. Sadly, this is not possible for Blizzy's toolbar, they are still separate textures.
+	* Added messages for special occasions (dev's birthdays, Christmas, New Year, that sort of thing) to AGOS' main GUI. The (stock) toolbar image will even dress up for the occasion!
+	* Added an option to allow users to enable AGOS' debug features (These might break your game, you've been warned)
 
 17/05/15, v2.0.8:
 	* Added support for Blizzy's toolbar

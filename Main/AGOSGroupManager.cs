@@ -185,8 +185,6 @@ namespace AGroupOnStage.Main
                     part.SetHighlight(true, false);
                 }
 
-
-
             }
 
         }

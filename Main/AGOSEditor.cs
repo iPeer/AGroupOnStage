@@ -40,7 +40,7 @@ namespace AGroupOnStage.Main
         private void onEditorRestart()
         {
             Logger.Log("Editor restart.");
-            AGOSUtils.resetActionGroupConfig();
+            AGOSUtils.resetActionGroupConfig(true);
         }
 
         private void onEditorLoad(ShipConstruct data0, CraftBrowser.LoadType data1)

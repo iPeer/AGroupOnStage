@@ -6,6 +6,8 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using AGroupOnStage.Extensions;
+using System.IO;
+using System.Reflection;
 
 namespace AGroupOnStage.Main
 {
@@ -88,12 +90,7 @@ namespace AGroupOnStage.Main
             return currentSkin;
         }
 
-        public static string intArrayToString(int[] array)
-        {
-            return intArrayToString(array, ", ");
-        }
-
-        public static string intArrayToString(int[] array, string separator)
+        public static string intArrayToString(int[] array, string separator = ", ")
         {
             if (array == null)
                 return "";
@@ -175,13 +172,13 @@ namespace AGroupOnStage.Main
             return FlightCamera.Modes.AUTO;
         }
 
-        public static void resetActionGroupConfig()
+        /*public static void resetActionGroupConfig()
         {
             resetActionGroupConfig(true);
-        }
+        }*/
 
 
-        public static void resetActionGroupConfig(bool clearCommited)
+        public static void resetActionGroupConfig(bool clearCommited = false)
         {
             if (AGOSMain.Instance.actionGroups.Count() > 0 && clearCommited)
                 AGOSMain.Instance.actionGroups.Clear();
@@ -226,6 +223,65 @@ namespace AGroupOnStage.Main
                 return 0; // No flight IDs in the editor, for kind of obvious reasons, perhaps.
             else
                 return FlightGlobals.ActiveVessel.rootPart.flightID;
+        }
+
+
+        /// <summary>
+        /// Return if an action group is valid. Invalid groups are groups that contain stages greater than the vessel has, or references to parts that do not exist.
+        /// </summary>
+        /// <param name="ag">The Action Group to check</param>
+        /// <returns>True if the group is valid, otherwise false</returns>
+        public static bool isGroupValidForVessel(IActionGroup ag)
+        {
+            List<Part> parts = (HighLogic.LoadedSceneIsEditor ? EditorLogic.fetch.ship.parts : FlightGlobals.fetch.activeVessel.parts);
+            if (ag.isPartLocked)
+            {
+
+                if (ag.linkedPart == null)
+                    return false;
+                return parts.Contains(ag.linkedPart);
+
+            }
+            else
+            {
+                int stages = /*(HighLogic.LoadedSceneIsEditor ? Staging.lastStage : FlightGlobals.fetch.activeVessel.currentStage - 1);*/Staging.lastStage;
+                if (ag.Stages == null || ag.Stages.Length == 0)
+                    return false;
+                return ag.Stages.Count(a => a > stages) == 0;
+            }
+
+        }
+
+        public static string getDLLPath()
+        {
+            return new FileInfo(Assembly.GetExecutingAssembly().Location).DirectoryName;
+        }
+
+        // I'm amazed that KSP doesn't have an exposed method for this, and if it does, it's well hidden...
+        public static Texture2D loadTextureFromDDS(string path, TextureFormat txf = TextureFormat.DXT1)
+        {
+
+            if (!(new TextureFormat[] { TextureFormat.DXT1, TextureFormat.DXT5}).Contains(txf))
+                throw new InvalidOperationException("Supplied image format is not a DDS format.");
+
+            byte[] imageData = System.IO.File.ReadAllBytes(path);
+            if (imageData[4] != 124)
+                throw new InvalidOperationException("File is not a valid DDS file");
+
+            int width = imageData[13] * 256 + imageData[12];
+            int height = imageData[17] * 256 + imageData[16];
+
+            int HEADER_SIZE = 128; // Header for DDS files is 128 bytes
+
+            byte[] dds = new byte[imageData.Length - HEADER_SIZE]; // Create buffer for the image
+            Buffer.BlockCopy(imageData, HEADER_SIZE, dds, 0, imageData.Length - HEADER_SIZE); // Copy DDS' data to an array, without the headers
+
+            // Create a new Texture2D to hold the image
+            Texture2D tex = new Texture2D(width, height, txf, false);
+            tex.LoadRawTextureData(dds); // Load the data into the image
+            tex.Apply(); // Apply changes
+            return tex;
+
         }
 
     }
