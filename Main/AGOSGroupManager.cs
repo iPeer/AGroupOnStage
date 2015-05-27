@@ -116,7 +116,7 @@ namespace AGroupOnStage.Main
                     Dictionary<string, int> groups = new Dictionary<string, int>();
                     foreach (ActionPart ap in actionsList[s])
                     {
-                        string groupText = String.Format("{0}: {1}", ap.Part.partInfo.title, ap.Action.name);
+                        string groupText = String.Format("{0}: {1}", ap.Part.partInfo.title, ap.Action.guiName);
                         if (groups.ContainsKey(groupText))
                             groups[groupText]++;
                         else
