@@ -9,6 +9,8 @@
 	* All variations of AGOS' textures for the stock toolbar button are now contained in one file, meaning slightly less RAM usage. Sadly, this is not possible for Blizzy's toolbar, they are still separate textures.
 	* Added messages for special occasions (dev's birthdays, Christmas, New Year, that sort of thing) to AGOS' main GUI. The (stock) toolbar image will even dress up for the occasion!
 	* Added an option to allow users to enable AGOS' debug features (These might break your game, you've been warned)
+	* Fixed AGOS' settings GUI sometimes throwing nullrefs when opened at specific times
+	* AGOS will now only save its settings to file if they've actually changed
 
 17/05/15, v2.0.8:
 	* Added support for Blizzy's toolbar

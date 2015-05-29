@@ -233,6 +233,10 @@ namespace AGroupOnStage.Main
         /// <returns>True if the group is valid, otherwise false</returns>
         public static bool isGroupValidForVessel(IActionGroup ag)
         {
+
+            if (!techLevelEnoughForGroup(ag.Group)) // 2.0.9-dev2: Mark parts that have higher tech requirement than the player currently has.
+                return false;
+
             List<Part> parts = (HighLogic.LoadedSceneIsEditor ? EditorLogic.fetch.ship.parts : FlightGlobals.fetch.activeVessel.parts);
             if (ag.isPartLocked)
             {

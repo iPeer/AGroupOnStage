@@ -429,7 +429,7 @@ namespace AGroupOnStage.Main
 
             if (!hasSetupStyles)
                 setUpStyles();
-            _windowPos = GUILayout.Window(AGOS_GUI_WINDOW_ID, _windowPos, OnWindow, "Action group control", _windowStyle, GUILayout.MinHeight(500f));
+            _windowPos = GUILayout.Window(AGOS_GUI_WINDOW_ID, _windowPos, OnWindow, "Action group control", _windowStyle, GUILayout.MinHeight(500f), GUILayout.MinWidth(500f), GUILayout.MaxWidth(500f));
             // TODO: GUI position sanity checks
 
         }
@@ -829,7 +829,6 @@ namespace AGroupOnStage.Main
             Logger.LogDebug("Skin name: {0}", skin.name);
             _windowStyle = new GUIStyle(skin.window);
             _windowStyle.stretchHeight = true;
-            _windowStyle.fixedWidth = 500f;
             _windowStyle.stretchWidth = true;
             _buttonStyle = new GUIStyle(skin.button);
             _labelStyle = new GUIStyle(skin.label);

@@ -24,6 +24,7 @@ namespace AGroupOnStage.Main
         private Rect _winPosOther = new Rect();
         private int otherWinID = 0;
         private GUIStyle _windowStyle;
+        private bool hasChanged = false;
         private Dictionary<string, string> configPrettyNames = new Dictionary<string, string> // Even though non-boolean items aren't displayed, still list them here for future-proofing.
         {
             {"InstantCameraTransitions", "Use instant camera transitions"},
@@ -42,7 +43,7 @@ namespace AGroupOnStage.Main
             {"TacosAllDayErrDay", "Always use the 'shimmyTaco' AGOS button image"},
             {"AGOSGroupsLast", "Show AGOS' custom groups last in the group list in the group config window"},
             {"EnableDebugOptions", "Display debug options within AGOS - MAY BREAK YOUR GAME! USE AT YOUR OWN RISK!"},
-            {"DEBUGForceSpecialOccasion", "DEBUG: Forces special occasion events to fire"}
+            {"DEBUGForceSpecialOccasion", "DEBUG: Force special occasion events to fire"}
 
         };
         private bool lastAGOSKSetting;
@@ -87,6 +88,7 @@ namespace AGroupOnStage.Main
         {
             foreach (string s in newSettings.Keys)
                 this.SETTINGS_MAP[s] = newSettings[s];
+            this.hasChanged = true;
         }
 
         public Dictionary<string, object> getCopy()
@@ -99,7 +101,11 @@ namespace AGroupOnStage.Main
         public void set(string s, object v)
         {
             if (this.SETTINGS_MAP.ContainsKey(s))
+            {
+                if (!get(s).Equals(v.ToString()))
+                    this.hasChanged = true;
                 this.SETTINGS_MAP[s] = v;
+            }
             else
                 Logger.LogWarning("Something attempted to write undefined setting '{0}' to '{1}'!", s, v);
         }
@@ -155,7 +161,9 @@ namespace AGroupOnStage.Main
 
         public void save() 
         {
-
+            if (!this.hasChanged)
+                return;
+            this.hasChanged = false;
             Logger.Log("AGOS is saving config...");
             ConfigNode node = new ConfigNode();
             foreach (string s in this.SETTINGS_MAP.Keys)
@@ -216,11 +224,8 @@ namespace AGroupOnStage.Main
             if (!AGOSMain.Instance.hasSetupStyles)
             {
                 AGOSMain.Instance.setUpStyles();
-                GUISkin skin = AGOSUtils.getBestAvailableSkin();
-                _windowStyle = new GUIStyle(skin.window);
             }
-
-            _winPos = GUILayout.Window(AGOSMain.AGOS_SETTINGS_GUI_WINDOW_ID, _winPos, OnWindow, "AGOS: Settings", _windowStyle);
+            _winPos = GUILayout.Window(AGOSMain.AGOS_SETTINGS_GUI_WINDOW_ID, _winPos, OnWindow, "AGOS: Settings", AGOSMain.Instance._windowStyle);
         }
 
         public void OnWindow(int id)
@@ -240,7 +245,6 @@ namespace AGroupOnStage.Main
                     if (s == null) { Logger.LogError("Settings string is null."); continue; }
                     if (s.StartsWith("wPos")) // "Uneditable" settings
                         continue;
-
                     if (s.Equals("UseStockToolbar") && !_000Toolbar.ToolbarManager.ToolbarAvailable) // Don't display the toolbar option if the player doesn't have 000toolbar installed
                         continue;
 #if !DEBUG
