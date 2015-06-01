@@ -1,4 +1,4 @@
-??, v2.0.9:
+01/06/15, v2.0.9:
 	* Added an option to always use the 'alternate' AGOS button textures.
 	* Added an option to have AGOS' custom action groups appear at the bottom of the configuration window's list.
 	* Added an option to allow AGOS to create AGOSrelated Kerbals in new (and existing) non-Career saves.
@@ -8,9 +8,11 @@
 	* Added an options button to the main AGOS GUI (the ... button).
 	* All variations of AGOS' textures for the stock toolbar button are now contained in one file, meaning slightly less RAM usage. Sadly, this is not possible for Blizzy's toolbar, they are still separate textures.
 	* Added messages for special occasions (dev's birthdays, Christmas, New Year, that sort of thing) to AGOS' main GUI. The (stock) toolbar image will even dress up for the occasion!
-	* Added an option to allow users to enable AGOS' debug features (These might break your game, you've been warned)
-	* Fixed AGOS' settings GUI sometimes throwing nullrefs when opened at specific times
-	* AGOS will now only save its settings to file if they've actually changed
+	* Added an option to allow users to enable AGOS' debug features (These might break your game, you've been warned
+	* Fixed AGOS' settings GUI sometimes throwing nullrefs when opened at specific times.
+	* AGOS will now only save its settings to file if they've actually changed.
+	* AGOS' should now correctly handle action group configs when two ships dock.
+	* Fixed nullref when opening AGOS' GUI without visiting the Editor first.
 
 17/05/15, v2.0.8:
 	* Added support for Blizzy's toolbar
@@ -20,7 +22,7 @@
 	* Vastly improved AGOS' vessel switching logic. Action group configs should now display correctly when switching vessels.
 	* Improved how AGOS handles action group duplication on flight reverts. There should be *no* circumstances in which this happens now.
 
-06/05/2015, v2.0.7:
+06/05/15, v2.0.7:
 	* Art pass on toolbar button
 	* Fixed a couple of things that relied on statements that would never fire.
 	* Rewritten AGOS' settings code
