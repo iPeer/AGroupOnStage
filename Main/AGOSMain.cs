@@ -31,13 +31,15 @@ namespace AGroupOnStage.Main
 
 
         };
-        public bool SpecialOccasion { 
-            get {
+        public bool SpecialOccasion
+        {
+            get
+            {
                 DateTime today = DateTime.Now;
                 string dayMonth = String.Format("{0}{1}", today.Day, today.Month);
                 //Logger.Log(dayMonth);
                 return specialOccasionDates.ContainsKey(dayMonth) || (AGOSDebug.isDebugBuild() && Settings.get<bool>("DEBUGForceSpecialOccasion"));
-            } 
+            }
         }
         public Part linkPart { get; set; }
         public bool guiVisible = false;
@@ -385,7 +387,6 @@ namespace AGroupOnStage.Main
                 Settings.toggleGUI();
                 return;
             }
-
             if (HighLogic.CurrentGame.Mode == Game.Modes.CAREER && AGOSUtils.getTechLevel(SpaceCenterFacility.VehicleAssemblyBuilding) == 0f)
             {
                 ScreenMessages.PostScreenMessage("You do not have access to action groups yet! Upgrade your VAB to unlock them!", 5f, ScreenMessageStyle.UPPER_CENTER);
@@ -393,7 +394,14 @@ namespace AGroupOnStage.Main
             }
             if (guiVisible && !fromPart)
             {
-                EditorLogic.fetch.Unlock("AGOS_INPUT_LOCK");
+                if (EditorLogic.fetch == null) // 2.0.9-dev3: Fix for NRE when opening GUI without visiting the editor first.
+                {
+                    Logger.LogWarning("Couldn't remove control locks because the player hasn't visited the Editor yet! (EditorLogic.fetch == null)");
+                }
+                else
+                {
+                    EditorLogic.fetch.Unlock("AGOS_INPUT_LOCK");
+                }
                 guiVisible = false;
                 if (!ToolbarManager.using000Toolbar)
                     ToolbarManager.agosButton.SetFalse(false);
@@ -412,9 +420,17 @@ namespace AGroupOnStage.Main
             else
             {
                 if (fromPart && guiVisible) { return; }
-                EditorTooltip.Instance.HideToolTip();
+                if (EditorTooltip.Instance != null) // 2.0.9-dev3: Fix for NRE when opening GUI without visiting the editor first.
+                    EditorTooltip.Instance.HideToolTip();
                 if (Settings.get<bool>("LockInputsOnGUIOpen"))
-                    EditorLogic.fetch.Lock(true, true, true, "AGOS_INPUT_LOCK");
+                    if (EditorLogic.fetch == null) // 2.0.9-dev3: Fix for NRE when opening GUI without visiting the editor first.
+                    {
+                        Logger.LogWarning("Couldn't apply control locks because the player hasn't visited the Editor yet! (EditorLogic.fetch == null)");
+                    }
+                    else
+                    {
+                        EditorLogic.fetch.Lock(true, true, true, "AGOS_INPUT_LOCK");
+                    }
                 guiVisible = true;
                 if (!ToolbarManager.using000Toolbar)
                     ToolbarManager.agosButton.SetTrue(false);
@@ -607,74 +623,82 @@ namespace AGroupOnStage.Main
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
-            _scrollPosConfig = GUILayout.BeginScrollView(_scrollPosConfig, _scrollStyle);
 
             //IActionGroup[] groups = actionGroups.ToArray();
             List<IActionGroup> groups = new List<IActionGroup>(); //                              2.0.8-dev2: Filter action groups to the current flightID only.
-            groups.AddRange(actionGroups.FindAll(g => g.FlightID == AGOSUtils.getFlightID())); // ^
+            groups.AddRange(actionGroups.FindAll(g => AGOSUtils.isLoadedCraftID(g.FlightID))); // ^
 
-            foreach (IActionGroup ag in groups)
+            if (groups.Count > 0)
             {
-                //AGOSUtils.printActionGroupInfo(ag);
-                //if (!HighLogic.LoadedSceneIsEditor && ag.Vessel != FlightGlobals.fetch.activeVessel) { continue; }
-                string stagesString;
-                if (ag.isPartLocked)
-                {
-                    if (ag.linkedPart == null)
-                    {
-                        Logger.LogWarning("Action group '{0}' is invalid (part reference is null), removing it from the list", ag.Group);
-                        actionGroups.Remove(ag);
-                        continue;
-                    }
-                    stagesString = String.Format("(PART) {1}", ag.partRef, ag.linkedPart.inverseStage);
-                }
-                else
-                {
-                    int[] stages = ag.Stages;
-                    stagesString = AGOSUtils.intArrayToString(stages, ", ");
-                }
+                _scrollPosConfig = GUILayout.BeginScrollView(_scrollPosConfig, _scrollStyle);
 
-                GUILayout.BeginHorizontal();
-                GUIStyle __labelStyle = _labelStyle;
-                if (!AGOSUtils.isGroupValidForVessel(ag))
-                    __labelStyle = _labelStyleRed;
-                string groupName;
-                string groupDescription = "";
-                if (ag.GetType() == typeof(TimeDelayedActionGroup))
-                    groupName = String.Format("Fire group '{0}' after {1}s", (useAGXConfig && ag.fireGroupID >= 8 ? "" + (ag.fireGroupID - 7) : actionGroupList[ag.fireGroupID]), String.Format("{0:N0}", ag.timerDelay));
-                else if (useAGXConfig && ag.Group >= 8)
-                    groupName = ag.Group - 7 + (AGXInterface.getAGXGroupName(ag.Group - 7) != "" ? ": " + AGXInterface.getAGXGroupName(ag.Group - 7) : "");
-                else
-                    groupName = actionGroupList[ag.Group];
-                if (ag.GetType() == typeof(ThrottleControlActionGroup))
-                    groupDescription = String.Format(" ({0:P0})", ag.ThrottleLevel);
-                GUILayout.Label(groupName + (groupDescription.Length > 0 ? " " + groupDescription : ""), __labelStyle, GUILayout.MinWidth(150f));
-
-                GUILayout.Label(stagesString, __labelStyle);
-                if (GUILayout.Button("Edit", _buttonStyle, GUILayout.MaxWidth(40f)))
+                foreach (IActionGroup ag in groups)
                 {
-                    if (linkPart != null)
-                        linkPart = null;
-                    actionGroupSettings[ag.Group] = true;
-                    throttleLevel = ag.ThrottleLevel;
-                    delayedGroup = ag.fireGroupID;
-                    timerDelay = ag.timerDelay;
-                    if (ag.linkedPart != null)
+                    //AGOSUtils.printActionGroupInfo(ag);
+                    //if (!HighLogic.LoadedSceneIsEditor && ag.Vessel != FlightGlobals.fetch.activeVessel) { continue; }
+                    string stagesString;
+                    if (ag.isPartLocked)
                     {
-                        linkPart = ag.linkedPart;
-                        stageList = "";
+                        if (ag.linkedPart == null)
+                        {
+                            Logger.LogWarning("Action group '{0}' is invalid (part reference is null), removing it from the list", ag.Group);
+                            actionGroups.Remove(ag);
+                            continue;
+                        }
+                        stagesString = String.Format("(PART) {1}", ag.partRef, ag.linkedPart.inverseStage);
                     }
                     else
-                        stageList = AGOSUtils.intArrayToString(ag.Stages, ",");
-                    actionGroups.Remove(ag);
+                    {
+                        int[] stages = ag.Stages;
+                        stagesString = AGOSUtils.intArrayToString(stages, ", ");
+                    }
+
+                    GUILayout.BeginHorizontal();
+                    GUIStyle __labelStyle = _labelStyle;
+                    if (!AGOSUtils.isGroupValidForVessel(ag))
+                        __labelStyle = _labelStyleRed;
+                    string groupName;
+                    string groupDescription = "";
+                    if (ag.GetType() == typeof(TimeDelayedActionGroup))
+                        groupName = String.Format("Fire group '{0}' after {1}s", (useAGXConfig && ag.fireGroupID >= 8 ? "" + (ag.fireGroupID - 7) : actionGroupList[ag.fireGroupID]), String.Format("{0:N0}", ag.timerDelay));
+                    else if (useAGXConfig && ag.Group >= 8)
+                        groupName = ag.Group - 7 + (AGXInterface.getAGXGroupName(ag.Group - 7) != "" ? ": " + AGXInterface.getAGXGroupName(ag.Group - 7) : "");
+                    else
+                        groupName = actionGroupList[ag.Group];
+                    if (ag.GetType() == typeof(ThrottleControlActionGroup))
+                        groupDescription = String.Format(" ({0:P0})", ag.ThrottleLevel);
+                    GUILayout.Label(groupName + (groupDescription.Length > 0 ? " " + groupDescription : ""), __labelStyle, GUILayout.MinWidth(150f));
+
+                    GUILayout.Label(stagesString, __labelStyle);
+                    if (GUILayout.Button("Edit", _buttonStyle, GUILayout.MaxWidth(40f)))
+                    {
+                        if (linkPart != null)
+                            linkPart = null;
+                        actionGroupSettings[ag.Group] = true;
+                        throttleLevel = ag.ThrottleLevel;
+                        delayedGroup = ag.fireGroupID;
+                        timerDelay = ag.timerDelay;
+                        if (ag.linkedPart != null)
+                        {
+                            linkPart = ag.linkedPart;
+                            stageList = "";
+                        }
+                        else
+                            stageList = AGOSUtils.intArrayToString(ag.Stages, ",");
+                        actionGroups.Remove(ag);
+                    }
+                    if (GUILayout.Button("Remove", _buttonStyle, GUILayout.MaxWidth(70f)))
+                        actionGroups.Remove(ag);
+
+                    GUILayout.EndHorizontal();
                 }
-                if (GUILayout.Button("Remove", _buttonStyle, GUILayout.MaxWidth(70f)))
-                    actionGroups.Remove(ag);
 
-                GUILayout.EndHorizontal();
+                GUILayout.EndScrollView();
             }
-
-            GUILayout.EndScrollView();
+            else
+            {
+                GUILayout.Label((AGOSUtils.getVesselPartsList().Count == 0 ? "No vessel is loaded!" : "There are no groups configured for this vessel"), _labelCenteredYellow, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
+            }
             GUILayout.EndHorizontal();
             GUILayout.BeginVertical();
             if (AGOSDebug.isDebugBuild() || Settings.get<bool>("EnableDebugOptions"))
@@ -849,6 +873,7 @@ namespace AGroupOnStage.Main
             _labelCenteredYellow.normal.textColor = Color.yellow;
             _labelCenteredYellow.stretchWidth = true;
             _labelCenteredYellow.alignment = TextAnchor.MiddleCenter;
+            //_labelCenteredYellow.stretchHeight = true;
             _tinyButtonStyle = new GUIStyle(skin.button);
             _tinyButtonStyle.clipping = TextClipping.Overflow;
             _tinyButtonStyle.padding = new RectOffset(0, 2, 0, 3);
@@ -889,6 +914,16 @@ namespace AGroupOnStage.Main
 
             return (from p in partList from m in p.Modules.OfType<AGOSModule>() select m).First();
 
+        }
+
+        public List<AGOSModule> getAllMasterAGOSModules(Vessel v)
+        {
+            List<Part> parts = new List<Part>();
+            if (HighLogic.LoadedSceneIsEditor)
+                parts = EditorLogic.fetch.ship.parts;
+            else
+                parts = v.parts;
+            return (from p in parts from m in p.Modules.OfType<AGOSModule>() where m.isRoot select m).ToList();
         }
 
         [Obsolete("Use findHomesForPartLockedGroups() instead", true)]
@@ -942,9 +977,9 @@ namespace AGroupOnStage.Main
                 if (AGOSUtils.getVesselPartsList().Count > 0)
                 {
                     //AGOSMain.Instance.restoreBackedUpActionGroups(false); // 2.0.6-dev1: Changed to false to prevent duping if player reverts multiple times (-> launch [-> launch [-> ...]] -> editor)
-                    AGOSMain.Instance.removeDuplicateActionGroups(); // 2.0.8-dev2: Updated code for removal of duplicated action groups
-                    //AGOSMain.Instance.removeInvalidActionGroups(); // 2.0.8-dev2: Fix for invalid (0 flightID) groups from pulluting nearby vessels
-                    AGOSMain.Instance.findHomesForPartLockedGroups(AGOSUtils.getVesselPartsList());
+                    removeDuplicateActionGroups(); // 2.0.8-dev2: Updated code for removal of duplicated action groups
+                    //AGOSMain.Instance.removeInvalidActionGroups(); // 2.0.8-dev2: Fix for invalid (0 flightID) groups from polluting nearby vessels
+                    findHomesForPartLockedGroups(AGOSUtils.getVesselPartsList());
                     //AGOSDebug.printAllActionGroups();
                 }
             }

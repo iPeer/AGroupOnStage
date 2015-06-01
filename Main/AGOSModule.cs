@@ -12,9 +12,9 @@ namespace AGroupOnStage.Main
     public class AGOSModule : PartModule
     {
 
-        private bool isRoot = false;
+        public bool isRoot { get; private set; }
         private uint flightID = 0;
-        private int tempFlightID = 0;
+        private uint tempFlightID = 0;
 
         [KSPEvent(active = true, guiActive = true, guiActiveEditor = true, guiName = "Action group control")]
         private void toggleGUI() { AGOSMain.Instance.linkPart = this.part; AGOSMain.Instance.toggleGUI(true); }
@@ -24,7 +24,7 @@ namespace AGroupOnStage.Main
             if (!AGOSUtils.isLoadedSceneOneOf(GameScenes.FLIGHT, GameScenes.EDITOR)) { return; } // Invalid scene
         }
 
-        public AGOSModule setRoot() { this.isRoot = true; return this; }
+        public AGOSModule setRoot() { isRoot = true; return this; }
 
         public override void OnSave(ConfigNode node)
         {
@@ -46,6 +46,15 @@ namespace AGroupOnStage.Main
             //AGOSDebug.printAllActionGroups();
             AGOSMain.Instance.removeDuplicateActionGroups();
             node.AddValue("flightID", this.flightID);
+            /*if (HighLogic.LoadedSceneIsFlight)
+            {
+                if (AGOSFlight.Instance.dockedVesselIDs.Count > 0)
+                {
+                    node.AddValue("isDocked", true);
+                    node.AddValue("subVessels", AGOSFlight.Instance.dockedVesselIDs.Count);
+                    node.AddValue("idList", AGOSUtils.arrayToString<uint>(AGOSFlight.Instance.dockedVesselIDs.ToArray(), ","));
+                }
+            }*/
             List<IActionGroup> groupsToSave = new List<IActionGroup>();
             groupsToSave.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.FlightID == this.flightID));
             if (groupsToSave.Count > 0)
@@ -68,6 +77,8 @@ namespace AGroupOnStage.Main
                         n++;
                     node_current.AddNode(n.ToString());
                     ConfigNode node_n = node_current.GetNode(n.ToString());
+                    if (ag.OriginalFlightID > 0)
+                        node_n.AddValue("originalFlightID", ag.OriginalFlightID);
                     node_n.AddValue("groupType", ag.GetType().Name);
                     node_n.AddValue("isPartLocked", ag.isPartLocked);
                     if (ag.isPartLocked)
@@ -123,7 +134,7 @@ namespace AGroupOnStage.Main
                 else
                 {
                     Logger.LogWarning("No flightID found for this config, assigning temp value.");
-                    this.tempFlightID = Math.Abs(this.GetHashCode());
+                    this.tempFlightID = Convert.ToUInt32(Math.Abs(this.GetHashCode()));
                 }
             }
 
@@ -143,6 +154,11 @@ namespace AGroupOnStage.Main
                 int _id = 0;
                 foreach (ConfigNode id in group.nodes)
                 {
+                    uint originalFlightID = 0;
+                    if (id.HasValue("originalFlightID"))
+                        originalFlightID = Convert.ToUInt32(id.GetValue("originalFlightID"));
+                    else // backwards compat.
+                        originalFlightID = this.flightID;
                     string groupType = id.GetValue("groupType");
                     IActionGroup ag;
                     if (groupType.Equals("FineControlActionGroup"))
@@ -233,6 +249,8 @@ namespace AGroupOnStage.Main
                     ag.Group = groupID;
                     ag.Vessel = this.vessel;
                     ag.FlightID = (this.tempFlightID != 0 ? Convert.ToUInt32(this.tempFlightID) : flightID);
+                    if (originalFlightID > 0)
+                        ag.OriginalFlightID = originalFlightID;
 
                     AGOSMain.Instance.actionGroups.Add(ag);
 
@@ -263,17 +281,31 @@ namespace AGroupOnStage.Main
             return "Able to fire action groups on stage.";
         }
 
-        public void setFlightID(uint id)
+        public void setFlightID(uint id, bool fromDock = false, uint oldID = 0)
         {
 
             this.flightID = id;
             Logger.Log("Processing flightID update from external source ({0})", id);
             List<IActionGroup> groupsToUpdate = new List<IActionGroup>();
-            groupsToUpdate.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.FlightID == this.tempFlightID));
+            groupsToUpdate.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.FlightID == (fromDock && oldID > 0 ? oldID : this.tempFlightID)));
             foreach (IActionGroup b in groupsToUpdate)
+            {
                 b.FlightID = id;
+                if (b.OriginalFlightID == 0)
+                    b.OriginalFlightID = id;
+            }
             Logger.Log("Updated {0} groups to new flightID", groupsToUpdate.Count);
 
+        }
+
+        public void resetFlightID(uint currentID)
+        {
+            Logger.Log("Resetting flightID for groups with current flight ID of '{0}'", currentID);
+            List<IActionGroup> toUpdate = new List<IActionGroup>();
+            toUpdate.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.FlightID == currentID));
+            foreach (IActionGroup a in toUpdate)
+                a.FlightID = a.OriginalFlightID;
+            Logger.Log("Updated {0} groups to their previous flight IDs", toUpdate.Count);
         }
 
     }

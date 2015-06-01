@@ -18,6 +18,7 @@ namespace AGroupOnStage.ActionGroups
         public int timerDelay { get; set; }
         public int fireGroupID { get; set; }
         public uint FlightID { get; set; }
+        public uint OriginalFlightID { get; set; }
         public string StagesAsString
         {
             get

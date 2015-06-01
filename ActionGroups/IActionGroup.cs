@@ -20,6 +20,7 @@ namespace AGroupOnStage.ActionGroups
         int fireGroupID { get; set; }
         uint FlightID { get; set; }
         string StagesAsString { get; }
+        uint OriginalFlightID { get; set; }
 
     }
 }

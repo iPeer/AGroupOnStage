@@ -56,7 +56,10 @@ namespace AGroupOnStage.Main
 
             if (GUILayout.Button("Move current vessel to orbit"))
             {
-                FlightGlobals.fetch.SetShipOrbit(Planetarium.fetch.CurrentMainBody.flightGlobalsIndex, 1.0d, 100d, 0d, 1d, 1d, 1d, 1d);
+                Orbit oldOrbit = FlightGlobals.fetch.activeVessel.orbit;
+                Orbit newOrbit = new Orbit(0.0, 1.0, 400000, oldOrbit.LAN, 0.0, Mathf.PI, Planetarium.GetUniversalTime(), oldOrbit.referenceBody);
+                FlightGlobals.fetch.SetShipOrbit(newOrbit.referenceBody.flightGlobalsIndex, 1.0, 3468.75, 0.0, newOrbit.LAN, 1.0, 1.0, Planetarium.GetUniversalTime());
+                //FlightGlobals.fetch.SetShipOrbit(Planetarium.fetch.CurrentMainBody.flightGlobalsIndex, 1.0d, 100d, 0d, 1d, 1d, 1d, 1d);
             }
 
 

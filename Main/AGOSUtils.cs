@@ -90,16 +90,27 @@ namespace AGroupOnStage.Main
             return currentSkin;
         }
 
+        public static string arrayToString<T>(T[] array, string separator = ", ")
+        {
+            StringBuilder r = new StringBuilder();
+            foreach (T t in array)
+            {
+                r.Append((r.Length > 0 ? separator : "") + t.ToString());
+            }
+            return r.ToString();
+        }
+
         public static string intArrayToString(int[] array, string separator = ", ")
         {
-            if (array == null)
+            /*if (array == null)
                 return "";
             string returnString = "";
             foreach(int o in array)
             {
                 returnString = returnString + (returnString.Length > 0 && separator != null ? separator : "") + o.ToString();
             }
-            return returnString;
+            return returnString;*/
+            return arrayToString<int>(array, separator);
         }
 
         public static List<Part> getVesselPartsList()
@@ -288,5 +299,12 @@ namespace AGroupOnStage.Main
 
         }
 
+
+        public static bool isLoadedCraftID(uint p)
+        {
+            if (HighLogic.LoadedSceneIsEditor)
+                return true;
+            return p == getFlightID();
+        }
     }
 }

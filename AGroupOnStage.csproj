@@ -154,11 +154,11 @@
   </ItemGroup>
   <ItemGroup />
   <PropertyGroup>
-    <PostBuildEvent>if $(ConfigurationName) == AGOS_Debug (
+    <PostBuildEvent>if $(ConfigurationName) == Debug (
   xcopy $(TargetFileName) C:\KSPScratchpad\GameData\iPeer\AGroupOnStage\ /y
   xcopy $(ProjectDir)GameData C:\KSPScratchPad\GameData\ /y /e
 )
-if $(ConfigurationName) == AGOS_Release (
+if $(ConfigurationName) == Release (
   xcopy $(TargetFileName) H:\Dropbox\Public\KSP\mods\staging\AGroupOnStage\GameData\iPeer\AGroupOnStage /y
   xcopy $(ProjectDir)GameData H:\Dropbox\Public\KSP\mods\staging\AGroupOnStage\GameData\ /y /e
 )

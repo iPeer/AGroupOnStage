@@ -39,6 +39,8 @@ namespace AGroupOnStage.Main
                 GameEvents.onFlightReady.Add(onFlightReady);
                 GameEvents.onVesselChange.Add(onVesselChange);
                 GameEvents.onVesselWillDestroy.Add(onVesselDestroy);
+                GameEvents.onPartCouple.Add(OnPartCouple);
+                GameEvents.onPartUndock.Add(OnPartUndock);
                 //GameEvents.onLevelWasLoaded.Add(onLevelWasLoaded);
                 //GameEvents.onVesselGoOffRails.Add(onVesselUnpack);
                 AGOSMain.Instance.FlightEventsRegistered = true;
@@ -46,6 +48,20 @@ namespace AGroupOnStage.Main
             }
             //GameEvents.onVesselLoaded.Add(AGOSMain.Instance.onVesselLoaded);
             //AGOSUtils.resetActionGroupConfig();
+        }
+
+        private void OnPartUndock(Part data)
+        {
+            Logger.Log("Vessel undock: {0}", data.vessel.name);
+            AGOSMain.Instance.getMasterAGOSModule(data.vessel).resetFlightID(data.vessel.rootPart.flightID);
+        }
+
+        private void OnPartCouple(GameEvents.FromToAction<Part, Part> data)
+        {
+
+            Logger.Log("Vessel '{0}' ({1}) docked to vessel '{2}' ({3})", data.from.vessel.vesselName, data.from.vessel.rootPart.flightID, data.to.vessel.vesselName, data.to.vessel.rootPart.flightID);
+            AGOSMain.Instance.getMasterAGOSModule(data.to.vessel).setFlightID(data.to.vessel.rootPart.flightID, true, data.from.vessel.rootPart.flightID);
+
         }
 
         private void onVesselDestroy(Vessel data)
@@ -128,7 +144,7 @@ namespace AGroupOnStage.Main
             processingStageEvent = true;
             List<IActionGroup> toFire = new List<IActionGroup>();
             List<IActionGroup> thisVesselsGroups = new List<IActionGroup>();
-            thisVesselsGroups.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.FlightID == AGOSUtils.getFlightID()));
+            thisVesselsGroups.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => AGOSUtils.isLoadedCraftID(a.FlightID)));
             int stageNum = (AGOSMain.Instance.useAGXConfig && s >= 8 ? s - 7 : s);
             toFire.AddRange(thisVesselsGroups.FindAll(a => a.Stages != null && a.Stages.Length > 0 && a.Stages.Contains(stageNum)/* && a.Vessel == FlightGlobals.fetch.activeVessel*/)); // Regular action groups
             toFire.AddRange(thisVesselsGroups.FindAll(a => a.isPartLocked && a.linkedPart.inverseStage == stageNum/* && a.Vessel == FlightGlobals.fetch.activeVessel*/)); // Part locked groups

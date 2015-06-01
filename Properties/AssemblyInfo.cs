@@ -19,7 +19,8 @@ using System.Runtime.InteropServices;
 // The form "{Major}.{Minor}.*" will automatically update the build and revision,
 // and "{Major}.{Minor}.{Build}.*" will update just the revision.
 
-[assembly: AssemblyVersion("2.0.9")]
+[assembly: AssemblyVersion("2.0.0")]
+[assembly: AssemblyFileVersionAttribute("2.0.9")]
 [assembly: KSPAssembly("AGroupOnStage", 2, 0)]
 
 // The following attributes are used to specify the signing key for the assembly,
@@ -29,5 +30,4 @@ using System.Runtime.InteropServices;
 //[assembly: AssemblyKeyFile("")]
 
 [assembly: NeutralResourcesLanguageAttribute("en-GB")]
-[assembly: AssemblyFileVersionAttribute("2.0.0.0")]
 [assembly: ComVisibleAttribute(false)]

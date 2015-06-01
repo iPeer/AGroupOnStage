@@ -67,7 +67,7 @@ namespace AGroupOnStage.Main
                 {"SilenceWhenUIHidden", true},
                 {"UseStockToolbar", true},
                 {"MaxGroupTimeDelay", 10f},
-                {"AddAGOSKerbals", true},
+                {"AddAGOSKerbals", false},
                 {"TacosAllDayErrDay", false},
                 {"AGOSGroupsLast", false},
                 {"EnableDebugOptions", false},
