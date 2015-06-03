@@ -39,7 +39,7 @@ namespace AGroupOnStage.Main
             {"SilenceWhenUIHidden", "Don't show notifications when the game's GUI is hidden"},
             {"UseStockToolbar", "Use the stock game's toolbar (recommended)"},
             {"MaxGroupTimeDelay", "Maximum time (in seconds) an action group can be delayed for"},
-            {"AddAGOSKerbals", "Add AGOS-related Kerbals to the applicants list"},
+            {"AddAGOSKerbals", "Add AGOS-related Kerbals to the roster list"},
             {"TacosAllDayErrDay", "Always use the 'shimmyTaco' AGOS button image"},
             {"AGOSGroupsLast", "Show AGOS' custom groups last in the group list in the group config window"},
             {"EnableDebugOptions", "Display debug options within AGOS - MAY BREAK YOUR GAME! USE AT YOUR OWN RISK!"},
@@ -182,8 +182,8 @@ namespace AGroupOnStage.Main
             {
                 RenderingManager.RemoveFromPostDrawQueue(AGOSMain.AGOS_SETTINGS_GUI_WINDOW_ID, OnDraw);
                 this.guiVisible = false;
-                if (!AGOSMain.ToolbarManager.Instance.using000Toolbar)
-                    AGOSMain.ToolbarManager.Instance.agosButton.SetFalse(false);
+                if (!AGOSToolbarManager.using000Toolbar)
+                    AGOSToolbarManager.agosButton.SetFalse(false);
                 if (this.lastAGOSKSetting && !get<bool>("AddAGOSKerbals"))
                     RenderingManager.AddToPostDrawQueue(this.otherWinID = AGOSMain.AGOS_SETTINGS_CONFIRM_GUI_WINDOW_ID, OnDrawOther);
                 else if (!this.lastAGOSKSetting && get<bool>("AddAGOSKerbals"))
@@ -296,7 +296,7 @@ namespace AGroupOnStage.Main
                     set("wPosSY", _winPos.y);
                     this.save();
                     this.toggleGUI();
-                    AGOSMain.ToolbarManager.Instance.switchToolbarsIfNeeded();
+                    AGOSToolbarManager.switchToolbarsIfNeeded();
                 }
 
                 GUILayout.EndVertical();
@@ -308,8 +308,6 @@ namespace AGroupOnStage.Main
                 GUILayout.BeginVertical(GUILayout.MinWidth(250f));
 
                 string dialogMessage = "Do you want to remove AGOS-related Kerbals from the roster?\n\nOnly Kerbals that are not assigned, missing or dead can be removed.";
-                if (HighLogic.CurrentGame.Mode == Game.Modes.CAREER)
-                    dialogMessage += "\n\nYou will NOT be refunded hirings costs for any of these Kerbals!";
                 GUILayout.Label(dialogMessage);
 
                 GUILayout.BeginHorizontal();

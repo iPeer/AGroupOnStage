@@ -26,7 +26,7 @@ namespace AGroupOnStage.Main
             {"244", "Today is Roxy's birthday!"},
             {"89", "Today is AGroupOnStage's birthday!"},
             {"2412", "Santa Claus is coming to town!"},
-            {"2515", "Merry Christmas!"},
+            {"2512", "Merry Christmas!"},
             {"11", "Happy New Year!"}
 
 
@@ -53,7 +53,6 @@ namespace AGroupOnStage.Main
         public Dictionary<int, KSPActionGroup> stockAGMap;
         public static AGOSSettings Settings { get; protected set; }
         public static AGOSGroupManager GroupManager { get; protected set; }
-        public static AGOSToolbarManager ToolbarManager { get; protected set; }
         public bool FlightEventsRegistered { get; set; }
         public bool EditorEventsRegistered { get; set; }
         public static readonly int AGOS_GUI_WINDOW_ID = 03022007;
@@ -159,7 +158,6 @@ namespace AGroupOnStage.Main
                 Logger.Log("Debug options are enabled.");
             Logger.Log("AGOS' Settings loaded");
             GroupManager = new AGOSGroupManager();
-            ToolbarManager = new AGOSToolbarManager();
 
             if (Settings.get<bool>("AddAGOSKerbals"))
                 addAGOSKerbals();
@@ -173,7 +171,7 @@ namespace AGroupOnStage.Main
             GameEvents.onEditorRedo.Add(OnEditorUndo);
             GameEvents.onShowUI.Add(onShowUI);
             GameEvents.onHideUI.Add(onHideUI);
-            ToolbarManager.addToolbarButton();
+            AGOSToolbarManager.addToolbarButton();
 
 #if DEBUG
             if (Settings.get<bool>("HereBeDragons"))
@@ -257,7 +255,7 @@ namespace AGroupOnStage.Main
         private void OnGUIApplicationLauncherReady()
         {
             if (Settings.get<bool>("UseStockToolbar") || !_000Toolbar.ToolbarManager.ToolbarAvailable)
-                ToolbarManager.setupToolbarButton();
+                AGOSToolbarManager.setupToolbarButton();
         }
 
         /*public void backupActionGroupList()
@@ -403,8 +401,8 @@ namespace AGroupOnStage.Main
                     EditorLogic.fetch.Unlock("AGOS_INPUT_LOCK");
                 }
                 guiVisible = false;
-                if (!ToolbarManager.using000Toolbar)
-                    ToolbarManager.agosButton.SetFalse(false);
+                if (!AGOSToolbarManager.using000Toolbar)
+                    AGOSToolbarManager.agosButton.SetFalse(false);
                 RenderingManager.RemoveFromPostDrawQueue(AGOS_GUI_WINDOW_ID, OnDraw);
                 Settings.set("wPosX", _windowPos.x);
                 Settings.set("wPosY", _windowPos.y);
@@ -432,8 +430,8 @@ namespace AGroupOnStage.Main
                         EditorLogic.fetch.Lock(true, true, true, "AGOS_INPUT_LOCK");
                     }
                 guiVisible = true;
-                if (!ToolbarManager.using000Toolbar)
-                    ToolbarManager.agosButton.SetTrue(false);
+                if (!AGOSToolbarManager.using000Toolbar)
+                    AGOSToolbarManager.agosButton.SetTrue(false);
                 _windowPos.x = Settings.get<float>("wPosX");
                 _windowPos.y = Settings.get<float>("wPosY");
                 RenderingManager.AddToPostDrawQueue(AGOS_GUI_WINDOW_ID, OnDraw);
@@ -714,6 +712,12 @@ namespace AGroupOnStage.Main
                 if (GUILayout.Button("DEBUG: Show AGs", _buttonStyle))
                 {
                     GroupManager.toggleGUI();
+                }
+                GUILayout.EndHorizontal();
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("DEBUG: Dump all possible control locks", _buttonStyle))
+                {
+                    AGOSInputLockManager.DEBUGListAllPossibleLocks();
                 }
                 GUILayout.EndHorizontal();
             }

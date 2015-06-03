@@ -12,20 +12,12 @@ namespace AGroupOnStage.Main
     public class AGOSToolbarManager
     {
 
-        public bool launcherButtonAdded = false;
-        public bool using000Toolbar = false;
-        public IButton _000agosButton;
-        public ApplicationLauncherButton agosButton;
+        public static bool launcherButtonAdded = false;
+        public static bool using000Toolbar = false;
+        public static IButton _000agosButton;
+        public static ApplicationLauncherButton agosButton;
 
-        public AGOSToolbarManager Instance { get; protected set; }
-
-
-        public AGOSToolbarManager()
-        {
-            Instance = this;
-        }
-
-        public void addToolbarButton()
+        public static void addToolbarButton()
         {
             if ((ApplicationLauncher.Ready && AGOSMain.Settings.get<bool>("UseStockToolbar")) || !ToolbarManager.ToolbarAvailable)
                 setupToolbarButton();
@@ -35,7 +27,7 @@ namespace AGroupOnStage.Main
             }
         }
 
-        public void switchToolbarsIfNeeded()
+        public static void switchToolbarsIfNeeded()
         {
             if (ToolbarManager.ToolbarAvailable && !AGOSMain.Settings.get<bool>("UseStockToolbar") && !using000Toolbar)
             {
@@ -51,7 +43,7 @@ namespace AGroupOnStage.Main
             }
         }
 
-        public void setup000ToolbarButton()
+        public static void setup000ToolbarButton()
         {
             Logger.Log("Setting up 000Toolbar");
             _000agosButton = ToolbarManager.Instance.add("AGOS", "AGroupOnStage");
@@ -68,7 +60,7 @@ namespace AGroupOnStage.Main
 
         }
 
-        public void remove000ToolbarButton()
+        public static void remove000ToolbarButton()
         {
             Logger.Log("Removing 000Toolbar button");
             _000agosButton.Destroy();
@@ -76,7 +68,7 @@ namespace AGroupOnStage.Main
             using000Toolbar = false;
         }
 
-        public void setupToolbarButton()
+        public static void setupToolbarButton()
         {
             if (!launcherButtonAdded)
             {
@@ -106,14 +98,14 @@ namespace AGroupOnStage.Main
 
         }
 
-        public void removeToolbarButton()
+        public static void removeToolbarButton()
         {
             Logger.Log("Removing ApplicationLauncher button");
             ApplicationLauncher.Instance.RemoveModApplication(agosButton);
             launcherButtonAdded = false;
         }
 
-        public Texture2D createButtonTexture(bool blizzy = false)
+        public static Texture2D createButtonTexture(bool blizzy = false)
         {
             int x = 0;
             int y = 0;

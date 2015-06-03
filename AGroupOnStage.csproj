@@ -138,6 +138,7 @@
     <Compile Include="Main\AGOSEditor.cs" />
     <Compile Include="Main\AGOSFlight.cs" />
     <Compile Include="Main\AGOSGroupManager.cs" />
+    <Compile Include="Main\AGOSInputLockManager.cs" />
     <Compile Include="Main\AGOSMain.cs" />
     <Compile Include="AGX\AGXInterface.cs" />
     <Compile Include="Logging\Logger.cs" />
