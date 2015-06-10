@@ -121,7 +121,7 @@ namespace AGroupOnStage.Main
                 Logger.Log("Are you hungry?");
                 y = (blizzy ? 24 : 128);
             }
-            Texture2D mainTex = AGOSUtils.loadTextureFromDDS(System.IO.Path.Combine(AGOSUtils.getDLLPath(), "Textures/Buttons.dds"));
+            Texture2D mainTex = AGOSUtils.loadTextureFromDDS(System.IO.Path.Combine(AGOSUtils.getDLLPath(), "Textures/Buttons.dds"), TextureFormat.DXT5);
             Color[] pixels = mainTex.GetPixels(x, y, w, h); // Get the pixels we want from the main texture
             Texture2D buttonTex = new Texture2D(w, h, TextureFormat.ARGB32, false); // Create the image that will be used for the button
             buttonTex.SetPixels(pixels); // Fill the image with the pixels we want

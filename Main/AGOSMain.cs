@@ -45,8 +45,6 @@ namespace AGroupOnStage.Main
         public bool guiVisible = false;
         public bool settingsGUIVisible = false;
         public bool useAGXConfig = false;
-        /*public bool using000Toolbar = false;
-        public bool launcherButtonAdded = false;*/
         public List<IActionGroup> actionGroups = new List<IActionGroup>();
         public Dictionary<int, string> actionGroupList = new Dictionary<int, string>();
         public Dictionary<int, bool> actionGroupSettings = new Dictionary<int, bool>();
@@ -64,9 +62,12 @@ namespace AGroupOnStage.Main
         public static readonly int AGOS_GROUP_LIST_WINDOW_ID = 53022007;
         public static readonly int AGOS_DEBUG_GUI_WINDOW_ID = 63022007;
 
+        public const string AGOS_MAIN_GUI_NAME = "Main";
+        public const string AGOS_SETTINGS_GUI_NAME = "Settings";
+        public const string AGOS_MANAGER_GUI_NAME = "Manager";
+        public const string AGOS_DEBUG_GUI_NAME = "Debug";
+
         public bool hasSetupStyles = false;
-        /*public ApplicationLauncherButton agosButton = null;
-        public IButton _000agosButton = null;*/
         public bool isGameGUIHidden = false;
         public static readonly List<string> agosKerbalNames = new List<string>() { "iPeer", "Roxy", "Shimmy", "Addle", "Gav", "Kofeyh" }; // You have to be super awesome to make it into this list
 
@@ -392,14 +393,7 @@ namespace AGroupOnStage.Main
             }
             if (guiVisible && !fromPart)
             {
-                if (EditorLogic.fetch == null) // 2.0.9-dev3: Fix for NRE when opening GUI without visiting the editor first.
-                {
-                    Logger.LogWarning("Couldn't remove control locks because the player hasn't visited the Editor yet! (EditorLogic.fetch == null)");
-                }
-                else
-                {
-                    EditorLogic.fetch.Unlock("AGOS_INPUT_LOCK");
-                }
+                AGOSInputLockManager.removeControlLocksForSceneDelayed(HighLogic.LoadedScene, 250d, AGOS_MAIN_GUI_NAME);
                 guiVisible = false;
                 if (!AGOSToolbarManager.using000Toolbar)
                     AGOSToolbarManager.agosButton.SetFalse(false);
@@ -421,14 +415,7 @@ namespace AGroupOnStage.Main
                 if (EditorTooltip.Instance != null) // 2.0.9-dev3: Fix for NRE when opening GUI without visiting the editor first.
                     EditorTooltip.Instance.HideToolTip();
                 if (Settings.get<bool>("LockInputsOnGUIOpen"))
-                    if (EditorLogic.fetch == null) // 2.0.9-dev3: Fix for NRE when opening GUI without visiting the editor first.
-                    {
-                        Logger.LogWarning("Couldn't apply control locks because the player hasn't visited the Editor yet! (EditorLogic.fetch == null)");
-                    }
-                    else
-                    {
-                        EditorLogic.fetch.Lock(true, true, true, "AGOS_INPUT_LOCK");
-                    }
+                    AGOSInputLockManager.setControlLocksForScene(HighLogic.LoadedScene, AGOS_MAIN_GUI_NAME);
                 guiVisible = true;
                 if (!AGOSToolbarManager.using000Toolbar)
                     AGOSToolbarManager.agosButton.SetTrue(false);
@@ -712,6 +699,10 @@ namespace AGroupOnStage.Main
                 if (GUILayout.Button("DEBUG: Show AGs", _buttonStyle))
                 {
                     GroupManager.toggleGUI();
+                }
+                if (GUILayout.Button("DEBUG: Display active lock list", _buttonStyle))
+                {
+                    AGOSInputLockManager.DEBUGListActiveLocks();
                 }
                 GUILayout.EndHorizontal();
                 GUILayout.BeginHorizontal();

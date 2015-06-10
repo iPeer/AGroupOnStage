@@ -43,7 +43,8 @@ namespace AGroupOnStage.Main
             {"TacosAllDayErrDay", "Always use the 'shimmyTaco' AGOS button image"},
             {"AGOSGroupsLast", "Show AGOS' custom groups last in the group list in the group config window"},
             {"EnableDebugOptions", "Display debug options within AGOS - MAY BREAK YOUR GAME! USE AT YOUR OWN RISK!"},
-            {"DEBUGForceSpecialOccasion", "DEBUG: Force special occasion events to fire"}
+            {"DEBUGForceSpecialOccasion", "DEBUG: Force special occasion events to fire"},
+            {"LogControlLocks", "Log all control locks or unlocks. Can be spammy."}
 
         };
         private bool lastAGOSKSetting;
@@ -71,7 +72,8 @@ namespace AGroupOnStage.Main
                 {"TacosAllDayErrDay", false},
                 {"AGOSGroupsLast", false},
                 {"EnableDebugOptions", false},
-                {"DEBUGForceSpecialOccasion", false}
+                {"DEBUGForceSpecialOccasion", false},
+                {"LogControlLocks", false}
             };
 
         }

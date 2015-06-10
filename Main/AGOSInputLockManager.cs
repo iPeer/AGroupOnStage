@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Timers;
+using UnityEngine;
 
 namespace AGroupOnStage.Main
 {
@@ -14,6 +16,9 @@ namespace AGroupOnStage.Main
         const string AGOS_KSC_LOCK_NAME     = "AGOS_KSC_LOCK";
         const string AGOS_ASTRO_LOCK_NAME   = "AGOS_STRO_LOCK";
         const string AGOS_TRACKING_LOCK_NAME = "AGOS_TRACKING_LOCK"; // this guy ruined my tabs. I'll remember that for later.
+        const string AGOS_DEBUG_LOCK_NAME   = "AGOS_DEBUG_LOCK";
+
+        private static List<string> openGUIs = new List<string>();
 
         /*
          * All valid control locks as of version 1.0.2:
@@ -38,6 +43,8 @@ namespace AGroupOnStage.Main
          * This file needs more of these magical green things.
          * It is a really nice green colour, though.
          * 
+         * Though on GitHub, it's grey. How boring.
+         * 
          */
 
         /// <summary>
@@ -50,12 +57,12 @@ namespace AGroupOnStage.Main
         static readonly List<ControlTypes> flightLocks = new List<ControlTypes>() 
         {
 
-            ControlTypes.THROTTLE,
-            ControlTypes.STAGING,
-            ControlTypes.PAUSE,
-            ControlTypes.TIMEWARP,
-            ControlTypes.CUSTOM_ACTION_GROUPS, // Custom01-10 groups?
-            ControlTypes.GROUP_ABORT
+            ControlTypes.THROTTLE, // Do I need to explain this one?
+            ControlTypes.STAGING, // ^
+            ControlTypes.PAUSE, // Not really vital, but it does make AGOS' GUI all wobbly and stuff.
+            ControlTypes.TIMEWARP, // Not a big deal, but locked anyway for state of mind.
+            ControlTypes.CUSTOM_ACTION_GROUPS, // Don't want to accidentally fire an action group while tweaking.
+            ControlTypes.GROUP_ABORT // See the first comment.
 
         };
 
@@ -70,19 +77,19 @@ namespace AGroupOnStage.Main
 
             // I could just use ControlTypes.EDITOR_UI, but I want some GUI elements to remain active, such as saving.
 
-            ControlTypes.EDITOR_EDIT_NAME_FIELDS,
-            ControlTypes.EDITOR_EDIT_STAGES,
-            ControlTypes.EDITOR_EXIT,
-            ControlTypes.EDITOR_GIZMO_TOOLS,
+            ControlTypes.EDITOR_EDIT_NAME_FIELDS, // I don't really know why I lock this
+            ControlTypes.EDITOR_EDIT_STAGES, // Might make AGOS act all funny. Foresight!
+            ControlTypes.EDITOR_EXIT, // Not really vital as of 1.0 (new confirmation), but locked anyway
+            ControlTypes.EDITOR_GIZMO_TOOLS, // Locked to prevent the rootpart from being changed. Might cause funky stuff.
             ControlTypes.EDITOR_ICON_HOVER, // What is this?
             ControlTypes.EDITOR_ICON_PICK, // ^
-            ControlTypes.EDITOR_LAUNCH,
-            ControlTypes.EDITOR_LOAD,
-            ControlTypes.EDITOR_NEW,
-            ControlTypes.EDITOR_PAD_PICK_COPY,
-            ControlTypes.EDITOR_PAD_PICK_PLACE,
-            ControlTypes.EDITOR_ROOT_REFLOW,
-            ControlTypes.EDITOR_UNDO_REDO
+            ControlTypes.EDITOR_LAUNCH, // I'll just tweak this gro-aw crap.
+            ControlTypes.EDITOR_LOAD, // Because the hang is annoying.
+            ControlTypes.EDITOR_NEW, // Might freak AGOS out if you're midway through editing a (part locked) group
+            ControlTypes.EDITOR_PAD_PICK_COPY, // Guess: prevents accidental part copying with the GUI open.
+            ControlTypes.EDITOR_PAD_PICK_PLACE, // Guess: Stops the player breaking everything by clicking their vessel and having the mouse grab a part. Possibly also locks the parts list.
+            ControlTypes.EDITOR_ROOT_REFLOW, // I got nothin'
+            ControlTypes.EDITOR_UNDO_REDO // AGOS: Doesn't (can't) handle undo/redo as it is, who knows what will happen if you do it with teh GUI open...
 
         };
 
@@ -92,7 +99,7 @@ namespace AGroupOnStage.Main
         // Super simple stuff.
         static readonly List<ControlTypes> kscLocks = new List<ControlTypes>() 
         {
-            ControlTypes.KSC_FACILITIES
+            ControlTypes.KSC_FACILITIES // Because accidentally entering the VAB when trying to change a setting is (really) annoying.
         };
 
         /// <summary>
@@ -103,7 +110,7 @@ namespace AGroupOnStage.Main
         static readonly List<ControlTypes> astroLocks = new List<ControlTypes>()
         {
 
-            ControlTypes.All
+            ControlTypes.All // More for career. Prevent accidental hiring (or firing) of Kerbals.
 
         };
 
@@ -114,44 +121,118 @@ namespace AGroupOnStage.Main
         static readonly List<ControlTypes> trackingLocks = new List<ControlTypes>()
         {
 
-            ControlTypes.TRACKINGSTATION_UI
+            ControlTypes.TRACKINGSTATION_UI // I wanted to change a setting, not terminate a flight!
 
         };
 
-
-        public static void lockFlightControls()
+        public static void setControlLocksForScene(GameScenes scene, string guiName)
         {
+            registerGUIOpen(guiName);
+            setControlLocksForScene(scene);
         }
 
-        public static void lockEditorControls() // Placeholder
+        public static void setControlLocksForScene(GameScenes scene)
         {
-            if (EditorLogic.fetch == null)
+
+
+            if (scene == GameScenes.EDITOR)
+                applyLocks(AGOS_EDITOR_LOCK_NAME, editorLocks);
+            else if (scene == GameScenes.FLIGHT)
+                applyLocks(AGOS_FLIGHT_LOCK_NAME, flightLocks);
+            else if (scene == GameScenes.SPACECENTER)
+                applyLocks(AGOS_KSC_LOCK_NAME, kscLocks);
+            else if (scene == GameScenes.TRACKSTATION)
+                applyLocks(AGOS_TRACKING_LOCK_NAME, trackingLocks);
+            else // So there's no scene for the astro complex? This could be problematic.
+                applyLocks(AGOS_ASTRO_LOCK_NAME, astroLocks);
+
+        }
+
+        public static void removeControlLocksForScene(GameScenes scene, string guiName)
+        {
+            registerGUIClosed(guiName);
+            removeControlLocksForScene(scene);
+        }
+
+        public static void removeControlLocksForScene(GameScenes scene)
+        {
+            if (scene == GameScenes.EDITOR)
+                removeLocks(AGOS_EDITOR_LOCK_NAME, editorLocks);
+            else if (scene == GameScenes.FLIGHT)
+                removeLocks(AGOS_FLIGHT_LOCK_NAME, flightLocks);
+            else if (scene == GameScenes.SPACECENTER)
+                removeLocks(AGOS_KSC_LOCK_NAME, kscLocks);
+            else if (scene == GameScenes.TRACKSTATION)
+                removeLocks(AGOS_TRACKING_LOCK_NAME, trackingLocks);
+            else // So there's no scene for the astro complex? This could be problematic.
+                removeLocks(AGOS_ASTRO_LOCK_NAME, astroLocks);
+        }
+
+        public static void removeControlLocksForSceneDelayed(GameScenes scene, double delay, string guiName)
+        {
+            registerGUIClosed(guiName);
+            removeControlLocksForSceneDelayed(scene, delay);
+        }
+
+        public static void removeControlLocksForSceneDelayed(GameScenes scene, double delay) // Doesn't work - never fires -- 30 minute later "I changed nothing" edit: I STAND CORRECTED. IT WORKS!
+        {
+            Timer t = new Timer();
+            GC.KeepAlive(t);
+            t.Interval = delay;
+            t.Elapsed += (sender, e) => delayedRemoveTrigger(sender, e, scene, t);
+            t.Enabled = true;
+            t.Start();
+
+        }
+
+        private static void delayedRemoveTrigger(object sender, ElapsedEventArgs e, GameScenes scene, Timer timer)
+        {
+
+            timer.Stop();
+            timer.Dispose();
+            removeControlLocksForScene(scene);
+
+        }
+
+        private static void applyLocks(string lockPrefix, List<ControlTypes> locks)
+        {
+
+
+            foreach (ControlTypes ct in locks)
             {
-                Logger.LogError("Cannot apply editor locks!");
-                return;
+                string lockName = String.Format("{0}_{1}", lockPrefix, ct.ToString());
+                if (AGOSMain.Settings.get<bool>("LogControlLocks"))
+                    Logger.Log("Activating control lock '{0}'", lockName);
+                InputLockManager.SetControlLock(ct, lockName);
             }
-            EditorLogic.fetch.Lock(true, true, true, AGOS_EDITOR_LOCK_NAME);
-        }
-
-        public static void removeFlightLocks()
-        {
 
         }
 
-        public static void removeEditorLocks() // Placeholder
+        private static void removeLocks(string lockPrefix, List<ControlTypes> locks) 
         {
-            if (EditorLogic.fetch == null)
+            if (openGUIs.Count > 1) { return; } // More than one AGOS GUI is open, don't remove the locks
+            foreach (ControlTypes ct in locks)
             {
-                Logger.LogError("Cannot remove editor locks!");
-                return;
+                string lockName = String.Format("{0}_{1}", lockPrefix, ct.ToString());
+                if (InputLockManager.GetControlLock(lockName) == ControlTypes.None)
+                    continue;
+                if (AGOSMain.Settings.get<bool>("LogControlLocks"))
+                    Logger.Log("Removing control lock '{0}'", lockName);
+                InputLockManager.RemoveControlLock(lockName);
             }
-            EditorLogic.fetch.Unlock(AGOS_EDITOR_LOCK_NAME);
+
         }
 
-        public static void removeAllLocks() // Utility method
+        public static void registerGUIOpen(string guiName)
         {
-            removeEditorLocks();
-            removeFlightLocks();
+            if (!openGUIs.Contains(guiName))
+                openGUIs.Add(guiName);
+        }
+
+        public static void registerGUIClosed(string guiName)
+        {
+            if (openGUIs.Contains(guiName))
+                openGUIs.Remove(guiName);
         }
 
         public static void DEBUGListAllPossibleLocks() 
@@ -160,6 +241,62 @@ namespace AGroupOnStage.Main
             var type = typeof(ControlTypes);
             foreach (string s in type.GetFields().Select(x => x.Name))
                 Logger.Log("{0}", s);
+
+        }
+
+        public static void DEBUGdrawLockButtons()
+        {
+
+            var type = typeof(ControlTypes);
+            foreach (string s in type.GetFields().Select(x => x.Name))
+            {
+
+                bool lockEnabled = InputLockManager.GetControlLock(String.Format("{0}_{1}", AGOS_DEBUG_LOCK_NAME, s)) != ControlTypes.None;
+                DEBUGtoggleDebugLock(s, GUILayout.Toggle(lockEnabled, s, AGOSMain.Instance._buttonStyle));
+
+            }
+
+        }
+
+        static ControlTypes DEBUGgetLockForName(string n)
+        {
+
+            foreach (ControlTypes ct in Enum.GetValues(typeof(ControlTypes)))
+            {
+                if (ct.ToString().Equals(n))
+                    return ct;
+            }
+            return ControlTypes.None;
+
+        }
+
+        static void DEBUGtoggleDebugLock(string s, bool ignored)
+        {
+
+            ControlTypes _lock = DEBUGgetLockForName(s);
+
+            if (InputLockManager.GetControlLock(String.Format("{0}_{1}", AGOS_DEBUG_LOCK_NAME, _lock.ToString())) != ControlTypes.None)
+            {
+                InputLockManager.RemoveControlLock(String.Format("{0}_{1}", AGOS_DEBUG_LOCK_NAME, _lock.ToString()));
+            }
+            else
+            {
+                InputLockManager.SetControlLock(_lock, String.Format("{0}_{1}", AGOS_DEBUG_LOCK_NAME, _lock.ToString()));
+            }
+
+        }
+
+        public static void DEBUGListActiveLocks()
+        {
+
+            List<string> locks = new List<string>(InputLockManager.lockStack.Where(a => a.Key.StartsWith("AGOS_")).Select(b => b.Key));
+
+            Logger.Log("AGOS currently has {0} active lock(s)", locks.Count);
+            int x = 0;
+            foreach (string s in locks)
+            {
+                Logger.Log("\t{0}: {1} ({2})", x++, s, InputLockManager.lockStack[s]);
+            }
 
         }
 
