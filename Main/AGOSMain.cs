@@ -168,8 +168,6 @@ namespace AGroupOnStage.Main
             GameEvents.onGameSceneLoadRequested.Add(onSceneLoadRequested);
             GameEvents.onGUIApplicationLauncherReady.Add(OnGUIApplicationLauncherReady);
             //GameEvents.onLevelWasLoaded.Add(onLevelWasLoaded); // 2.0.8-dev2: No longer needed.
-            GameEvents.onEditorUndo.Add(OnEditorUndo);
-            GameEvents.onEditorRedo.Add(OnEditorUndo);
             GameEvents.onShowUI.Add(onShowUI);
             GameEvents.onHideUI.Add(onHideUI);
             AGOSToolbarManager.addToolbarButton();
@@ -1002,14 +1000,6 @@ namespace AGroupOnStage.Main
                 backupActionGroupList();
             }*/
             AGOSUtils.resetActionGroupConfig(true);
-        }
-
-
-        private void OnEditorUndo(ShipConstruct data)
-        {
-            Logger.Log("Undo/Redo");
-            //AGOSUtils.resetActionGroupConfig();
-            findHomesForPartLockedGroups(data.parts);
         }
 
         private void onLevelWasLoaded(GameScenes level)
