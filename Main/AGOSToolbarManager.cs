@@ -116,7 +116,7 @@ namespace AGroupOnStage.Main
                 w = h = 24;
                 x = 128;
             }
-            if ((AGOSMain.Settings.get<bool>("TacosAllDayErrDay") || (new System.Random()).NextBoolOneIn(5)) && AGOSMain.Settings.get<bool>("AllowEE"))
+            if ((AGOSMain.Settings.get<bool>("TacosAllDayErrDay") || (new System.Random()).NextBoolOneIn(AGOSMain.Settings.get<int>("TacoButtonChance"))) && AGOSMain.Settings.get<bool>("AllowEE"))
             {
                 Logger.Log("Are you hungry?");
                 y = (blizzy ? 24 : 128);

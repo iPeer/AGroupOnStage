@@ -46,7 +46,7 @@ namespace AGroupOnStage.Main
                 AGOSMain.Settings.set("wPosGX", _winPos.x);
                 AGOSMain.Settings.set("wPosGY", _winPos.y);
                 AGOSMain.Settings.save();
-                AGOSInputLockManager.removeControlLocksForSceneDelayed(HighLogic.LoadedScene, 250d, AGOSMain.AGOS_MANAGER_GUI_NAME);
+                AGOSInputLockManager.removeControlLocksForSceneDelayed(HighLogic.LoadedScene, AGOSMain.AGOS_MANAGER_GUI_NAME);
             }
 
         }

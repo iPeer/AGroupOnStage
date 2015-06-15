@@ -300,43 +300,9 @@ namespace AGroupOnStage.Main
                 new { o.cameraMode, o.fireGroupID, o.FlightID, o.Group, o.isPartLocked, o.linkedPart, o.partRef, o.StagesAsString, o.ThrottleLevel, o.timerDelay, o.Vessel }
                 ).Select(n => n.First()).ToList<IActionGroup>();
             int end = newList.Count;
-            Logger.Log("Removed {0} duplicate action groups(s)", (start - end));
+            Logger.Log("Removed {0} duplicate action group(s)", (start - end));
             this.actionGroups = new List<IActionGroup>(newList);
         }
-
-        public void removeInvalidActionGroups()
-        {
-            int start = this.actionGroups.Count;
-            List<IActionGroup> newList = new List<IActionGroup>(this.actionGroups.RemoveAll(a => a.FlightID == 0));
-            int end = newList.Count;
-            Logger.Log("Removed {0} invalid action groups", (start - end));
-            this.actionGroups = new List<IActionGroup>(newList);
-        }
-
-        /*[Obsolete("Use removeDuplicateActionGroups instead", true)]
-        public void restoreBackedUpActionGroups()
-        {
-            restoreBackedUpActionGroups(false);
-        }*/
-
-        /*[Obsolete("Use removeDuplicateActionGroups instead", true)]
-        public void restoreBackedUpActionGroups(bool clear)
-        {
-            if (backupActionGroups != null && backupActionGroups.Count > 0)
-            {
-                int thisVesselsGroups = this.actionGroups.Count(a => a.FlightID == AGOSUtils.getFlightID());
-                Logger.Log("B:{0} / L:{1}", backupActionGroups.Count, thisVesselsGroups);
-                if (backupActionGroups.Count == this.actionGroups.Count)
-                    return;
-                this.actionGroups.RemoveAll(a => a.FlightID == AGOSUtils.getFlightID());
-                //this.actionGroups.Clear();
-                foreach (IActionGroup a in backupActionGroups.FindAll(a => a.FlightID == AGOSUtils.getFlightID()))
-                    this.actionGroups.Add(a);
-                Logger.Log("Restored {0} group(s)", backupActionGroups.Count(a => a.FlightID == AGOSUtils.getFlightID()));
-                if (clear)
-                    backupActionGroups.Clear();
-            }
-        }*/
 
         private void loadActionGroups()
         {
@@ -416,7 +382,7 @@ namespace AGroupOnStage.Main
             }
             if (guiVisible && !fromPart)
             {
-                AGOSInputLockManager.removeControlLocksForSceneDelayed(HighLogic.LoadedScene, 250d, AGOS_MAIN_GUI_NAME);
+                AGOSInputLockManager.removeControlLocksForSceneDelayed(HighLogic.LoadedScene, AGOS_MAIN_GUI_NAME);
                 guiVisible = false;
                 if (!AGOSToolbarManager.using000Toolbar)
                     AGOSToolbarManager.agosButton.SetFalse(false);
@@ -1042,6 +1008,14 @@ namespace AGroupOnStage.Main
                 }
             }*/
 
+        }
+
+        public static void ResetSettings()
+        {
+            if (Settings.guiVisible)
+                Settings.toggleGUI();
+            Settings.removeFile();
+            Settings = new AGOSSettings(Settings.configPath);
         }
     }
 }

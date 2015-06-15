@@ -1,6 +1,7 @@
 ﻿using AGroupOnStage.Logging;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using UnityEngine;
@@ -45,7 +46,10 @@ namespace AGroupOnStage.Main
             {"EnableDebugOptions", "Display debug options within AGOS - MAY BREAK YOUR GAME! USE AT YOUR OWN RISK!"},
             {"DEBUGForceSpecialOccasion", "DEBUG: Force special occasion events to fire"},
             {"LogControlLocks", "Log all control locks or unlocks. Can be spammy."},
-            {"ShowUndoWarning", "Show a warning about part configurations when undo or redoing craft modifications in the editor."}
+            {"ShowUndoWarning", "Show a warning about part configurations when undo or redoing craft modifications in the editor."},
+            {"LockRemovalDelay", "The delay between AGOS' last GUI closing and the removal of the control locks"},
+            {"TacoButtonChance", "1-in-N chance of the Taco AGOS button being used"},
+            {"FineControlsEEChance", "1-in-N chance of the Fine Controls easter egg firing"}
 
         };
         private bool lastAGOSKSetting;
@@ -75,7 +79,10 @@ namespace AGroupOnStage.Main
                 {"EnableDebugOptions", false},
                 {"DEBUGForceSpecialOccasion", false},
                 {"LogControlLocks", false},
-                {"ShowUndoWarning", true}
+                {"ShowUndoWarning", true},
+                {"LockRemovalDelay", 250d},
+                {"TacoButtonChance", 5},
+                {"FineControlsEEChance", 10}
             };
 
         }
@@ -320,6 +327,16 @@ namespace AGroupOnStage.Main
                 this.toggleGUI();
             }
 
+            if (GUILayout.Button("Reset settings to defaults", AGOSMain.Instance._buttonStyle))
+            {
+                DialogOption[] options = new DialogOption[] { 
+                        new DialogOption("Yes", () => resetSettingsCallback(1)), 
+                        new DialogOption("No", () => resetSettingsCallback(0)) 
+                    };
+                MultiOptionDialog mod = new MultiOptionDialog("Are you sure you want to reset your AGOS settings? This will reset all AGOS' settings back to their defaults. This process cannot be undone!", "AGroupOnStage", HighLogic.Skin, options);
+                PopupDialog.SpawnPopupDialog(mod, false, HighLogic.Skin);
+            }
+
             if (GUILayout.Button("Save & Close", AGOSMain.Instance._buttonStyle))
             {
                 set("wPosSX", _winPos.x);
@@ -332,6 +349,26 @@ namespace AGroupOnStage.Main
             GUILayout.EndVertical();
 
             GUI.DragWindow();
+        }
+
+        private void resetSettingsCallback(int opt)
+        {
+            if (opt == 1)
+            {
+                AGOSMain.ResetSettings();
+            }
+        }
+
+        public void removeFile()
+        {
+            try
+            {
+                File.Delete(this.configPath);
+            }
+            catch (Exception e)
+            {
+                Logger.LogError("Couldn't delete config file: {0}", e.ToString());
+            }
         }
 
     }

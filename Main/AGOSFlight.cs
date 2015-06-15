@@ -268,7 +268,7 @@ namespace AGroupOnStage.Main
             if (!(AGOSMain.Instance.isGameGUIHidden && AGOSMain.Settings.get<bool>("SilenceWhenUIHidden")))
             {
                 System.Random ra = new System.Random();
-                ScreenMessages.PostScreenMessage((ra.NextBoolOneIn(10) && AGOSMain.Settings.get<bool>("AllowEE") ? "fINE cONTROLS" : "Fine Controls") + " have been " + (FlightInputHandler.fetch.precisionMode ? "enabled" : "disabled") + ".", 5f, ScreenMessageStyle.UPPER_CENTER);
+                ScreenMessages.PostScreenMessage((ra.NextBoolOneIn(AGOSMain.Settings.get<int>("FineControlsEEChance")) && AGOSMain.Settings.get<bool>("AllowEE") ? "fINE cONTROLS" : "Fine Controls") + " have been " + (FlightInputHandler.fetch.precisionMode ? "enabled" : "disabled") + ".", 5f, ScreenMessageStyle.UPPER_CENTER);
             }
         }
 
