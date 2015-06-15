@@ -62,7 +62,6 @@ namespace AGroupOnStage.Main
                 //FlightGlobals.fetch.SetShipOrbit(Planetarium.fetch.CurrentMainBody.flightGlobalsIndex, 1.0d, 100d, 0d, 1d, 1d, 1d, 1d);
             }
 
-
             GUILayout.EndVertical();
 
             GUI.DragWindow();
