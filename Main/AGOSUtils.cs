@@ -8,6 +8,7 @@ using UnityEngine;
 using AGroupOnStage.Extensions;
 using System.IO;
 using System.Reflection;
+using System.Timers;
 
 namespace AGroupOnStage.Main
 {
@@ -305,6 +306,23 @@ namespace AGroupOnStage.Main
             if (HighLogic.LoadedSceneIsEditor)
                 return true;
             return p == getFlightID();
+        }
+
+        public static void runVoidMethodDelayed(Action method, double delay)
+        {
+            Timer t = new Timer();
+            t.AutoReset = false;
+            t.Interval = delay;
+            t.Elapsed += (sender, e) => delayedVoidMethodTrigger(sender, e, method, t);
+            t.Enabled = true;
+            t.Start();
+        }
+
+        private static void delayedVoidMethodTrigger(object source, ElapsedEventArgs e, Action method, Timer timer)
+        {
+            timer.Stop();
+            timer.Dispose();
+            method.Invoke();
         }
 
     }

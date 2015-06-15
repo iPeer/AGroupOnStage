@@ -44,13 +44,14 @@ namespace AGroupOnStage.Main
             {"AGOSGroupsLast", "Show AGOS' custom groups last in the group list in the group config window"},
             {"EnableDebugOptions", "Display debug options within AGOS - MAY BREAK YOUR GAME! USE AT YOUR OWN RISK!"},
             {"DEBUGForceSpecialOccasion", "DEBUG: Force special occasion events to fire"},
-            {"LogControlLocks", "Log all control locks or unlocks. Can be spammy."}
+            {"LogControlLocks", "Log all control locks or unlocks. Can be spammy."},
+            {"ShowUndoWarning", "Show a warning about part configurations when undo or redoing craft modifications in the editor."}
 
         };
         private bool lastAGOSKSetting;
-        private Dictionary<string, ProtoCrewMember.RosterStatus> failedKerbalRemovals;
 
-        public AGOSSettings(string path) {
+        public AGOSSettings(string path)
+        {
             this.configPath = path;
 
             this.SETTINGS_MAP = new Dictionary<string, object> {
@@ -73,7 +74,8 @@ namespace AGroupOnStage.Main
                 {"AGOSGroupsLast", false},
                 {"EnableDebugOptions", false},
                 {"DEBUGForceSpecialOccasion", false},
-                {"LogControlLocks", false}
+                {"LogControlLocks", false},
+                {"ShowUndoWarning", true}
             };
 
         }
@@ -161,7 +163,7 @@ namespace AGroupOnStage.Main
 
         }
 
-        public void save() 
+        public void save()
         {
             if (!this.hasChanged)
                 return;
@@ -177,7 +179,7 @@ namespace AGroupOnStage.Main
 
         }
 
-        public void toggleGUI() 
+        public void toggleGUI()
         {
 
             if (guiVisible)
@@ -187,7 +189,15 @@ namespace AGroupOnStage.Main
                 if (!AGOSToolbarManager.using000Toolbar)
                     AGOSToolbarManager.agosButton.SetFalse(false);
                 if (this.lastAGOSKSetting && !get<bool>("AddAGOSKerbals"))
-                    RenderingManager.AddToPostDrawQueue(this.otherWinID = AGOSMain.AGOS_SETTINGS_CONFIRM_GUI_WINDOW_ID, OnDrawOther);
+                {
+                    DialogOption[] options = new DialogOption[] { 
+                        new DialogOption("Yes", () => removeKerbalsClick(0)), 
+                        new DialogOption("No", () => removeKerbalsClick(1)) 
+                    };
+
+                    MultiOptionDialog mod = new MultiOptionDialog("Do you want to remove AGOS related Kerbals from your game? Only Kerbals who have a status of \"Available\" will be able to be removed.", "AGroupOnStage", HighLogic.Skin, options);
+                    PopupDialog.SpawnPopupDialog(mod, false, HighLogic.Skin);
+                }
                 else if (!this.lastAGOSKSetting && get<bool>("AddAGOSKerbals"))
                     AGOSMain.Instance.addAGOSKerbals();
             }
@@ -202,22 +212,43 @@ namespace AGroupOnStage.Main
 
         }
 
-        public void OnDrawOther()
+        private void removeKerbalsClick(int opt)
         {
-
-            if (!AGOSMain.Instance.hasSetupStyles)
+            if (opt == 0)
             {
-                AGOSMain.Instance.setUpStyles();
-                GUISkin skin = AGOSUtils.getBestAvailableSkin();
-                _windowStyle = new GUIStyle(skin.window);
+                AGOSUtils.runVoidMethodDelayed(doKerbalRemoval, 250d);
             }
+        }
 
-            _winPosOther = GUILayout.Window(this.otherWinID, _winPosOther, OnWindow, "AGOS: User Input", _windowStyle);
-            if (_winPosOther.x == 0 && _winPosOther.y == 0)
+        private void doKerbalRemoval()
+        {
+            Dictionary<string, ProtoCrewMember.RosterStatus> fails = AGOSMain.Instance.removeAGOSKerbals();
+            int removed = AGOSMain.agosKerbalNames.Count - fails.Count;
+            StringBuilder message = new StringBuilder(String.Format("{0} AGOS related Kerbal(s) have been removed.", removed));
+            if (fails.Count > 0)
             {
-                _winPosOther.x = (Screen.width/* + _winPosOther.width*/ / 2);
-                _winPosOther.y = (Screen.height/* + _winPosOther.height*/ / 2);
+                message.AppendLine();
+                message.AppendLine(String.Format("{0} Kerbals were not removed:", fails.Count));
+                message.AppendLine();
+                message.AppendLine();
+                foreach (string s in fails.Keys)
+                {
+                    ProtoCrewMember.RosterStatus status = fails[s];
+                    string failMessage = "They are dead.";
+                    if (status == ProtoCrewMember.RosterStatus.Assigned)
+                        failMessage = "They are on a mission.";
+                    else if (status == ProtoCrewMember.RosterStatus.Missing)
+                        failMessage = "They are missing.";
+                    /* else 
+                        leave it alone because it, by default, says they're dead.*/
+
+                    message.AppendLine(String.Format("{0} - {1}", s, failMessage));
+
+                }
+
             }
+            MultiOptionDialog mod = new MultiOptionDialog(message.ToString(), "AGroupOnStage", HighLogic.Skin, new DialogOption("Ok", () => removeKerbalsClick(2)));
+            PopupDialog.SpawnPopupDialog(mod, false, HighLogic.Skin);
         }
 
         public void OnDraw()
@@ -233,126 +264,74 @@ namespace AGroupOnStage.Main
         public void OnWindow(int id)
         {
 
-            // Did someone say multi-purpose GUIs?!
-            if (id == AGOSMain.AGOS_SETTINGS_GUI_WINDOW_ID)
+
+            GUILayout.BeginVertical(GUILayout.MinWidth(300f), GUILayout.MaxWidth(300f));
+
+
+            List<string> keys = new List<string>(this.SETTINGS_MAP.Keys);
+
+            foreach (string s in keys)
             {
-
-                GUILayout.BeginVertical(GUILayout.MinWidth(300f), GUILayout.MaxWidth(300f));
-
-
-                List<string> keys = new List<string>(this.SETTINGS_MAP.Keys);
-
-                foreach (string s in keys)
-                {
-                    if (s == null) { Logger.LogError("Settings string is null."); continue; }
-                    if (s.StartsWith("wPos")) // "Uneditable" settings
-                        continue;
-                    if (s.Equals("UseStockToolbar") && !_000Toolbar.ToolbarManager.ToolbarAvailable) // Don't display the toolbar option if the player doesn't have 000toolbar installed
-                        continue;
+                if (s == null) { Logger.LogError("Settings string is null."); continue; }
+                if (s.StartsWith("wPos")) // "Uneditable" settings
+                    continue;
+                if (s.Equals("UseStockToolbar") && !_000Toolbar.ToolbarManager.ToolbarAvailable) // Don't display the toolbar option if the player doesn't have 000toolbar installed
+                    continue;
 #if !DEBUG
                 if (s.Equals("HereBeDragons")) // Hide HBD dialog option if this is NOT a debug build
                     continue;
 #endif
 
-                    if (s.StartsWith("Taco") && !get<bool>("AllowEE")) // Don't show the shimmyTaco option if AGOS' EEs are disabled.
-                        continue;
+                if (s.StartsWith("Taco") && !get<bool>("AllowEE")) // Don't show the shimmyTaco option if AGOS' EEs are disabled.
+                    continue;
 
-                    if (s.Equals("AddAGOSKerbals") && HighLogic.CurrentGame.Mode == Game.Modes.CAREER) // Don't show Kerbal options on Career saves.
-                        continue;
+                if (s.Equals("AddAGOSKerbals") && HighLogic.CurrentGame.Mode == Game.Modes.CAREER) // Don't show Kerbal options on Career saves.
+                    continue;
 
-                    if (s.StartsWith("DEBUG") && (!AGOSDebug.isDebugBuild() && !get<bool>("EnableDebugOptions"))) // Skip debug options if this isn't a debug build or debug options are disabled
-                        continue;
+                if (s.StartsWith("DEBUG") && (!AGOSDebug.isDebugBuild() && !get<bool>("EnableDebugOptions"))) // Skip debug options if this isn't a debug build or debug options are disabled
+                    continue;
 
-                    bool __;
-                    if (Boolean.TryParse(get(s), out __))
-                    {
-                        set(s, GUILayout.Toggle(get<bool>(s), configPrettyNames[s], AGOSMain.Instance._toggleStyle));
-                    }
-                    else
-                    {
-                        continue; // Do not display non-boolean settings
-                        /*GUILayout.BeginHorizontal(GUILayout.MinWidth(300f), GUILayout.MaxWidth(300f));
-
-                        GUILayout.Label(configPrettyNames[s] + ": ", AGOSMain.Instance._labelStyle, GUILayout.ExpandWidth(true), GUILayout.MaxWidth(200f));
-                        this.SETTINGS_MAP[s] = GUILayout.TextField(get<string>(s), AGOSMain.Instance._textFieldStyle);
-
-                        GUILayout.EndHorizontal();*/
-                    }
-
-                }
-
-                if (GUILayout.Button("Reset GUI positions", AGOSMain.Instance._buttonStyle))
+                bool __;
+                if (Boolean.TryParse(get(s), out __))
                 {
-                    this.toggleGUI();
-                    foreach (string s in this.SETTINGS_MAP.Keys.ToList())
-                    {
-                        if (s.StartsWith("wPos"))
-                            set(s, 0f);
-                    }
-                    this.toggleGUI();
+                    set(s, GUILayout.Toggle(get<bool>(s), configPrettyNames[s], AGOSMain.Instance._toggleStyle));
                 }
-
-                if (GUILayout.Button("Save & Close", AGOSMain.Instance._buttonStyle))
+                else
                 {
-                    set("wPosSX", _winPos.x);
-                    set("wPosSY", _winPos.y);
-                    this.save();
-                    this.toggleGUI();
-                    AGOSToolbarManager.switchToolbarsIfNeeded();
+                    continue; // Do not display non-boolean settings
+                    /*GUILayout.BeginHorizontal(GUILayout.MinWidth(300f), GUILayout.MaxWidth(300f));
+
+                    GUILayout.Label(configPrettyNames[s] + ": ", AGOSMain.Instance._labelStyle, GUILayout.ExpandWidth(true), GUILayout.MaxWidth(200f));
+                    this.SETTINGS_MAP[s] = GUILayout.TextField(get<string>(s), AGOSMain.Instance._textFieldStyle);
+
+                    GUILayout.EndHorizontal();*/
                 }
 
-                GUILayout.EndVertical();
-
-                GUI.DragWindow();
             }
-            else if (id == AGOSMain.AGOS_SETTINGS_CONFIRM_GUI_WINDOW_ID)
+
+            if (GUILayout.Button("Reset GUI positions", AGOSMain.Instance._buttonStyle))
             {
-                GUILayout.BeginVertical(GUILayout.MinWidth(250f));
-
-                string dialogMessage = "Do you want to remove AGOS-related Kerbals from the roster?\n\nOnly Kerbals that are not assigned, missing or dead can be removed.";
-                GUILayout.Label(dialogMessage);
-
-                GUILayout.BeginHorizontal();
-
-                if (GUILayout.Button("Yes", AGOSMain.Instance._buttonStyle))
+                this.toggleGUI();
+                foreach (string s in this.SETTINGS_MAP.Keys.ToList())
                 {
-                    this.failedKerbalRemovals = AGOSMain.Instance.removeAGOSKerbals();
-                    if (failedKerbalRemovals.Count > 0)
-                    {
-                        RenderingManager.RemoveFromPostDrawQueue(AGOSMain.AGOS_SETTINGS_CONFIRM_GUI_WINDOW_ID, OnDrawOther);
-                        RenderingManager.AddToPostDrawQueue(this.otherWinID = AGOSMain.AGOS_SETTINGS_ERROR_GUI_WINDOW_ID, OnDrawOther);
-                    }
+                    if (s.StartsWith("wPos"))
+                        set(s, 0f);
                 }
-                if (GUILayout.Button("No", AGOSMain.Instance._buttonStyle))
-                {
-                    RenderingManager.RemoveFromPostDrawQueue(AGOSMain.AGOS_SETTINGS_CONFIRM_GUI_WINDOW_ID, OnDrawOther);
-                }
-
-                GUILayout.EndHorizontal();
-                GUILayout.EndVertical();
-
+                this.toggleGUI();
             }
-            else if (id == AGOSMain.AGOS_SETTINGS_ERROR_GUI_WINDOW_ID)
+
+            if (GUILayout.Button("Save & Close", AGOSMain.Instance._buttonStyle))
             {
-                GUILayout.BeginVertical(GUILayout.MinWidth(250f));
-                foreach (string s in this.failedKerbalRemovals.Keys)
-                {
-                    string kerbalName = s;
-                    ProtoCrewMember.RosterStatus kerbalStatus = this.failedKerbalRemovals[s];
-                    string error = s + " could not be removed because";
-                    if (kerbalStatus == ProtoCrewMember.RosterStatus.Assigned)
-                        error += " they are on a mission.";
-                    else if (kerbalStatus == ProtoCrewMember.RosterStatus.Missing)
-                        error += " they are missing.";
-                    else
-                        error += " they are dead.";
-                    GUILayout.Label(error, AGOSMain.Instance._labelStyle);
-                }
-                if (GUILayout.Button("Close", AGOSMain.Instance._buttonStyle))
-                    RenderingManager.RemoveFromPostDrawQueue(AGOSMain.AGOS_SETTINGS_ERROR_GUI_WINDOW_ID, OnDrawOther);
-                GUILayout.EndVertical();
+                set("wPosSX", _winPos.x);
+                set("wPosSY", _winPos.y);
+                this.save();
+                this.toggleGUI();
+                AGOSToolbarManager.switchToolbarsIfNeeded();
             }
 
+            GUILayout.EndVertical();
+
+            GUI.DragWindow();
         }
 
     }

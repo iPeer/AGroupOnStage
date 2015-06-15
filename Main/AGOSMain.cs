@@ -57,10 +57,8 @@ namespace AGroupOnStage.Main
         //                                              ^ pointless 0 is pointless
         public static readonly int AGOS_DRAGONS_GUI_WINDOW_ID = 13022007;
         public static readonly int AGOS_SETTINGS_GUI_WINDOW_ID = 23022007;
-        public static readonly int AGOS_SETTINGS_CONFIRM_GUI_WINDOW_ID = 33022007;
-        public static readonly int AGOS_SETTINGS_ERROR_GUI_WINDOW_ID = 43022007;
-        public static readonly int AGOS_GROUP_LIST_WINDOW_ID = 53022007;
-        public static readonly int AGOS_DEBUG_GUI_WINDOW_ID = 63022007;
+        public static readonly int AGOS_GROUP_LIST_WINDOW_ID = 33022007;
+        public static readonly int AGOS_DEBUG_GUI_WINDOW_ID = 43022007;
 
         public const string AGOS_MAIN_GUI_NAME = "Main";
         public const string AGOS_SETTINGS_GUI_NAME = "Settings";
@@ -174,10 +172,37 @@ namespace AGroupOnStage.Main
 
 #if DEBUG
             if (Settings.get<bool>("HereBeDragons"))
-                RenderingManager.AddToPostDrawQueue(AGOS_GUI_WINDOW_ID - 1, OnDraw_Dragons);
+            {
+                DialogOption[] options = new DialogOption[] 
+                {
+                    new DialogOption("OK", () => dragonsCallBack(0)),
+                    new DialogOption("OK - Don't show again", () => dragonsCallBack(1)),
+                    new DialogOption("Issue Page", () => dragonsCallBack(2), false)
+                };
+                MultiOptionDialog mod = new MultiOptionDialog("HERE BE DRAGONS!\n " +
+                "This is a *very* early experimental release of the new AGOS. Things are going to be broken.\n\n"+
+                "If you find a bug, which is really quite likely, please report it on AGOS' GitHub issues page.\n\n"+
+                "You can get to this page by clicking the \"Issues Page\" button below.\n\n"+
+                "When reporting a bug, please include your output_log file and a craft file  and/or persistent file (stock only, please!) if you feel it will help with the report.\n\n"+
+                "Please check back at the releases page regularly to see if there's a new release!", "Here be Dragons - AGroupOnStage", HighLogic.Skin, options);
+                PopupDialog.SpawnPopupDialog(mod, false, HighLogic.Skin);
+            }
 #endif
             sw.Stop();
             Logger.Log("AGOS initalised in {0}s", sw.Elapsed.TotalSeconds);
+        }
+
+        private void dragonsCallBack(int opt)
+        {
+            if (opt == 1)
+            {
+                Settings.set("HereBeDragons", false);
+                Settings.save();
+            }
+            else if (opt == 2)
+            {
+                Application.OpenURL("https://github.com/iPeer/AGroupOnStage/issues");
+            }
         }
 
         public void addAGOSKerbals()
@@ -1018,48 +1043,5 @@ namespace AGroupOnStage.Main
             }*/
 
         }
-
-        #region herebedragons
-        // Here be dragons GUI on startup
-
-        private void OnDraw_Dragons()
-        {
-
-            /*if (!hasSetupStyles)
-                setUpStyles();*/
-            _windowPos = GUILayout.Window(AGOS_GUI_WINDOW_ID - 1, _windowPos, OnWindow_Dragons, "Roar!", HighLogic.Skin.window);
-
-            _windowPos.x = Screen.width / 2 - _windowPos.width / 2;
-            _windowPos.y = Screen.height / 2 - _windowPos.height / 2;
-
-        }
-
-        public void OnWindow_Dragons(int wID)
-        {
-            GUIStyle label = HighLogic.Skin.label;
-            label.stretchWidth = true;
-
-            GUILayout.BeginHorizontal(GUILayout.Width(250f));
-
-            GUILayout.Label("HERE BE DRAGONS!\nThis is a *very* early experimental release of the new AGOS. Things are going to be broken.\n\nIf you find a bug, which is really quite likely, please report it on AGOS' GitHub issues page.\n\nYou can get to this page by clicking the \"Issues Page\" button below.\n\nWhen reporting a bug, please include your output_log file and a craft file  and/or persistent file (stock only, please!) if you feel it will help with the report.\n\nPlease check back at the releases page regularly to see if there's a new release!\n\nThis message will only display once.", label, GUILayout.Width(245f));
-            GUILayout.EndHorizontal();
-            GUILayout.BeginHorizontal(GUILayout.Width(250f));
-            if (GUILayout.Button("Issues Page"))
-                Application.OpenURL("https://github.com/iPeer/AGroupOnStage/issues");
-            if (GUILayout.Button("Do not anger dragons. Got it."))
-            {
-                //Settings.set("HereBeDragons", false);
-                //Settings.save();
-                RenderingManager.RemoveFromPostDrawQueue(AGOS_GUI_WINDOW_ID - 1, OnDraw_Dragons);
-            }
-
-            GUILayout.EndHorizontal();
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("You can stop this GUI popping up in AGOS' settings!");
-            GUILayout.EndHorizontal();
-            GUI.DragWindow();
-        }
-
-        #endregion
     }
 }
