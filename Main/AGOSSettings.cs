@@ -14,6 +14,7 @@ namespace AGroupOnStage.Main
         public bool guiVisible = false;
 
         public string configPath;
+        public Texture buttonTex = (Texture)AGOSToolbarManager.createButtonTexture(AGOSToolbarManager.ButtonType.SETTINGS);
         /*public bool INSTANT_CAMERA_TRANSITIONS = true;
         public bool SHOW_DRAGONS_DIALOG = true;
         public float WIN_POS_X = 0, WIN_POS_Y = 0f;
@@ -22,9 +23,6 @@ namespace AGroupOnStage.Main
 
         private Dictionary<string, object> SETTINGS_MAP;
         private Rect _winPos = new Rect();
-        private Rect _winPosOther = new Rect();
-        private int otherWinID = 0;
-        private GUIStyle _windowStyle;
         private bool hasChanged = false;
         private Dictionary<string, string> configPrettyNames = new Dictionary<string, string> // Even though non-boolean items aren't displayed, still list them here for future-proofing.
         {
