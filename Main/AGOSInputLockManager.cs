@@ -174,10 +174,19 @@ namespace AGroupOnStage.Main
             removeControlLocksForSceneDelayed(scene, delay);
         }
 
+        public static void removeControlLocksForSceneDelayed(GameScenes scene)
+        {
+            removeControlLocksForSceneDelayed(scene, AGOSMain.Settings.get<double>("LockRemovalDelay"));
+        }
+
+        public static void removeControlLocksForSceneDelayed(GameScenes scene, string guiName)
+        {
+            removeControlLocksForSceneDelayed(scene, AGOSMain.Settings.get<double>("LockRemovalDelay"), guiName);
+        }
+
         public static void removeControlLocksForSceneDelayed(GameScenes scene, double delay) // Doesn't work - never fires -- 30 minute later "I changed nothing" edit: I STAND CORRECTED. IT WORKS!
         {
             Timer t = new Timer();
-            GC.KeepAlive(t);
             t.Interval = delay;
             t.Elapsed += (sender, e) => delayedRemoveTrigger(sender, e, scene, t);
             t.Enabled = true;
@@ -221,6 +230,15 @@ namespace AGroupOnStage.Main
                 InputLockManager.RemoveControlLock(lockName);
             }
 
+        }
+
+        public static void removeAllControlLocks()
+        {
+            removeControlLocksForScene(GameScenes.FLIGHT);
+            removeControlLocksForScene(GameScenes.EDITOR);
+            removeControlLocksForScene(GameScenes.SPACECENTER);
+            removeControlLocksForScene(GameScenes.TRACKSTATION);
+            removeControlLocksForScene(GameScenes.LOADING); // We don't actually lock anything on loading scenes, but this will remove locks that aren't for any specified scene (in most cases Astronaut complex locks) - tl;dr: failsafe
         }
 
         public static void registerGUIOpen(string guiName)

@@ -1,6 +1,15 @@
+??, v2.0.10:
+	* Exposed option for the chance of the Taco AGOS button being used.
+	* Exposed option for how often the Fine Controls easte egg fires.
+	* Added an option to disable special occasion messages.
+	* Added a button to the settings GUI to allow users to reset AGOS' settings to their defaults.
+	* Dialogs that are used to inform the player or ask for basic input not longer use OnGUI, but KSP's native PopupDialog class.
+	* Tweaked the buton images for the stock toolbar slightly. they should be less jaggy on smaller screen resolutions now.
+	* Completely new anti-clickthrough system!
+
 01/06/15, v2.0.9:
 	* Added an option to always use the 'alternate' AGOS button textures.
-	* Added an option to have AGOS' custom action groups appear at the bottom of the configuration window's list.
+	* Added an option to have AGOS' custom action groups appear at the bottom of the configuration window's list.coeCOE
 	* Added an option to allow AGOS to create AGOSrelated Kerbals in new (and existing) non-Career saves.
 	* Duplicated actions groups are now removed before saving as well as on vessel switch and flight ready events.
 	* Invalid action groups are now highlighted in red. "Invalid" means if they're configured for stages above the stages the vessel has or are linked to a part that was removed.

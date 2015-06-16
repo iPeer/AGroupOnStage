@@ -17,6 +17,13 @@ namespace AGroupOnStage.Main
         public static IButton _000agosButton;
         public static ApplicationLauncherButton agosButton;
 
+        public enum ButtonType
+        {
+            DEFAULT,
+            SHIMMY_TACO,
+            SETTINGS
+        }
+
         public static void addToolbarButton()
         {
             if ((ApplicationLauncher.Ready && AGOSMain.Settings.get<bool>("UseStockToolbar")) || !ToolbarManager.ToolbarAvailable)
@@ -105,27 +112,37 @@ namespace AGroupOnStage.Main
             launcherButtonAdded = false;
         }
 
-        public static Texture2D createButtonTexture(bool blizzy = false)
+        public static Texture2D createButtonTexture()
+        {
+            ButtonType t = ButtonType.DEFAULT;
+            if ((AGOSMain.Settings.get<bool>("TacosAllDayErrDay") || (new System.Random()).NextBoolOneIn(AGOSMain.Settings.get<int>("TacoButtonChance"))) && AGOSMain.Settings.get<bool>("AllowEE"))
+                t = ButtonType.SHIMMY_TACO;
+            return createButtonTexture(t);
+
+        }
+
+        public static Texture2D createButtonTexture(ButtonType type)
         {
             int x = 0;
             int y = 0;
             int w = 128;
             int h = 128;
-            if (blizzy) // After writing this, I discovered you *must* give Toolbar a path, not a texture ಠ_ಠ
-            {
-                w = h = 24;
-                x = 128;
-            }
-            if ((AGOSMain.Settings.get<bool>("TacosAllDayErrDay") || (new System.Random()).NextBoolOneIn(AGOSMain.Settings.get<int>("TacoButtonChance"))) && AGOSMain.Settings.get<bool>("AllowEE"))
+            if (type == ButtonType.SHIMMY_TACO)
             {
                 Logger.Log("Are you hungry?");
-                y = (blizzy ? 24 : 128);
+                y = 128;
+            }
+            else if (type == ButtonType.SETTINGS)
+            {
+                x = 184;
+                y = 56;
+                w = h = 72;
             }
             Texture2D mainTex = AGOSUtils.loadTextureFromDDS(System.IO.Path.Combine(AGOSUtils.getDLLPath(), "Textures/Buttons.dds"), TextureFormat.DXT5);
             Color[] pixels = mainTex.GetPixels(x, y, w, h); // Get the pixels we want from the main texture
             Texture2D buttonTex = new Texture2D(w, h, TextureFormat.ARGB32, false); // Create the image that will be used for the button
             buttonTex.SetPixels(pixels); // Fill the image with the pixels we want
-            if (AGOSMain.Instance.SpecialOccasion) // Draw confetting for special occasions! \o/
+            if (type != ButtonType.SETTINGS && AGOSMain.Instance.SpecialOccasion) // Draw confetting for special occasions! \o/
             {
                 for (int a = 0; a < 128; a++) // height
                 {

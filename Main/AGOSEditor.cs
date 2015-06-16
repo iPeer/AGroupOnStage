@@ -101,7 +101,7 @@ namespace AGroupOnStage.Main
 
         }*/
 
-        private void processUndoRedo(ProtoVessel v)
+        private void processUndoRedo(/*ProtoVessel v*/ShipConstruct data)
         {
 
             Logger.Log("Undo/Redo");
@@ -131,7 +131,7 @@ namespace AGroupOnStage.Main
              */
             //AGOSUtils.resetActionGroupConfig();
 
-            AGOSMain.Instance.findHomesForPartLockedGroups(v.vesselRef.parts);
+            AGOSMain.Instance.findHomesForPartLockedGroups(data.parts);
 
             if (AGOSMain.Settings.get<bool>("ShowUndoWarning") && AGOSMain.Instance.actionGroups.Count(a => a.isPartLocked) > 0)
             {
@@ -139,7 +139,7 @@ namespace AGroupOnStage.Main
                     AGOSInputLockManager.setControlLocksForScene(HighLogic.LoadedScene);
                 DialogOption optionOK = new DialogOption("Okay", () => undoClick(0));
                 DialogOption optionOKDS = new DialogOption("Okay - don't show this again", () => undoClick(1));
-                DialogOption optionMI = new DialogOption("More Information", () => undoClick(2));
+                DialogOption optionMI = new DialogOption("More Information", () => undoClick(2), false);
                 MultiOptionDialog mod = new MultiOptionDialog(
                     "It looks like you had groups which were locked to parts, but just tried to undo or redo something on your vessel." +
                     "Due to how the game handles undos and redos, it's not currently possible for AGOS to correctly process " +
@@ -154,7 +154,7 @@ namespace AGroupOnStage.Main
         {
 
             //processUndoRedo(new ProtoVessel(ShipConstruction.backups.Last(), HighLogic.CurrentGame));
-            processUndoRedo(null);
+            processUndoRedo(data);
 
         }
 
@@ -176,7 +176,8 @@ namespace AGroupOnStage.Main
             {
                 throw new NotImplementedException();
             }
-            AGOSInputLockManager.removeAllControlLocks();
+            if (opt < 2)
+                AGOSInputLockManager.removeAllControlLocks();
 
         }
     }
