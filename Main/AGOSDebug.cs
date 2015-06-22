@@ -8,12 +8,19 @@ using UnityEngine;
 
 namespace AGroupOnStage.Main
 {
+    [KSPAddon(KSPAddon.Startup.Instantly, true)]
     public class AGOSDebug : MonoBehaviour
     {
 
         private static bool guiVisible = false;
-        private static bool hasSetupStyles = false;
         private static Rect _winPos = new Rect();
+        private static Vector2 scrollPos = Vector2.zero;
+
+        public void Start()
+        {
+            if (isDebugBuild())
+                HighLogic.fetch.showConsole = true;
+        }
 
         public static void printAllActionGroups()
         {
@@ -61,6 +68,12 @@ namespace AGroupOnStage.Main
                 FlightGlobals.fetch.SetShipOrbit(newOrbit.referenceBody.flightGlobalsIndex, 1.0, 3468.75, 0.0, newOrbit.LAN, 1.0, 1.0, Planetarium.GetUniversalTime());
                 //FlightGlobals.fetch.SetShipOrbit(Planetarium.fetch.CurrentMainBody.flightGlobalsIndex, 1.0d, 100d, 0d, 1d, 1d, 1d, 1d);
             }
+
+            scrollPos = GUILayout.BeginScrollView(scrollPos, GUILayout.MaxHeight(300f));
+
+            AGOSInputLockManager.DEBUGdrawLockButtons();
+            
+            GUILayout.EndScrollView();
 
             GUILayout.EndVertical();
 

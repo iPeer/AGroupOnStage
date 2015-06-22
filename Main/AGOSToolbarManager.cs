@@ -56,7 +56,7 @@ namespace AGroupOnStage.Main
             _000agosButton = ToolbarManager.Instance.add("AGOS", "AGroupOnStage");
             string _texture = "iPeer/AGroupOnStage/Textures/Toolbar000";
             System.Random r = new System.Random();
-            if ((r.NextBoolOneIn(5) || AGOSMain.Settings.get<bool>("TacosAllDayErrDay")) && AGOSMain.Settings.get<bool>("AllowEE")) // 2.0.7-dev1: This would never be true at its previous value (5) (C# Random is *weird*)
+            if ((new System.Random().NextBoolOneIn(AGOSMain.Settings.get<int>("TacoButtonChance")) || AGOSMain.Settings.get<bool>("TacosAllDayErrDay")) && AGOSMain.Settings.get<bool>("AllowEE")) // 2.0.7-dev1: This would never be true at its previous value (5) (C# Random is *weird*)
             {
                 Logger.Log("Are you hungry?");
                 _texture = "iPeer/AGroupOnStage/Textures/Toolbar_alt000";
@@ -115,7 +115,7 @@ namespace AGroupOnStage.Main
         public static Texture2D createButtonTexture()
         {
             ButtonType t = ButtonType.DEFAULT;
-            if ((AGOSMain.Settings.get<bool>("TacosAllDayErrDay") || (new System.Random()).NextBoolOneIn(AGOSMain.Settings.get<int>("TacoButtonChance"))) && AGOSMain.Settings.get<bool>("AllowEE"))
+            if ((AGOSMain.Settings.get<bool>("TacosAllDayErrDay") || new System.Random().NextBoolOneIn(AGOSMain.Settings.get<int>("TacoButtonChance"))) && AGOSMain.Settings.get<bool>("AllowEE"))
                 t = ButtonType.SHIMMY_TACO;
             return createButtonTexture(t);
 

@@ -14,7 +14,7 @@ namespace AGroupOnStage.Main
         const string AGOS_EDITOR_LOCK_NAME  = "AGOS_EDITOR_LOCK";
         const string AGOS_FLIGHT_LOCK_NAME  = "AGOS_FLIGHT_LOCK";
         const string AGOS_KSC_LOCK_NAME     = "AGOS_KSC_LOCK";
-        const string AGOS_ASTRO_LOCK_NAME   = "AGOS_STRO_LOCK";
+        const string AGOS_ASTRO_LOCK_NAME   = "AGOS_ASTRO_LOCK";
         const string AGOS_TRACKING_LOCK_NAME = "AGOS_TRACKING_LOCK"; // this guy ruined my tabs. I'll remember that for later.
         const string AGOS_DEBUG_LOCK_NAME   = "AGOS_DEBUG_LOCK";
 
@@ -80,16 +80,16 @@ namespace AGroupOnStage.Main
             ControlTypes.EDITOR_EDIT_NAME_FIELDS, // I don't really know why I lock this
             ControlTypes.EDITOR_EDIT_STAGES, // Might make AGOS act all funny. Foresight!
             ControlTypes.EDITOR_EXIT, // Not really vital as of 1.0 (new confirmation), but locked anyway
-            ControlTypes.EDITOR_GIZMO_TOOLS, // Locked to prevent the rootpart from being changed. Might cause funky stuff.
-            ControlTypes.EDITOR_ICON_HOVER, // What is this?
-            ControlTypes.EDITOR_ICON_PICK, // ^
+            ControlTypes.EDITOR_GIZMO_TOOLS, // Locked to prevent the rootpart from being changed. Might cause funky stuff. -- DOESN'T ACTUALLY WORK. Squad pls.
+            ControlTypes.EDITOR_ICON_HOVER, // Preverts the "info" pannel from parts appearing when hovered over in the parts list
+            ControlTypes.EDITOR_ICON_PICK, // Stops parts from being picked from the parts list
             ControlTypes.EDITOR_LAUNCH, // I'll just tweak this gro-aw crap.
             ControlTypes.EDITOR_LOAD, // Because the hang is annoying.
             ControlTypes.EDITOR_NEW, // Might freak AGOS out if you're midway through editing a (part locked) group
             ControlTypes.EDITOR_PAD_PICK_COPY, // Guess: prevents accidental part copying with the GUI open.
             ControlTypes.EDITOR_PAD_PICK_PLACE, // Guess: Stops the player breaking everything by clicking their vessel and having the mouse grab a part. Possibly also locks the parts list.
             ControlTypes.EDITOR_ROOT_REFLOW, // I got nothin'
-            ControlTypes.EDITOR_UNDO_REDO // AGOS: Doesn't (can't) handle undo/redo as it is, who knows what will happen if you do it with teh GUI open...
+            ControlTypes.EDITOR_UNDO_REDO, // AGOS: Doesn't (can't) handle undo/redo as it is, who knows what will happen if you do it with teh GUI open...
 
         };
 
@@ -268,9 +268,10 @@ namespace AGroupOnStage.Main
             var type = typeof(ControlTypes);
             foreach (string s in type.GetFields().Select(x => x.Name))
             {
-
+                if (new string[] { "value__", "None" }.Contains(s))
+                    continue;
                 bool lockEnabled = InputLockManager.GetControlLock(String.Format("{0}_{1}", AGOS_DEBUG_LOCK_NAME, s)) != ControlTypes.None;
-                DEBUGtoggleDebugLock(s, GUILayout.Toggle(lockEnabled, s, AGOSMain.Instance._buttonStyle));
+                DEBUGtoggleDebugLock(s, GUILayout.Toggle(lockEnabled, s + ": " + lockEnabled, AGOSMain.Instance._buttonStyle));
 
             }
 

@@ -15,6 +15,8 @@ namespace AGroupOnStage.Main
 
         public string configPath;
         public Texture buttonTex = (Texture)AGOSToolbarManager.createButtonTexture(AGOSToolbarManager.ButtonType.SETTINGS);
+        public GUIStyle _scrollStyle;
+        private GUISkin guiSkin;
         /*public bool INSTANT_CAMERA_TRANSITIONS = true;
         public bool SHOW_DRAGONS_DIALOG = true;
         public float WIN_POS_X = 0, WIN_POS_Y = 0f;
@@ -44,13 +46,16 @@ namespace AGroupOnStage.Main
             {"EnableDebugOptions", "Display debug options within AGOS - MAY BREAK YOUR GAME! USE AT YOUR OWN RISK!"},
             {"DEBUGForceSpecialOccasion", "DEBUG: Force special occasion events to fire"},
             {"LogControlLocks", "Log all control locks or unlocks. Can be spammy."},
-            {"ShowUndoWarning", "Show a warning about part configurations when undo or redoing craft modifications in the editor."},
+            {"DisplaySpecialOccasions", "Show a notification in AGOS' main window when the day is a special occasion"},
+            {"ShowUndoWarning", "Show a warning about part configurations when undo or redoing craft modifications in the editor"},
             {"LockRemovalDelay", "The delay between AGOS' last GUI closing and the removal of the control locks"},
             {"TacoButtonChance", "1-in-N chance of the Taco AGOS button being used"},
-            {"FineControlsEEChance", "1-in-N chance of the Fine Controls easter egg firing"}
+            {"FineControlsEEChance", "1-in-N chance of the Fine Controls easter egg firing"},
+            {"UnloadUnusedAssets", "Unload AGOS assets that are in memory but don't need to be on game load"}
 
         };
         private bool lastAGOSKSetting;
+        private Vector2 scrollPos = Vector2.zero;
 
         public AGOSSettings(string path)
         {
@@ -77,10 +82,12 @@ namespace AGroupOnStage.Main
                 {"EnableDebugOptions", false},
                 {"DEBUGForceSpecialOccasion", false},
                 {"LogControlLocks", false},
+                {"DisplaySpecialOccasions", true},
                 {"ShowUndoWarning", true},
                 {"LockRemovalDelay", 250d},
                 {"TacoButtonChance", 5},
-                {"FineControlsEEChance", 10}
+                {"FineControlsEEChance", 10},
+                {"UnloadUnusedAssets", true}
             };
 
         }
@@ -190,6 +197,7 @@ namespace AGroupOnStage.Main
             if (guiVisible)
             {
                 RenderingManager.RemoveFromPostDrawQueue(AGOSMain.AGOS_SETTINGS_GUI_WINDOW_ID, OnDraw);
+                scrollPos = Vector2.zero;
                 this.guiVisible = false;
                 if (!AGOSToolbarManager.using000Toolbar)
                     AGOSToolbarManager.agosButton.SetFalse(false);
@@ -258,10 +266,12 @@ namespace AGroupOnStage.Main
 
         public void OnDraw()
         {
-
+            // TODO: Fix GUI scaling for long option descriptions
             if (!AGOSMain.Instance.hasSetupStyles)
             {
-                AGOSMain.Instance.setUpStyles();
+                guiSkin = AGOSMain.Instance.setUpStyles();
+                _scrollStyle = new GUIStyle(guiSkin.scrollView);
+                _scrollStyle.stretchWidth = true;
             }
             _winPos = GUILayout.Window(AGOSMain.AGOS_SETTINGS_GUI_WINDOW_ID, _winPos, OnWindow, "AGOS: Settings", AGOSMain.Instance._windowStyle);
         }
@@ -274,6 +284,8 @@ namespace AGroupOnStage.Main
 
 
             List<string> keys = new List<string>(this.SETTINGS_MAP.Keys);
+
+            scrollPos = GUILayout.BeginScrollView(scrollPos, _scrollStyle, GUILayout.MaxHeight(300f), GUILayout.MinHeight(300f), GUILayout.MinWidth(500f));
 
             foreach (string s in keys)
             {
@@ -299,6 +311,10 @@ namespace AGroupOnStage.Main
                 bool __;
                 if (Boolean.TryParse(get(s), out __))
                 {
+                    float min, max;
+                    guiSkin.toggle.CalcMinMaxWidth(new GUIContent(configPrettyNames[s]), out min, out max);
+                    if ((max + 5f) > _winPos.width)
+                        _winPos.width = (max + 5f);
                     set(s, GUILayout.Toggle(get<bool>(s), configPrettyNames[s], AGOSMain.Instance._toggleStyle));
                 }
                 else
@@ -313,6 +329,8 @@ namespace AGroupOnStage.Main
                 }
 
             }
+
+            GUILayout.EndScrollView();
 
             if (GUILayout.Button("Reset GUI positions", AGOSMain.Instance._buttonStyle))
             {

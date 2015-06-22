@@ -160,6 +160,13 @@ namespace AGroupOnStage.Main
 
             if (Settings.get<bool>("AddAGOSKerbals"))
                 addAGOSKerbals();
+            if (Settings.get<bool>("UnloadUnusedAssets")) // 2.0.10-dev2: Remove Buttons texture from memory because we don't need it in memory (it's loaded on-demand in AGOSToolbarManager)
+            {
+                Logger.Log("Unloading assets that don't need to be in memory...");
+                bool success = GameDatabase.Instance.RemoveTexture("iPeer/AGroupOnStage/Textures/Buttons");
+                Logger.Log(String.Format("{0} '{1}'", (success ? "Successfully unloaded" : "Couldn't unload"), "iPeer/AGroupOnStage/Textures/Buttons"));
+                Logger.Log("Finished cleaning up un-needed assets");
+            }
 
             //GameEvents.onGUIApplicationLauncherReady.Add(OnGUIApplicationLauncherReady);
             GameEvents.onVesselChange.Add(onVesselLoaded);
@@ -168,6 +175,8 @@ namespace AGroupOnStage.Main
             //GameEvents.onLevelWasLoaded.Add(onLevelWasLoaded); // 2.0.8-dev2: No longer needed.
             GameEvents.onShowUI.Add(onShowUI);
             GameEvents.onHideUI.Add(onHideUI);
+            //GameEvents.onGUIAstronautComplexSpawn.Add(onGUIAstronautComplexSpawn);
+            //GameEvents.onGUIAstronautComplexDespawn.Add(onGUIAstronautComplexDespawn);
             AGOSToolbarManager.addToolbarButton();
 
 #if DEBUG
@@ -190,6 +199,16 @@ namespace AGroupOnStage.Main
 #endif
             sw.Stop();
             Logger.Log("AGOS initalised in {0}s", sw.Elapsed.TotalSeconds);
+        }
+
+        private void onGUIAstronautComplexSpawn()
+        {
+            if (this.guiVisible)
+                this.toggleGUI();
+        }
+
+        private void onGUIAstronautComplexDespawn()
+        {
         }
 
         private void dragonsCallBack(int opt)
@@ -383,6 +402,7 @@ namespace AGroupOnStage.Main
             if (guiVisible && !fromPart)
             {
                 AGOSInputLockManager.removeControlLocksForSceneDelayed(HighLogic.LoadedScene, AGOS_MAIN_GUI_NAME);
+                _scrollPosConfig = _scrollPosGroups = Vector2.zero; // 2.0.10-dev2: Reset scroll list positions when GUI closes
                 guiVisible = false;
                 if (!AGOSToolbarManager.using000Toolbar)
                     AGOSToolbarManager.agosButton.SetFalse(false);
@@ -439,7 +459,7 @@ namespace AGroupOnStage.Main
 
         private void OnWindow(int windowID)
         {
-            if (SpecialOccasion)
+            if (SpecialOccasion && Settings.get<bool>("DisplaySpecialOccasions"))
             {
                 GUILayout.BeginVertical();
                 GUILayout.BeginHorizontal();
@@ -829,7 +849,7 @@ namespace AGroupOnStage.Main
             return ret;
         }
 
-        public void setUpStyles()
+        public GUISkin setUpStyles()
         {
             Logger.Log("Setting up GUI styles");
             hasSetupStyles = true;
@@ -860,9 +880,11 @@ namespace AGroupOnStage.Main
             //_labelCenteredYellow.stretchHeight = true;
             _tinyButtonStyle = new GUIStyle(skin.button);
             _tinyButtonStyle.clipping = TextClipping.Overflow;
-            _tinyButtonStyle.padding = new RectOffset(0, 2, 0, 3);
+            //_tinyButtonStyle.alignment = TextAnchor.MiddleCenter;
+            _tinyButtonStyle.padding = new RectOffset(0, 0, 0, 0);
             _tinyButtonStyle.margin = new RectOffset();
             Logger.Log("Done setting up GUI styles");
+            return skin;
         }
 
         #endregion
