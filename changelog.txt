@@ -1,3 +1,6 @@
+22/06/15, v2.0.9.1:
+	* Recompiled against 1.0.3 binaries; no code changes.
+
 01/06/15, v2.0.9:
 	* Added an option to always use the 'alternate' AGOS button textures.
 	* Added an option to have AGOS' custom action groups appear at the bottom of the configuration window's list.
