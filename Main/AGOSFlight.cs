@@ -71,6 +71,9 @@ namespace AGroupOnStage.Main
 
         private void onVesselChange(Vessel data)
         {
+
+            if (data.isEVA) { return; } // 2.0.10-dev2: Don't run on Kerbals on EVA.
+
             if (data != this.lastVessel)
             {
                 Logger.Log("Vessel changed");
@@ -86,6 +89,9 @@ namespace AGroupOnStage.Main
 
         private void onVesselUnpack(Vessel v)
         {
+
+            if (v.isEVA) { return; } // 2.0.10-dev2: Don't run on Kerbals on EVA.
+
             Logger.Log("Vessel unpack");
             AGOSMain.Instance.removeDuplicateActionGroups();
             //AGOSMain.Instance.removeInvalidActionGroups();
@@ -95,6 +101,9 @@ namespace AGroupOnStage.Main
 
         private void onFlightReady()
         {
+
+            if (FlightGlobals.fetch.activeVessel.isEVA) { return; } // 2.0.10-dev2: Don't run on Kerbals on EVA.
+
             Logger.Log("Flight ready");
             //AGOSMain.Instance.restoreBackedUpActionGroups();
             AGOSMain.Instance.removeDuplicateActionGroups();
@@ -108,6 +117,9 @@ namespace AGroupOnStage.Main
 
         private void onVesselLoaded(Vessel data)
         {
+
+            if (data.isEVA) { return; } // 2.0.10-dev2: Don't run on Kerbals on EVA.
+
             AGOSMain.Instance.removeDuplicateActionGroups();
             AGOSMain.Instance.getMasterAGOSModule(data).setFlightID(data.rootPart.flightID);
             AGOSMain.Instance.findHomesForPartLockedGroups(data);

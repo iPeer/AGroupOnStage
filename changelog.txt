@@ -6,6 +6,7 @@
 	* Dialogs that are used to inform the player or ask for basic input no longer use OnGUI, but KSP's native PopupDialog class.
 	* Tweaked the button images for the stock toolbar slightly. they should be less jaggy on smaller screen resolutions now.
 	* Completely new anti-clickthrough system!
+	* AGOS will no longer run on kerbals that go on EVA
 
 22/06/15, v2.0.9.1:
 	* Recompiled against 1.0.3 binaries; no code changes.
