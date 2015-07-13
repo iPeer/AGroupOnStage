@@ -263,9 +263,36 @@ namespace AGroupOnStage.Main
                 int stages = /*(HighLogic.LoadedSceneIsEditor ? Staging.lastStage : FlightGlobals.fetch.activeVessel.currentStage - 1);*/Staging.lastStage;
                 if (ag.Stages == null || ag.Stages.Length == 0)
                     return false;
-                return ag.Stages.Count(a => a > stages) == 0;
+                return ag.Stages.Count(a => a > stages || a < 0) == 0;
             }
 
+        }
+
+        public static bool hasOutOfRangeStageConfig()
+        {
+            foreach (IActionGroup ag in AGOSMain.Instance.actionGroups)
+            {
+
+                if (ag.isPartLocked)
+                    continue;
+                if (ag.Stages.Count(a => a > Staging.lastStage || a < 0) > 0)
+                    return true;
+
+            }
+            return false;
+        }
+
+        public static bool hasInvalidPartLinkedConfig()
+        {
+            List<Part> parts = (HighLogic.LoadedSceneIsEditor ? EditorLogic.fetch.ship.parts : FlightGlobals.fetch.activeVessel.parts);
+            foreach (IActionGroup ag in AGOSMain.Instance.actionGroups)
+            {
+                if (!ag.isPartLocked)
+                    continue;
+                if (!parts.Contains(ag.linkedPart))
+                    return true;
+            }
+            return false;
         }
 
         public static string getDLLPath()

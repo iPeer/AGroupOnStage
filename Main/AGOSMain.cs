@@ -67,7 +67,7 @@ namespace AGroupOnStage.Main
 
         public bool hasSetupStyles = false;
         public bool isGameGUIHidden = false;
-        public static readonly List<string> agosKerbalNames = new List<string>() { "iPeer", "Roxy", "Shimmy", "Addle", "Gav", "Kofeyh" }; // You have to be super awesome to make it into this list
+        public static readonly List<string> agosKerbalNames = new List<string>() { "iPeer", "Roxy", "Shimmy", "Addle", "Gav", "Kofeyh", "Mator" }; // You have to be super awesome to make it into this list
 
 
         #endregion

@@ -131,6 +131,10 @@
     <Compile Include="ActionGroups\FineControlActionGroup.cs" />
     <Compile Include="ActionGroups\ThrottleControlActionGroup.cs" />
     <Compile Include="ActionGroups\TimeDelayedActionGroup.cs" />
+    <Compile Include="EngineersReport\EngineersReportInitialiser.cs" />
+    <Compile Include="EngineersReport\InvalidPartReferenceConcern.cs" />
+    <Compile Include="EngineersReport\NoGroupsConfiguredConcern.cs" />
+    <Compile Include="EngineersReport\OutOfStageRangeConcern.cs" />
     <Compile Include="Extensions\IntegerExtensions.cs" />
     <Compile Include="Extensions\ListExtensions.cs" />
     <Compile Include="Extensions\PartExtensions.cs" />

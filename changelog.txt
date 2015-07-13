@@ -4,9 +4,11 @@
 	* Added an option to disable special occasion messages.
 	* Added a button to the settings GUI to allow users to reset AGOS' settings to their defaults.
 	* Dialogs that are used to inform the player or ask for basic input no longer use OnGUI, but KSP's native PopupDialog class.
-	* Tweaked the button images for the stock toolbar slightly. they should be less jaggy on smaller screen resolutions now.
+	* Tweaked the button images for the stock toolbar slightly. They should be less jaggy on smaller screen resolutions now.
 	* Completely new anti-clickthrough system!
-	* AGOS will no longer run on kerbals that go on EVA
+	* AGOS will no longer run on Kerbals that go on EVA.
+	* AGOS can now hook into the Engineer's Report to show information on its configuration.
+	* Fixed an issue where AGOS would not see groups configured for stages < 0 as invalid.
 
 22/06/15, v2.0.9.1:
 	* Recompiled against 1.0.3 binaries; no code changes.

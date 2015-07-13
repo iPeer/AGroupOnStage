@@ -51,7 +51,8 @@ namespace AGroupOnStage.Main
             {"LockRemovalDelay", "The delay between AGOS' last GUI closing and the removal of the control locks"},
             {"TacoButtonChance", "1-in-N chance of the Taco AGOS button being used"},
             {"FineControlsEEChance", "1-in-N chance of the Fine Controls easter egg firing"},
-            {"UnloadUnusedAssets", "Unload AGOS assets that are in memory but don't need to be on game load"}
+            {"UnloadUnusedAssets", "Unload AGOS assets that are in memory but don't need to be on game load"},
+            {"EnableEngineersReportHook", "Allow AGOS to hook into the Engineer's Report to give information on misconfigurations"}
 
         };
         private bool lastAGOSKSetting;
@@ -87,7 +88,8 @@ namespace AGroupOnStage.Main
                 {"LockRemovalDelay", 250d},
                 {"TacoButtonChance", 5},
                 {"FineControlsEEChance", 10},
-                {"UnloadUnusedAssets", true}
+                {"UnloadUnusedAssets", true},
+                {"EnableEngineersReportHook", true}
             };
 
         }
