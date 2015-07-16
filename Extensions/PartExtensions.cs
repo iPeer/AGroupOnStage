@@ -10,7 +10,7 @@ namespace AGroupOnStage.Extensions
 
         public static string savedPartName(this Part part) 
         {
-            return String.Format("{0}_{1}", part.name, part.craftID);
+            return String.Format("{0}_{1}", part.name.Split(' '), part.craftID);
         }
 
     }

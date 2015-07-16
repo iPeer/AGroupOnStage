@@ -83,6 +83,7 @@ namespace AGroupOnStage.Main
                     Logger.Log("Player switched vessel; reverts are now invalid. Removing action group backups.");
                     AGOSMain.backupActionGroups.Clear();
                 }*/
+                AGOSMain.Instance.linkPart = null; // 2.0.10-dev3: Fix for https://github.com/iPeer/AGroupOnStage/issues/18
                 this.lastVessel = data;
             }
         }
