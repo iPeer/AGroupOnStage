@@ -1,12 +1,12 @@
 ??, v2.0.10:
 	* Exposed option for the chance of the Taco AGOS button being used.
-	* Exposed option for how often the Fine Controls easte egg fires.
+	* Exposed option for how often the Fine Controls easter egg fires.
 	* Added an option to disable special occasion messages.
 	* Added a button to the settings GUI to allow users to reset AGOS' settings to their defaults.
-	* Dialogs that are used to inform the player or ask for basic input no longer use OnGUI, but KSP's native PopupDialog class.
+	* Dialogs that are used to inform the player of something or ask for basic input no longer use OnGUI, but KSP's native PopupDialog class.
 	* Tweaked the button images for the stock toolbar slightly. They should be less jaggy on smaller screen resolutions now.
 	* Completely new anti-clickthrough system!
-	* AGOS will no longer run on Kerbals that go on EVA.
+	* Fixed InvalidOperation exceptions being thrown when EVAing a Kerbal.
 	* AGOS can now hook into the Engineer's Report to show information on its configuration.
 	* Fixed an issue where AGOS would not see groups configured for stages < 0 as invalid.
 
