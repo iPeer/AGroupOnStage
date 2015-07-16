@@ -789,7 +789,7 @@ namespace AGroupOnStage.Main
                     {
                         ag.linkedPart = linkPart;
                         ag.isPartLocked = true;
-                        ag.partRef = String.Format("{0}_{1}", linkPart.name, linkPart.craftID);
+                        ag.partRef = linkPart.savedPartName();
                     }
                     else
                     {
@@ -968,7 +968,7 @@ namespace AGroupOnStage.Main
                     continue;
                 }
                 g.linkedPart = part;
-                Logger.Log("Action group '{2}' and part '{0}' ({1}) have been paired", part.partInfo.title, String.Format("{0}_{1}", part.name, part.craftID), g.Group);
+                Logger.Log("Action group '{2}' and part '{0}' ({1}) have been paired", part.partInfo.title, part.savedPartName(), g.Group);
             }
             //Logger.Log("Finished finding homes for all part locked action group configurations");
         }
