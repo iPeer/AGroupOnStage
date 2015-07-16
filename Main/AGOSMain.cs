@@ -793,19 +793,18 @@ namespace AGroupOnStage.Main
                     }
                     else
                     {
-                        int[] stages;
+                        List<int> stages = new List<int>();
                         string[] sList = stageList.Split(',');
-                        stages = new int[sList.Length];
-                        for (int i = 0; i < sList.Length; i++)
-                            try
-                            {
-                                stages[i] = Convert.ToInt32(sList[i]);
+                        foreach(string stage in sList) {
+                            try {
+                                stages.Add(Convert.ToInt32(stage));
                             }
                             catch
                             {
-                                Logger.LogWarning("Couldn't parse stage number '{0}'. Skipping.", sList[i]);
+                                Logger.LogWarning("Couldn't parse stage number '{0}'. Skipping", stage);
                             }
-                        ag.Stages = stages;
+                        }
+                        ag.Stages = stages.ToArray();
                     }
 
                     if (useAGXGroup)
