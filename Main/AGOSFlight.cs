@@ -41,6 +41,8 @@ namespace AGroupOnStage.Main
                 GameEvents.onVesselWillDestroy.Add(onVesselDestroy);
                 GameEvents.onPartCouple.Add(OnPartCouple);
                 GameEvents.onPartUndock.Add(OnPartUndock);
+                GameEvents.onCrewOnEva.Add(onCrewOnEVA); //             2.0.10-dev3: Disable AGOS toolbar buttons when EVAing a Kerbal
+                GameEvents.onCrewBoardVessel.Add(onCrewBoardVessel); // ^
                 //GameEvents.onLevelWasLoaded.Add(onLevelWasLoaded);
                 //GameEvents.onVesselGoOffRails.Add(onVesselUnpack);
                 AGOSMain.Instance.FlightEventsRegistered = true;
@@ -48,6 +50,18 @@ namespace AGroupOnStage.Main
             }
             //GameEvents.onVesselLoaded.Add(AGOSMain.Instance.onVesselLoaded);
             //AGOSUtils.resetActionGroupConfig();
+        }
+
+        private void onCrewBoardVessel(GameEvents.FromToAction<Part, Part> data)
+        {
+            AGOSToolbarManager.enableToolbarButton();
+        }
+
+        private void onCrewOnEVA(GameEvents.FromToAction<Part, Part> data)
+        {
+            if (AGOSMain.Instance.guiVisible)
+                AGOSMain.Instance.toggleGUI(); 
+            AGOSToolbarManager.disableToolbarButton();
         }
 
         private void OnPartUndock(Part data)
@@ -72,8 +86,15 @@ namespace AGroupOnStage.Main
         private void onVesselChange(Vessel data)
         {
 
-            if (data.isEVA) { return; } // 2.0.10-dev2: Don't run on Kerbals on EVA.
-
+            if (data.isEVA) // 2.0.10-dev2: Don't run on Kerbals on EVA.
+            {
+                if (AGOSMain.Instance.guiVisible)
+                    AGOSMain.Instance.toggleGUI();
+                // 2.0.10-dev3: Don't allow AGOS' toolbar button to be clicked if it's an EVA.
+                AGOSToolbarManager.disableToolbarButton();
+                return; 
+            }
+            AGOSToolbarManager.enableToolbarButton(); // 2.0.10-dev3: Make sure the button is enabled if the active vessel IS NOT an EVA.
             if (data != this.lastVessel)
             {
                 Logger.Log("Vessel changed");
@@ -91,7 +112,12 @@ namespace AGroupOnStage.Main
         private void onVesselUnpack(Vessel v)
         {
 
-            if (v.isEVA) { return; } // 2.0.10-dev2: Don't run on Kerbals on EVA.
+            if (v.isEVA) // 2.0.10-dev2: Don't run on Kerbals on EVA.
+            {
+                if (AGOSMain.Instance.guiVisible)
+                    AGOSMain.Instance.toggleGUI(); 
+                return;
+            } 
 
             Logger.Log("Vessel unpack");
             AGOSMain.Instance.removeDuplicateActionGroups();
@@ -103,7 +129,12 @@ namespace AGroupOnStage.Main
         private void onFlightReady()
         {
 
-            if (FlightGlobals.fetch.activeVessel.isEVA) { return; } // 2.0.10-dev2: Don't run on Kerbals on EVA.
+            if (FlightGlobals.fetch.activeVessel.isEVA) // 2.0.10-dev2: Don't run on Kerbals on EVA.
+            {
+                if (AGOSMain.Instance.guiVisible)
+                    AGOSMain.Instance.toggleGUI(); 
+                return; 
+            } 
 
             Logger.Log("Flight ready");
             //AGOSMain.Instance.restoreBackedUpActionGroups();
@@ -119,7 +150,12 @@ namespace AGroupOnStage.Main
         private void onVesselLoaded(Vessel data)
         {
 
-            if (data.isEVA) { return; } // 2.0.10-dev2: Don't run on Kerbals on EVA.
+            if (data.isEVA) // 2.0.10-dev2: Don't run on Kerbals on EVA.
+            {
+                if (AGOSMain.Instance.guiVisible)
+                    AGOSMain.Instance.toggleGUI();
+                return;
+            }
 
             AGOSMain.Instance.removeDuplicateActionGroups();
             AGOSMain.Instance.getMasterAGOSModule(data).setFlightID(data.rootPart.flightID);

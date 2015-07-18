@@ -161,5 +161,32 @@ namespace AGroupOnStage.Main
 
         }
 
+        public static void disableToolbarButton()
+        {
+            if (using000Toolbar)
+                _000agosButton.Enabled = false;
+            else
+                agosButton.Disable();
+        }
+
+        public static void enableToolbarButton()
+        {
+            if (using000Toolbar)
+                _000agosButton.Enabled = true;
+            else
+                agosButton.Enable();
+        }
+
+        public static void toggleToolbarButtonEnabledState()
+        {
+            if (using000Toolbar)
+                _000agosButton.Enabled = !_000agosButton.Enabled;
+            else
+                if (agosButton.enabled)
+                    agosButton.Disable();
+                else
+                    agosButton.Enable();
+        }
+
     }
 }
