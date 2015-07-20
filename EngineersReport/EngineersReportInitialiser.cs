@@ -84,12 +84,12 @@ namespace AGroupOnStage.EngineersReport
 
         private void LogWarning(string text, params object[] fillers)
         {
-            Logger.LogWarning(String.Format("[EngineersReportInit]: " + text, fillers));
+            Logger.LogWarning(String.Format("[EngineersReportInit] " + text, fillers));
         }
 
         private void Log(string text, params object[] fillers)
         {
-            Logger.Log(String.Format("[EngineersReportInit]: "+text, fillers));
+            Logger.Log(String.Format("[EngineersReportInit] "+text, fillers));
         }
 
     }

@@ -27,6 +27,7 @@
         <Command type="AfterBuild" command="xcopy ${TargetDir}\iPeerLib.dll C:\KSPScratchpad\GameData\iPeer\AGroupOnStage\ /y" externalConsole="True" />
       </CustomCommands>
     </CustomCommands>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>full</DebugType>
