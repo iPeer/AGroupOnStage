@@ -33,11 +33,20 @@ namespace AGroupOnStage.Main
                 GameEvents.onEditorLoad.Add(onEditorLoad); // Does this do what I think (hope) it does?
                 GameEvents.onEditorUndo.Add(OnEditorUndo);
                 GameEvents.onEditorRedo.Add(OnEditorRedo);
+                GameEvents.onPartDestroyed.Add(onPartDestroyed);
 
                 AGOSMain.Instance.EditorEventsRegistered = true;
                 Logger.Log("Registered for Editor related GameEvents");
             }
 
+        }
+
+        private void onPartDestroyed(Part data)
+        {
+            int partsInScene = EditorLogic.fetch.CountAllSceneParts(true);
+            //Logger.Log("Parts in scene: {0}", partsInScene); // Spammy on large vessels.
+            if (partsInScene == 0)
+                AGOSUtils.resetActionGroupConfig(true);
         }
 
         private void onEditorRestart()
