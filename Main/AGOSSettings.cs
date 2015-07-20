@@ -26,6 +26,8 @@ namespace AGroupOnStage.Main
         private Dictionary<string, object> SETTINGS_MAP;
         private Rect _winPos = new Rect();
         private bool hasChanged = false;
+        private bool hasSetupStyles = false;
+        private float scrollMinWidth = 500f;
         private Dictionary<string, string> configPrettyNames = new Dictionary<string, string> // Even though non-boolean items aren't displayed, still list them here for future-proofing.
         {
             {"InstantCameraTransitions", "Use instant camera transitions"},
@@ -269,9 +271,10 @@ namespace AGroupOnStage.Main
         public void OnDraw()
         {
             // TODO: Fix GUI scaling for long option descriptions
-            if (!AGOSMain.Instance.hasSetupStyles)
+            if (!hasSetupStyles)
             {
-                guiSkin = AGOSMain.Instance.setUpStyles();
+                hasSetupStyles = true;
+                guiSkin = AGOSUtils.getBestAvailableSkin();
                 _scrollStyle = new GUIStyle(guiSkin.scrollView);
                 _scrollStyle.stretchWidth = true;
             }
@@ -287,7 +290,7 @@ namespace AGroupOnStage.Main
 
             List<string> keys = new List<string>(this.SETTINGS_MAP.Keys);
 
-            scrollPos = GUILayout.BeginScrollView(scrollPos, _scrollStyle, GUILayout.MaxHeight(300f), GUILayout.MinHeight(300f), GUILayout.MinWidth(500f));
+            scrollPos = GUILayout.BeginScrollView(scrollPos, _scrollStyle, GUILayout.MaxHeight(300f), GUILayout.MinHeight(300f), GUILayout.MinWidth(scrollMinWidth));
 
             foreach (string s in keys)
             {
@@ -315,8 +318,11 @@ namespace AGroupOnStage.Main
                 {
                     float min, max;
                     guiSkin.toggle.CalcMinMaxWidth(new GUIContent(configPrettyNames[s]), out min, out max);
-                    if ((max + 5f) > _winPos.width)
-                        _winPos.width = (max + 5f);
+                    if ((max + 30f) > _winPos.width)
+                    {
+                        _winPos.width = (max + 30f);
+                        scrollMinWidth = max + 25f;
+                    }
                     set(s, GUILayout.Toggle(get<bool>(s), configPrettyNames[s], AGOSMain.Instance._toggleStyle));
                 }
                 else
