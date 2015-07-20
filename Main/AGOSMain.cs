@@ -835,7 +835,10 @@ namespace AGroupOnStage.Main
                                 Logger.LogWarning("Couldn't parse stage number '{0}'. Skipping", stage);
                             }
                         }
-                        ag.Stages = stages.ToArray();
+                        if (stages.Count > 0) // 2.0.10-dev4: Fix for groups containing only non-numeric invalid stages being added to the list with no stages configured
+                            ag.Stages = stages.ToArray();
+                        else
+                            continue;
                     }
 
                     if (useAGXGroup)
