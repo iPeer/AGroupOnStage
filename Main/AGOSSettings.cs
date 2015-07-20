@@ -318,10 +318,10 @@ namespace AGroupOnStage.Main
                 {
                     float min, max;
                     guiSkin.toggle.CalcMinMaxWidth(new GUIContent(configPrettyNames[s]), out min, out max);
-                    if ((max + 30f) > _winPos.width)
+                    if ((max + 35f) > _winPos.width)
                     {
-                        _winPos.width = (max + 30f);
-                        scrollMinWidth = max + 25f;
+                        _winPos.width = (max + 35f);
+                        scrollMinWidth = max + 30f;
                     }
                     set(s, GUILayout.Toggle(get<bool>(s), configPrettyNames[s], AGOSMain.Instance._toggleStyle));
                 }
