@@ -37,9 +37,9 @@ namespace AGroupOnStage.EngineersReport
             designConcerns = new List<IDesignConcern>();
             Log("Generating list of AGOS Concerns...");
             designConcerns.AddRange(new IDesignConcern[] { new OutOfStageRangeConcern(), new InvalidPartReferenceConcern(), new NoGroupsConfiguredConcern() }.ToList());
-            StringBuilder sb = new StringBuilder(String.Format("{0} concern(s) will be added:", designConcerns.Count));
+            Log("{0} concern(s) will be added:", designConcerns.Count);
             foreach (IDesignConcern dc in designConcerns)
-                sb.AppendLine(String.Format("\t{0}: {1}", dc.ToString(), dc.GetSeverity().ToString()));
+                Log("\t{0}: {1}", dc.ToString(), dc.GetSeverity().ToString());
             Log("Waiting for Engineer's Report 'ready' state...");
 
         }
