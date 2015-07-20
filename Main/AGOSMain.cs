@@ -611,10 +611,19 @@ namespace AGroupOnStage.Main
                 GUILayout.EndHorizontal();
                 GUILayout.Space(4);
             }
-
-            if (GUILayout.Button("Commit group(s)", _buttonStyle))
+            bool hasStageList = !string.IsNullOrEmpty(stageList);
+            bool hasLinkedPart = !(linkPart == null);
+            bool hasGroups = !(actionGroupSettings.Values.Count(a => a) == 0);
+            if ((!hasStageList && !hasLinkedPart) || !hasGroups) // Not configued
             {
-                commitGroups();
+                GUILayout.Label("This group is not correctly configured!", _labelStyleRed);
+            }
+            else
+            {
+                if (GUILayout.Button("Commit group(s)", _buttonStyle))
+                {
+                    commitGroups();
+                }
             }
 
             GUILayout.EndVertical();
@@ -739,6 +748,23 @@ namespace AGroupOnStage.Main
         private void commitGroups()
         {
             Logger.Log("Commiting current action group configuration...");
+
+            // Check if the config is valid (IE no fields are blank)
+            // Shouldn't actually be possible to get this far with a misconfigured group, but I like my sanity.
+
+            Logger.Log("Checking configuration parameters:");
+            bool hasStageList = !string.IsNullOrEmpty(stageList);
+            bool hasLinkedPart = !(linkPart == null);
+            bool hasGroups = !(actionGroupSettings.Values.Count(a => a) == 0);
+            Logger.Log("{0} / {1} ({2}), {3} | {4}", hasStageList ? "PASS" : "FAIL", hasLinkedPart ? "PASS" : "FAIL", !hasStageList && !hasLinkedPart ? "FAIL" : "PASS", hasGroups ? "PASS" : "FAIL", (!hasStageList && !hasLinkedPart) || !hasGroups ? "FAIL" : "PASS");
+            if ((!hasStageList && !hasLinkedPart) || !hasGroups)
+            {
+
+                Logger.LogWarning("Action group is not configured properly, aborting.");
+                return;
+
+            }
+
             int[] AG_MIN_MAX = getMinMaxGroupIds();
             int AG_MIN = AG_MIN_MAX[0];
             int AG_MAX = AG_MIN_MAX[1];
