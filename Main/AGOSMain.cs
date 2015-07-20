@@ -475,7 +475,12 @@ namespace AGroupOnStage.Main
             }
 
             // Draw settings button
-            if (GUI.Button(new Rect(_windowPos.width - 20, 20, 16, 16), Settings.buttonTex, _tinyButtonStyle))
+            Rect settingsBtnRect;
+            if (linkPart != null)
+                settingsBtnRect = new Rect(_windowPos.width - 20, 3, 16, 16);
+            else
+                settingsBtnRect = new Rect(_windowPos.width - 20, 20, 16, 16);
+            if (GUI.Button(settingsBtnRect, Settings.buttonTex, _tinyButtonStyle))
             {
                 Settings.toggleGUI();
             }
