@@ -15,6 +15,7 @@
 	* [#18] Fixed an issue where switching vessels during configuration of part linked groups would allow them to be applied to the wrong vessel.
 	* [#19] Fixed an issue where AGOS would cause an editor-breaking NullReferenceException when loading vessels created with AGX after removal of AGX.
 	* [#20] Fixed an issue causing part linked group configs to have the vessel's current name in their reference string if created during flight.
+	* [#21] Fixed an issue that would allow group configs that had not been fully configured to be assigned to vehicles.
 
 22/06/15, v2.0.9.1:
 	* Recompiled against 1.0.3 binaries; no code changes.
