@@ -227,6 +227,7 @@ namespace AGroupOnStage.Main
                         Logger.Log("Action group {0}:{1} and part '{2}' ({3}) have been reunited and are living happily ever after", groupID, _id, part.partInfo.title, String.Format("{0}_{1}", part.name, part.craftID));*/
                         ag.isPartLocked = isPartLocked;
                         ag.partRef = id.GetValue("partLink");
+                        ag.Stages = new int[0]; // 2.0.10-dev3: Fix for NRE when loading AGX vessels w/o AGX installed (Assumed to be caused by AGX, any way)
                     }
                     else
                     {

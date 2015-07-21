@@ -46,8 +46,7 @@ namespace AGroupOnStage.Main
                 AGOSMain.Settings.set("wPosGX", _winPos.x);
                 AGOSMain.Settings.set("wPosGY", _winPos.y);
                 AGOSMain.Settings.save();
-                if (!AGOSMain.Instance.guiVisible)
-                    EditorLogic.fetch.Unlock("AGOS_INPUT_LOCK");
+                AGOSInputLockManager.removeControlLocksForSceneDelayed(HighLogic.LoadedScene, AGOSMain.AGOS_MANAGER_GUI_NAME);
             }
 
         }
@@ -68,13 +67,13 @@ namespace AGroupOnStage.Main
             Vector3d realMousePos = Input.mousePosition;
             realMousePos.y = Screen.height - Input.mousePosition.y; // <- What the hell is this crap? Why is it a thing?
 
-            if (AGOSMain.Settings.get<bool>("LockInputsOnGUIOpen") && HighLogic.LoadedSceneIsEditor)
+            if (AGOSMain.Settings.get<bool>("LockInputsOnGUIOpen"))
             {
                 if (_winPos.Contains(realMousePos))
-                    EditorLogic.fetch.Lock(true, true, true, "AGOS_INPUT_LOCK");
+                    AGOSInputLockManager.setControlLocksForScene(HighLogic.LoadedScene, AGOSMain.AGOS_MANAGER_GUI_NAME);
                 else
                 {
-                    EditorLogic.fetch.Unlock("AGOS_INPUT_LOCK");
+                    AGOSInputLockManager.removeControlLocksForScene(HighLogic.LoadedScene, AGOSMain.AGOS_MANAGER_GUI_NAME);
                 }
             }
 

@@ -41,6 +41,8 @@ namespace AGroupOnStage.Main
                 GameEvents.onVesselWillDestroy.Add(onVesselDestroy);
                 GameEvents.onPartCouple.Add(OnPartCouple);
                 GameEvents.onPartUndock.Add(OnPartUndock);
+                GameEvents.onCrewOnEva.Add(onCrewOnEVA); //             2.0.10-dev3: Disable AGOS toolbar buttons when EVAing a Kerbal
+                GameEvents.onCrewBoardVessel.Add(onCrewBoardVessel); // ^
                 //GameEvents.onLevelWasLoaded.Add(onLevelWasLoaded);
                 //GameEvents.onVesselGoOffRails.Add(onVesselUnpack);
                 AGOSMain.Instance.FlightEventsRegistered = true;
@@ -48,6 +50,18 @@ namespace AGroupOnStage.Main
             }
             //GameEvents.onVesselLoaded.Add(AGOSMain.Instance.onVesselLoaded);
             //AGOSUtils.resetActionGroupConfig();
+        }
+
+        private void onCrewBoardVessel(GameEvents.FromToAction<Part, Part> data)
+        {
+            AGOSToolbarManager.enableToolbarButton();
+        }
+
+        private void onCrewOnEVA(GameEvents.FromToAction<Part, Part> data)
+        {
+            if (AGOSMain.Instance.guiVisible)
+                AGOSMain.Instance.toggleGUI(); 
+            AGOSToolbarManager.disableToolbarButton();
         }
 
         private void OnPartUndock(Part data)
@@ -71,6 +85,16 @@ namespace AGroupOnStage.Main
 
         private void onVesselChange(Vessel data)
         {
+
+            if (data.isEVA) // 2.0.10-dev2: Don't run on Kerbals on EVA.
+            {
+                if (AGOSMain.Instance.guiVisible)
+                    AGOSMain.Instance.toggleGUI();
+                // 2.0.10-dev3: Don't allow AGOS' toolbar button to be clicked if it's an EVA.
+                AGOSToolbarManager.disableToolbarButton();
+                return; 
+            }
+            AGOSToolbarManager.enableToolbarButton(); // 2.0.10-dev3: Make sure the button is enabled if the active vessel IS NOT an EVA.
             if (data != this.lastVessel)
             {
                 Logger.Log("Vessel changed");
@@ -80,12 +104,21 @@ namespace AGroupOnStage.Main
                     Logger.Log("Player switched vessel; reverts are now invalid. Removing action group backups.");
                     AGOSMain.backupActionGroups.Clear();
                 }*/
+                AGOSMain.Instance.linkPart = null; // 2.0.10-dev3: Fix for https://github.com/iPeer/AGroupOnStage/issues/18
                 this.lastVessel = data;
             }
         }
 
         private void onVesselUnpack(Vessel v)
         {
+
+            if (v.isEVA) // 2.0.10-dev2: Don't run on Kerbals on EVA.
+            {
+                if (AGOSMain.Instance.guiVisible)
+                    AGOSMain.Instance.toggleGUI(); 
+                return;
+            } 
+
             Logger.Log("Vessel unpack");
             AGOSMain.Instance.removeDuplicateActionGroups();
             //AGOSMain.Instance.removeInvalidActionGroups();
@@ -95,6 +128,14 @@ namespace AGroupOnStage.Main
 
         private void onFlightReady()
         {
+
+            if (FlightGlobals.fetch.activeVessel.isEVA) // 2.0.10-dev2: Don't run on Kerbals on EVA.
+            {
+                if (AGOSMain.Instance.guiVisible)
+                    AGOSMain.Instance.toggleGUI(); 
+                return; 
+            } 
+
             Logger.Log("Flight ready");
             //AGOSMain.Instance.restoreBackedUpActionGroups();
             AGOSMain.Instance.removeDuplicateActionGroups();
@@ -108,6 +149,14 @@ namespace AGroupOnStage.Main
 
         private void onVesselLoaded(Vessel data)
         {
+
+            if (data.isEVA) // 2.0.10-dev2: Don't run on Kerbals on EVA.
+            {
+                if (AGOSMain.Instance.guiVisible)
+                    AGOSMain.Instance.toggleGUI();
+                return;
+            }
+
             AGOSMain.Instance.removeDuplicateActionGroups();
             AGOSMain.Instance.getMasterAGOSModule(data).setFlightID(data.rootPart.flightID);
             AGOSMain.Instance.findHomesForPartLockedGroups(data);
@@ -268,7 +317,7 @@ namespace AGroupOnStage.Main
             if (!(AGOSMain.Instance.isGameGUIHidden && AGOSMain.Settings.get<bool>("SilenceWhenUIHidden")))
             {
                 System.Random ra = new System.Random();
-                ScreenMessages.PostScreenMessage((ra.NextBoolOneIn(10) && AGOSMain.Settings.get<bool>("AllowEE") ? "fINE cONTROLS" : "Fine Controls") + " have been " + (FlightInputHandler.fetch.precisionMode ? "enabled" : "disabled") + ".", 5f, ScreenMessageStyle.UPPER_CENTER);
+                ScreenMessages.PostScreenMessage((ra.NextBoolOneIn(AGOSMain.Settings.get<int>("FineControlsEEChance")) && AGOSMain.Settings.get<bool>("AllowEE") ? "fINE cONTROLS" : "Fine Controls") + " have been " + (FlightInputHandler.fetch.precisionMode ? "enabled" : "disabled") + ".", 5f, ScreenMessageStyle.UPPER_CENTER);
             }
         }
 

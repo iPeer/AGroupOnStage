@@ -12,20 +12,19 @@ namespace AGroupOnStage.Main
     public class AGOSToolbarManager
     {
 
-        public bool launcherButtonAdded = false;
-        public bool using000Toolbar = false;
-        public IButton _000agosButton;
-        public ApplicationLauncherButton agosButton;
+        public static bool launcherButtonAdded = false;
+        public static bool using000Toolbar = false;
+        public static IButton _000agosButton;
+        public static ApplicationLauncherButton agosButton;
 
-        public AGOSToolbarManager Instance { get; protected set; }
-
-
-        public AGOSToolbarManager()
+        public enum ButtonType
         {
-            Instance = this;
+            DEFAULT,
+            SHIMMY_TACO,
+            SETTINGS
         }
 
-        public void addToolbarButton()
+        public static void addToolbarButton()
         {
             if ((ApplicationLauncher.Ready && AGOSMain.Settings.get<bool>("UseStockToolbar")) || !ToolbarManager.ToolbarAvailable)
                 setupToolbarButton();
@@ -35,7 +34,7 @@ namespace AGroupOnStage.Main
             }
         }
 
-        public void switchToolbarsIfNeeded()
+        public static void switchToolbarsIfNeeded()
         {
             if (ToolbarManager.ToolbarAvailable && !AGOSMain.Settings.get<bool>("UseStockToolbar") && !using000Toolbar)
             {
@@ -51,13 +50,13 @@ namespace AGroupOnStage.Main
             }
         }
 
-        public void setup000ToolbarButton()
+        public static void setup000ToolbarButton()
         {
             Logger.Log("Setting up 000Toolbar");
             _000agosButton = ToolbarManager.Instance.add("AGOS", "AGroupOnStage");
             string _texture = "iPeer/AGroupOnStage/Textures/Toolbar000";
             System.Random r = new System.Random();
-            if ((r.NextBoolOneIn(5) || AGOSMain.Settings.get<bool>("TacosAllDayErrDay")) && AGOSMain.Settings.get<bool>("AllowEE")) // 2.0.7-dev1: This would never be true at its previous value (5) (C# Random is *weird*)
+            if ((new System.Random().NextBoolOneIn(AGOSMain.Settings.get<int>("TacoButtonChance")) || AGOSMain.Settings.get<bool>("TacosAllDayErrDay")) && AGOSMain.Settings.get<bool>("AllowEE")) // 2.0.7-dev1: This would never be true at its previous value (5) (C# Random is *weird*)
             {
                 Logger.Log("Are you hungry?");
                 _texture = "iPeer/AGroupOnStage/Textures/Toolbar_alt000";
@@ -68,7 +67,7 @@ namespace AGroupOnStage.Main
 
         }
 
-        public void remove000ToolbarButton()
+        public static void remove000ToolbarButton()
         {
             Logger.Log("Removing 000Toolbar button");
             _000agosButton.Destroy();
@@ -76,7 +75,7 @@ namespace AGroupOnStage.Main
             using000Toolbar = false;
         }
 
-        public void setupToolbarButton()
+        public static void setupToolbarButton()
         {
             if (!launcherButtonAdded)
             {
@@ -106,34 +105,44 @@ namespace AGroupOnStage.Main
 
         }
 
-        public void removeToolbarButton()
+        public static void removeToolbarButton()
         {
             Logger.Log("Removing ApplicationLauncher button");
             ApplicationLauncher.Instance.RemoveModApplication(agosButton);
             launcherButtonAdded = false;
         }
 
-        public Texture2D createButtonTexture(bool blizzy = false)
+        public static Texture2D createButtonTexture()
+        {
+            ButtonType t = ButtonType.DEFAULT;
+            if ((AGOSMain.Settings.get<bool>("TacosAllDayErrDay") || new System.Random().NextBoolOneIn(AGOSMain.Settings.get<int>("TacoButtonChance"))) && AGOSMain.Settings.get<bool>("AllowEE"))
+                t = ButtonType.SHIMMY_TACO;
+            return createButtonTexture(t);
+
+        }
+
+        public static Texture2D createButtonTexture(ButtonType type)
         {
             int x = 0;
             int y = 0;
             int w = 128;
             int h = 128;
-            if (blizzy) // After writing this, I discovered you *must* give Toolbar a path, not a texture ಠ_ಠ
-            {
-                w = h = 24;
-                x = 128;
-            }
-            if ((AGOSMain.Settings.get<bool>("TacosAllDayErrDay") || (new System.Random()).NextBoolOneIn(5)) && AGOSMain.Settings.get<bool>("AllowEE"))
+            if (type == ButtonType.SHIMMY_TACO)
             {
                 Logger.Log("Are you hungry?");
-                y = (blizzy ? 24 : 128);
+                y = 128;
             }
-            Texture2D mainTex = AGOSUtils.loadTextureFromDDS(System.IO.Path.Combine(AGOSUtils.getDLLPath(), "Textures/Buttons.dds"));
+            else if (type == ButtonType.SETTINGS)
+            {
+                x = 184;
+                y = 56;
+                w = h = 72;
+            }
+            Texture2D mainTex = AGOSUtils.loadTextureFromDDS(System.IO.Path.Combine(AGOSUtils.getDLLPath(), "Textures/Buttons.dds"), TextureFormat.DXT5);
             Color[] pixels = mainTex.GetPixels(x, y, w, h); // Get the pixels we want from the main texture
             Texture2D buttonTex = new Texture2D(w, h, TextureFormat.ARGB32, false); // Create the image that will be used for the button
             buttonTex.SetPixels(pixels); // Fill the image with the pixels we want
-            if (AGOSMain.Instance.SpecialOccasion) // Draw confetting for special occasions! \o/
+            if (type != ButtonType.SETTINGS && AGOSMain.Instance.SpecialOccasion) // Draw confetting for special occasions! \o/
             {
                 for (int a = 0; a < 128; a++) // height
                 {
@@ -150,6 +159,33 @@ namespace AGroupOnStage.Main
             buttonTex.Apply(); // Apply changes
             return buttonTex;
 
+        }
+
+        public static void disableToolbarButton()
+        {
+            if (using000Toolbar)
+                _000agosButton.Enabled = false;
+            else
+                agosButton.Disable();
+        }
+
+        public static void enableToolbarButton()
+        {
+            if (using000Toolbar)
+                _000agosButton.Enabled = true;
+            else
+                agosButton.Enable();
+        }
+
+        public static void toggleToolbarButtonEnabledState()
+        {
+            if (using000Toolbar)
+                _000agosButton.Enabled = !_000agosButton.Enabled;
+            else
+                if (agosButton.enabled)
+                    agosButton.Disable();
+                else
+                    agosButton.Enable();
         }
 
     }

@@ -26,7 +26,7 @@ namespace AGroupOnStage.Main
             {"244", "Today is Roxy's birthday!"},
             {"89", "Today is AGroupOnStage's birthday!"},
             {"2412", "Santa Claus is coming to town!"},
-            {"2515", "Merry Christmas!"},
+            {"2512", "Merry Christmas!"},
             {"11", "Happy New Year!"}
 
 
@@ -45,31 +45,29 @@ namespace AGroupOnStage.Main
         public bool guiVisible = false;
         public bool settingsGUIVisible = false;
         public bool useAGXConfig = false;
-        /*public bool using000Toolbar = false;
-        public bool launcherButtonAdded = false;*/
         public List<IActionGroup> actionGroups = new List<IActionGroup>();
         public Dictionary<int, string> actionGroupList = new Dictionary<int, string>();
         public Dictionary<int, bool> actionGroupSettings = new Dictionary<int, bool>();
         public Dictionary<int, KSPActionGroup> stockAGMap;
         public static AGOSSettings Settings { get; protected set; }
         public static AGOSGroupManager GroupManager { get; protected set; }
-        public static AGOSToolbarManager ToolbarManager { get; protected set; }
         public bool FlightEventsRegistered { get; set; }
         public bool EditorEventsRegistered { get; set; }
         public static readonly int AGOS_GUI_WINDOW_ID = 03022007;
         //                                              ^ pointless 0 is pointless
         public static readonly int AGOS_DRAGONS_GUI_WINDOW_ID = 13022007;
         public static readonly int AGOS_SETTINGS_GUI_WINDOW_ID = 23022007;
-        public static readonly int AGOS_SETTINGS_CONFIRM_GUI_WINDOW_ID = 33022007;
-        public static readonly int AGOS_SETTINGS_ERROR_GUI_WINDOW_ID = 43022007;
-        public static readonly int AGOS_GROUP_LIST_WINDOW_ID = 53022007;
-        public static readonly int AGOS_DEBUG_GUI_WINDOW_ID = 63022007;
+        public static readonly int AGOS_GROUP_LIST_WINDOW_ID = 33022007;
+        public static readonly int AGOS_DEBUG_GUI_WINDOW_ID = 43022007;
+
+        public const string AGOS_MAIN_GUI_NAME = "Main";
+        public const string AGOS_SETTINGS_GUI_NAME = "Settings";
+        public const string AGOS_MANAGER_GUI_NAME = "Manager";
+        public const string AGOS_DEBUG_GUI_NAME = "Debug";
 
         public bool hasSetupStyles = false;
-        /*public ApplicationLauncherButton agosButton = null;
-        public IButton _000agosButton = null;*/
         public bool isGameGUIHidden = false;
-        public static readonly List<string> agosKerbalNames = new List<string>() { "iPeer", "Roxy", "Shimmy", "Addle", "Gav", "Kofeyh" }; // You have to be super awesome to make it into this list
+        public static readonly List<string> agosKerbalNames = new List<string>() { "iPeer", "Roxy", "Shimmy", "Addle", "Gav", "Kofeyh", "Mator" }; // You have to be super awesome to make it into this list
 
 
         #endregion
@@ -159,28 +157,71 @@ namespace AGroupOnStage.Main
                 Logger.Log("Debug options are enabled.");
             Logger.Log("AGOS' Settings loaded");
             GroupManager = new AGOSGroupManager();
-            ToolbarManager = new AGOSToolbarManager();
 
             if (Settings.get<bool>("AddAGOSKerbals"))
                 addAGOSKerbals();
+            if (Settings.get<bool>("UnloadUnusedAssets")) // 2.0.10-dev2: Remove Buttons texture from memory because we don't need it in memory (it's loaded on-demand in AGOSToolbarManager)
+            {
+                Logger.Log("Unloading assets that don't need to be in memory...");
+                bool success = GameDatabase.Instance.RemoveTexture("iPeer/AGroupOnStage/Textures/Buttons");
+                Logger.Log(String.Format("{0} '{1}'", (success ? "Successfully unloaded" : "Couldn't unload"), "iPeer/AGroupOnStage/Textures/Buttons"));
+                Logger.Log("Finished cleaning up un-needed assets");
+            }
 
             //GameEvents.onGUIApplicationLauncherReady.Add(OnGUIApplicationLauncherReady);
             GameEvents.onVesselChange.Add(onVesselLoaded);
             GameEvents.onGameSceneLoadRequested.Add(onSceneLoadRequested);
             GameEvents.onGUIApplicationLauncherReady.Add(OnGUIApplicationLauncherReady);
             //GameEvents.onLevelWasLoaded.Add(onLevelWasLoaded); // 2.0.8-dev2: No longer needed.
-            GameEvents.onEditorUndo.Add(OnEditorUndo);
-            GameEvents.onEditorRedo.Add(OnEditorUndo);
             GameEvents.onShowUI.Add(onShowUI);
             GameEvents.onHideUI.Add(onHideUI);
-            ToolbarManager.addToolbarButton();
+            //GameEvents.onGUIAstronautComplexSpawn.Add(onGUIAstronautComplexSpawn);
+            //GameEvents.onGUIAstronautComplexDespawn.Add(onGUIAstronautComplexDespawn);
+            AGOSToolbarManager.addToolbarButton();
 
 #if DEBUG
             if (Settings.get<bool>("HereBeDragons"))
-                RenderingManager.AddToPostDrawQueue(AGOS_GUI_WINDOW_ID - 1, OnDraw_Dragons);
+            {
+                DialogOption[] options = new DialogOption[] 
+                {
+                    new DialogOption("OK", () => dragonsCallBack(0)),
+                    new DialogOption("OK - Don't show again", () => dragonsCallBack(1)),
+                    new DialogOption("Issue Page", () => dragonsCallBack(2), false)
+                };
+                MultiOptionDialog mod = new MultiOptionDialog("HERE BE DRAGONS!\n " +
+                "This is a *very* early experimental release of the new AGOS. Things are going to be broken.\n\n"+
+                "If you find a bug, which is really quite likely, please report it on AGOS' GitHub issues page.\n\n"+
+                "You can get to this page by clicking the \"Issues Page\" button below.\n\n"+
+                "When reporting a bug, please include your output_log file and a craft file  and/or persistent file (stock only, please!) if you feel it will help with the report.\n\n"+
+                "Please check back at the releases page regularly to see if there's a new release!", "Here be Dragons - AGroupOnStage", HighLogic.Skin, options);
+                PopupDialog.SpawnPopupDialog(mod, false, HighLogic.Skin);
+            }
 #endif
             sw.Stop();
             Logger.Log("AGOS initalised in {0}s", sw.Elapsed.TotalSeconds);
+        }
+
+        private void onGUIAstronautComplexSpawn()
+        {
+            if (this.guiVisible)
+                this.toggleGUI();
+        }
+
+        private void onGUIAstronautComplexDespawn()
+        {
+        }
+
+        private void dragonsCallBack(int opt)
+        {
+            if (opt == 1)
+            {
+                Settings.set("HereBeDragons", false);
+                Settings.save();
+            }
+            else if (opt == 2)
+            {
+                Application.OpenURL("https://github.com/iPeer/AGroupOnStage/issues");
+            }
         }
 
         public void addAGOSKerbals()
@@ -196,7 +237,7 @@ namespace AGroupOnStage.Main
             foreach (string s in agosKerbalNames)
             {
                 string kName = s + " Kerman";
-                bool kerbalsPresent = roster.Crew.Count(i => i.name.Equals(kName)) > 0;
+                bool kerbalsPresent = roster[kName] != null;
                 if (kerbalsPresent)
                 {
                     Logger.LogWarning("{0} has already been signed up (harmless)", kName);
@@ -257,7 +298,7 @@ namespace AGroupOnStage.Main
         private void OnGUIApplicationLauncherReady()
         {
             if (Settings.get<bool>("UseStockToolbar") || !_000Toolbar.ToolbarManager.ToolbarAvailable)
-                ToolbarManager.setupToolbarButton();
+                AGOSToolbarManager.setupToolbarButton();
         }
 
         /*public void backupActionGroupList()
@@ -278,43 +319,9 @@ namespace AGroupOnStage.Main
                 new { o.cameraMode, o.fireGroupID, o.FlightID, o.Group, o.isPartLocked, o.linkedPart, o.partRef, o.StagesAsString, o.ThrottleLevel, o.timerDelay, o.Vessel }
                 ).Select(n => n.First()).ToList<IActionGroup>();
             int end = newList.Count;
-            Logger.Log("Removed {0} duplicate action groups(s)", (start - end));
+            Logger.Log("Removed {0} duplicate action group(s)", (start - end));
             this.actionGroups = new List<IActionGroup>(newList);
         }
-
-        public void removeInvalidActionGroups()
-        {
-            int start = this.actionGroups.Count;
-            List<IActionGroup> newList = new List<IActionGroup>(this.actionGroups.RemoveAll(a => a.FlightID == 0));
-            int end = newList.Count;
-            Logger.Log("Removed {0} invalid action groups", (start - end));
-            this.actionGroups = new List<IActionGroup>(newList);
-        }
-
-        /*[Obsolete("Use removeDuplicateActionGroups instead", true)]
-        public void restoreBackedUpActionGroups()
-        {
-            restoreBackedUpActionGroups(false);
-        }*/
-
-        /*[Obsolete("Use removeDuplicateActionGroups instead", true)]
-        public void restoreBackedUpActionGroups(bool clear)
-        {
-            if (backupActionGroups != null && backupActionGroups.Count > 0)
-            {
-                int thisVesselsGroups = this.actionGroups.Count(a => a.FlightID == AGOSUtils.getFlightID());
-                Logger.Log("B:{0} / L:{1}", backupActionGroups.Count, thisVesselsGroups);
-                if (backupActionGroups.Count == this.actionGroups.Count)
-                    return;
-                this.actionGroups.RemoveAll(a => a.FlightID == AGOSUtils.getFlightID());
-                //this.actionGroups.Clear();
-                foreach (IActionGroup a in backupActionGroups.FindAll(a => a.FlightID == AGOSUtils.getFlightID()))
-                    this.actionGroups.Add(a);
-                Logger.Log("Restored {0} group(s)", backupActionGroups.Count(a => a.FlightID == AGOSUtils.getFlightID()));
-                if (clear)
-                    backupActionGroups.Clear();
-            }
-        }*/
 
         private void loadActionGroups()
         {
@@ -394,17 +401,11 @@ namespace AGroupOnStage.Main
             }
             if (guiVisible && !fromPart)
             {
-                if (EditorLogic.fetch == null) // 2.0.9-dev3: Fix for NRE when opening GUI without visiting the editor first.
-                {
-                    Logger.LogWarning("Couldn't remove control locks because the player hasn't visited the Editor yet! (EditorLogic.fetch == null)");
-                }
-                else
-                {
-                    EditorLogic.fetch.Unlock("AGOS_INPUT_LOCK");
-                }
+                AGOSInputLockManager.removeControlLocksForSceneDelayed(HighLogic.LoadedScene, AGOS_MAIN_GUI_NAME);
+                _scrollPosConfig = _scrollPosGroups = Vector2.zero; // 2.0.10-dev2: Reset scroll list positions when GUI closes
                 guiVisible = false;
-                if (!ToolbarManager.using000Toolbar)
-                    ToolbarManager.agosButton.SetFalse(false);
+                if (!AGOSToolbarManager.using000Toolbar)
+                    AGOSToolbarManager.agosButton.SetFalse(false);
                 RenderingManager.RemoveFromPostDrawQueue(AGOS_GUI_WINDOW_ID, OnDraw);
                 Settings.set("wPosX", _windowPos.x);
                 Settings.set("wPosY", _windowPos.y);
@@ -423,17 +424,10 @@ namespace AGroupOnStage.Main
                 if (EditorTooltip.Instance != null) // 2.0.9-dev3: Fix for NRE when opening GUI without visiting the editor first.
                     EditorTooltip.Instance.HideToolTip();
                 if (Settings.get<bool>("LockInputsOnGUIOpen"))
-                    if (EditorLogic.fetch == null) // 2.0.9-dev3: Fix for NRE when opening GUI without visiting the editor first.
-                    {
-                        Logger.LogWarning("Couldn't apply control locks because the player hasn't visited the Editor yet! (EditorLogic.fetch == null)");
-                    }
-                    else
-                    {
-                        EditorLogic.fetch.Lock(true, true, true, "AGOS_INPUT_LOCK");
-                    }
+                    AGOSInputLockManager.setControlLocksForScene(HighLogic.LoadedScene, AGOS_MAIN_GUI_NAME);
                 guiVisible = true;
-                if (!ToolbarManager.using000Toolbar)
-                    ToolbarManager.agosButton.SetTrue(false);
+                if (!AGOSToolbarManager.using000Toolbar)
+                    AGOSToolbarManager.agosButton.SetTrue(false);
                 _windowPos.x = Settings.get<float>("wPosX");
                 _windowPos.y = Settings.get<float>("wPosY");
                 RenderingManager.AddToPostDrawQueue(AGOS_GUI_WINDOW_ID, OnDraw);
@@ -465,7 +459,7 @@ namespace AGroupOnStage.Main
 
         private void OnWindow(int windowID)
         {
-            if (SpecialOccasion)
+            if (SpecialOccasion && Settings.get<bool>("DisplaySpecialOccasions"))
             {
                 GUILayout.BeginVertical();
                 GUILayout.BeginHorizontal();
@@ -481,7 +475,12 @@ namespace AGroupOnStage.Main
             }
 
             // Draw settings button
-            if (GUI.Button(new Rect(_windowPos.width - 50, 3, 45, 12), "...", _tinyButtonStyle))
+            Rect settingsBtnRect;
+            if (linkPart != null)
+                settingsBtnRect = new Rect(_windowPos.width - 20, 3, 16, 16);
+            else
+                settingsBtnRect = new Rect(_windowPos.width - 20, 20, 16, 16);
+            if (GUI.Button(settingsBtnRect, Settings.buttonTex, _tinyButtonStyle))
             {
                 Settings.toggleGUI();
             }
@@ -612,10 +611,19 @@ namespace AGroupOnStage.Main
                 GUILayout.EndHorizontal();
                 GUILayout.Space(4);
             }
-
-            if (GUILayout.Button("Commit group(s)", _buttonStyle))
+            bool hasStageList = !string.IsNullOrEmpty(stageList);
+            bool hasLinkedPart = !(linkPart == null);
+            bool hasGroups = !(actionGroupSettings.Values.Count(a => a) == 0);
+            if ((!hasStageList && !hasLinkedPart) || !hasGroups) // Not configued
             {
-                commitGroups();
+                GUILayout.Label("This group is not correctly configured!", _labelStyleRed);
+            }
+            else
+            {
+                if (GUILayout.Button("Commit group(s)", _buttonStyle))
+                {
+                    commitGroups();
+                }
             }
 
             GUILayout.EndVertical();
@@ -715,6 +723,16 @@ namespace AGroupOnStage.Main
                 {
                     GroupManager.toggleGUI();
                 }
+                if (GUILayout.Button("DEBUG: Display active lock list", _buttonStyle))
+                {
+                    AGOSInputLockManager.DEBUGListActiveLocks();
+                }
+                GUILayout.EndHorizontal();
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("DEBUG: Dump all possible control locks", _buttonStyle))
+                {
+                    AGOSInputLockManager.DEBUGListAllPossibleLocks();
+                }
                 GUILayout.EndHorizontal();
             }
             GUILayout.BeginHorizontal();
@@ -730,6 +748,23 @@ namespace AGroupOnStage.Main
         private void commitGroups()
         {
             Logger.Log("Commiting current action group configuration...");
+
+            // Check if the config is valid (IE no fields are blank)
+            // Shouldn't actually be possible to get this far with a misconfigured group, but I like my sanity.
+
+            Logger.Log("Checking configuration parameters:");
+            bool hasStageList = !string.IsNullOrEmpty(stageList);
+            bool hasLinkedPart = !(linkPart == null);
+            bool hasGroups = !(actionGroupSettings.Values.Count(a => a) == 0);
+            Logger.Log("{0} / {1} ({2}), {3} | {4}", hasStageList ? "PASS" : "FAIL", hasLinkedPart ? "PASS" : "FAIL", !hasStageList && !hasLinkedPart ? "FAIL" : "PASS", hasGroups ? "PASS" : "FAIL", (!hasStageList && !hasLinkedPart) || !hasGroups ? "FAIL" : "PASS");
+            if ((!hasStageList && !hasLinkedPart) || !hasGroups)
+            {
+
+                Logger.LogWarning("Action group is not configured properly, aborting.");
+                return;
+
+            }
+
             int[] AG_MIN_MAX = getMinMaxGroupIds();
             int AG_MIN = AG_MIN_MAX[0];
             int AG_MAX = AG_MIN_MAX[1];
@@ -785,23 +820,25 @@ namespace AGroupOnStage.Main
                     {
                         ag.linkedPart = linkPart;
                         ag.isPartLocked = true;
-                        ag.partRef = String.Format("{0}_{1}", linkPart.name, linkPart.craftID);
+                        ag.partRef = linkPart.savedPartName();
                     }
                     else
                     {
-                        int[] stages;
+                        List<int> stages = new List<int>();
                         string[] sList = stageList.Split(',');
-                        stages = new int[sList.Length];
-                        for (int i = 0; i < sList.Length; i++)
-                            try
-                            {
-                                stages[i] = Convert.ToInt32(sList[i]);
+                        foreach(string stage in sList) {
+                            try {
+                                stages.Add(Convert.ToInt32(stage));
                             }
                             catch
                             {
-                                Logger.LogWarning("Couldn't parse stage number '{0}'. Skipping.", sList[i]);
+                                Logger.LogWarning("Couldn't parse stage number '{0}'. Skipping", stage);
                             }
-                        ag.Stages = stages;
+                        }
+                        if (stages.Count > 0) // 2.0.10-dev4: Fix for groups containing only non-numeric invalid stages being added to the list with no stages configured
+                            ag.Stages = stages.ToArray();
+                        else
+                            continue;
                     }
 
                     if (useAGXGroup)
@@ -845,7 +882,7 @@ namespace AGroupOnStage.Main
             return ret;
         }
 
-        public void setUpStyles()
+        public GUISkin setUpStyles()
         {
             Logger.Log("Setting up GUI styles");
             hasSetupStyles = true;
@@ -876,9 +913,11 @@ namespace AGroupOnStage.Main
             //_labelCenteredYellow.stretchHeight = true;
             _tinyButtonStyle = new GUIStyle(skin.button);
             _tinyButtonStyle.clipping = TextClipping.Overflow;
-            _tinyButtonStyle.padding = new RectOffset(0, 2, 0, 3);
+            //_tinyButtonStyle.alignment = TextAnchor.MiddleCenter;
+            _tinyButtonStyle.padding = new RectOffset(0, 0, 0, 0);
             _tinyButtonStyle.margin = new RectOffset();
             Logger.Log("Done setting up GUI styles");
+            return skin;
         }
 
         #endregion
@@ -962,7 +1001,7 @@ namespace AGroupOnStage.Main
                     continue;
                 }
                 g.linkedPart = part;
-                Logger.Log("Action group '{2}' and part '{0}' ({1}) have been paired", part.partInfo.title, String.Format("{0}_{1}", part.name, part.craftID), g.Group);
+                Logger.Log("Action group '{2}' and part '{0}' ({1}) have been paired", part.partInfo.title, part.savedPartName(), g.Group);
             }
             //Logger.Log("Finished finding homes for all part locked action group configurations");
         }
@@ -1009,14 +1048,6 @@ namespace AGroupOnStage.Main
             AGOSUtils.resetActionGroupConfig(true);
         }
 
-
-        private void OnEditorUndo(ShipConstruct data)
-        {
-            Logger.Log("Undo/Redo");
-            //AGOSUtils.resetActionGroupConfig();
-            findHomesForPartLockedGroups(data.parts);
-        }
-
         private void onLevelWasLoaded(GameScenes level)
         {
 
@@ -1034,47 +1065,12 @@ namespace AGroupOnStage.Main
 
         }
 
-        #region herebedragons
-        // Here be dragons GUI on startup
-
-        private void OnDraw_Dragons()
+        public static void ResetSettings()
         {
-
-            /*if (!hasSetupStyles)
-                setUpStyles();*/
-            _windowPos = GUILayout.Window(AGOS_GUI_WINDOW_ID - 1, _windowPos, OnWindow_Dragons, "Roar!", HighLogic.Skin.window);
-
-            _windowPos.x = Screen.width / 2 - _windowPos.width / 2;
-            _windowPos.y = Screen.height / 2 - _windowPos.height / 2;
-
+            if (Settings.guiVisible)
+                Settings.toggleGUI();
+            Settings.removeFile();
+            Settings = new AGOSSettings(Settings.configPath);
         }
-
-        public void OnWindow_Dragons(int wID)
-        {
-            GUIStyle label = HighLogic.Skin.label;
-            label.stretchWidth = true;
-
-            GUILayout.BeginHorizontal(GUILayout.Width(250f));
-
-            GUILayout.Label("HERE BE DRAGONS!\nThis is a *very* early experimental release of the new AGOS. Things are going to be broken.\n\nIf you find a bug, which is really quite likely, please report it on AGOS' GitHub issues page.\n\nYou can get to this page by clicking the \"Issues Page\" button below.\n\nWhen reporting a bug, please include your output_log file and a craft file  and/or persistent file (stock only, please!) if you feel it will help with the report.\n\nPlease check back at the releases page regularly to see if there's a new release!\n\nThis message will only display once.", label, GUILayout.Width(245f));
-            GUILayout.EndHorizontal();
-            GUILayout.BeginHorizontal(GUILayout.Width(250f));
-            if (GUILayout.Button("Issues Page"))
-                Application.OpenURL("https://github.com/iPeer/AGroupOnStage/issues");
-            if (GUILayout.Button("Do not anger dragons. Got it."))
-            {
-                //Settings.set("HereBeDragons", false);
-                //Settings.save();
-                RenderingManager.RemoveFromPostDrawQueue(AGOS_GUI_WINDOW_ID - 1, OnDraw_Dragons);
-            }
-
-            GUILayout.EndHorizontal();
-            GUILayout.BeginHorizontal();
-            GUILayout.Label("You can stop this GUI popping up in AGOS' settings!");
-            GUILayout.EndHorizontal();
-            GUI.DragWindow();
-        }
-
-        #endregion
     }
 }

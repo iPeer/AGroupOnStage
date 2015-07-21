@@ -1,3 +1,24 @@
+21/07/15, v2.0.10:
+	* Exposed option to alter the chance of the Taco AGOS button being used.
+	* Exposed option to alter the chance for how often the Fine Controls easter egg fires.
+	* Added an option to disable special occasion messages.
+	* Added a button to the settings GUI to allow users to reset AGOS' settings to their defaults.
+	* Dialogs that are used to inform the player of something or ask for basic input no longer use OnGUI, but KSP's native PopupDialog class.
+	* Tweaked the button images for the stock toolbar slightly. They should be less jaggy on smaller screen resolutions now.
+	* Completely new anti-clickthrough system!
+	* AGOS can now hook into the Engineer's Report to show information on its configuration.
+	* The button to open the settings GUI has a sweet icon now.
+	* AGOS will now remove unneeded (AGOS related) textures from memory upon startup
+	* [#14] Fixed an issue that was causing InvalidOperation exceptions to be thrown when sending a Kerbal on EVA.
+	* [#15] Fixed an issue where AGOS would not see groups configured for stages less than 0 as invalid.
+	* [#16] Fixed an issue which made it possible to assign group configurations to Kerbals on EVA.
+	* [#17] Fixed an issue causing invalid stage number inputs (such as letters) to be parsed as 0s instead of being ignored.
+	* [#18] Fixed an issue where switching vessels during configuration of part linked groups would allow them to be applied to the wrong vessel.
+	* [#19] Fixed an issue where AGOS would cause an editor-breaking NullReferenceException when loading vessels created with AGX after removal of AGX.
+	* [#20] Fixed an issue causing part linked group configs to have the vessel's current name in their reference string if created during flight.
+	* [#21] Fixed an issue that would allow group configs that had not been fully configured to be assigned to vehicles.
+	* [#22] Fixed an issue where AGOS would not clear configured groups if all parts of a vessel were deleted from the editor scene.
+
 22/06/15, v2.0.9.1:
 	* Recompiled against 1.0.3 binaries; no code changes.
 

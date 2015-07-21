@@ -27,6 +27,7 @@
         <Command type="AfterBuild" command="xcopy ${TargetDir}\iPeerLib.dll C:\KSPScratchpad\GameData\iPeer\AGroupOnStage\ /y" externalConsole="True" />
       </CustomCommands>
     </CustomCommands>
+    <UseVSHostingProcess>true</UseVSHostingProcess>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>full</DebugType>
@@ -131,13 +132,20 @@
     <Compile Include="ActionGroups\FineControlActionGroup.cs" />
     <Compile Include="ActionGroups\ThrottleControlActionGroup.cs" />
     <Compile Include="ActionGroups\TimeDelayedActionGroup.cs" />
+    <Compile Include="EngineersReport\EngineersReportInitialiser.cs" />
+    <Compile Include="EngineersReport\InvalidPartReferenceConcern.cs" />
+    <Compile Include="EngineersReport\NoGroupsConfiguredConcern.cs" />
+    <Compile Include="EngineersReport\OutOfStageRangeConcern.cs" />
     <Compile Include="Extensions\IntegerExtensions.cs" />
+    <Compile Include="Extensions\ListExtensions.cs" />
+    <Compile Include="Extensions\PartExtensions.cs" />
     <Compile Include="Extensions\RandomExtensions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
     <Compile Include="Main\AGOSDebug.cs" />
     <Compile Include="Main\AGOSEditor.cs" />
     <Compile Include="Main\AGOSFlight.cs" />
     <Compile Include="Main\AGOSGroupManager.cs" />
+    <Compile Include="Main\AGOSInputLockManager.cs" />
     <Compile Include="Main\AGOSMain.cs" />
     <Compile Include="AGX\AGXInterface.cs" />
     <Compile Include="Logging\Logger.cs" />
