@@ -270,7 +270,8 @@ namespace AGroupOnStage.Main
 
         public void OnDraw()
         {
-            // TODO: Fix GUI scaling for long option descriptions
+            if (!AGOSMain.Instance.hasSetupStyles)
+                AGOSMain.Instance.setUpStyles();
             if (!hasSetupStyles)
             {
                 hasSetupStyles = true;

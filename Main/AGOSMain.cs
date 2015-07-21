@@ -237,7 +237,7 @@ namespace AGroupOnStage.Main
             foreach (string s in agosKerbalNames)
             {
                 string kName = s + " Kerman";
-                bool kerbalsPresent = roster.Crew.Count(i => i.name.Equals(kName)) > 0;
+                bool kerbalsPresent = roster[kName] != null;
                 if (kerbalsPresent)
                 {
                     Logger.LogWarning("{0} has already been signed up (harmless)", kName);
