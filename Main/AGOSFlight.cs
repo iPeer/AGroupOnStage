@@ -132,9 +132,11 @@ namespace AGroupOnStage.Main
             if (FlightGlobals.fetch.activeVessel.isEVA) // 2.0.10-dev2: Don't run on Kerbals on EVA.
             {
                 if (AGOSMain.Instance.guiVisible)
-                    AGOSMain.Instance.toggleGUI(); 
-                return; 
-            } 
+                    AGOSMain.Instance.toggleGUI();
+                // 2.0.10-dev3: Don't allow AGOS' toolbar button to be clicked if it's an EVA.
+                AGOSToolbarManager.disableToolbarButton();
+                return;
+            }
 
             Logger.Log("Flight ready");
             //AGOSMain.Instance.restoreBackedUpActionGroups();
