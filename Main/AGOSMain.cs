@@ -1034,6 +1034,7 @@ namespace AGroupOnStage.Main
         private void onSceneLoadRequested(GameScenes scene)
         {
             Logger.Log("Scene change to '{0}' from '{1}' requested", scene.ToString(), HighLogic.LoadedScene.ToString());
+            AGOSToolbarManager.enableToolbarButton(); // 2.0.11-dev1: Force enable toolbar buttons on scene change (Fixes #24)
             if (this.guiVisible)
                 toggleGUI();
             if (Settings.guiVisible && !scene.ToString().Equals("SPACECENTER"))
