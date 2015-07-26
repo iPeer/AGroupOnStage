@@ -1,5 +1,6 @@
-??, v2.0.11:
+26/07/15, v2.0.11:
 	* [#24] Fixed an issue where AGOS' toolbar buttons could become stuck in a disabled state if the player changed scene while controlling a Kerbal
+	* [#26] Fixed AGOS using incorrect value ("System.String[]") as a part's name when saving part linked groups.
 
 21/07/15, v2.0.10:
 	* Exposed option to alter the chance of the Taco AGOS button being used.
