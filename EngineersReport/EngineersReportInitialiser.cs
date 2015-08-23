@@ -10,7 +10,7 @@ using KSPEngineersReport = EngineersReport;
 
 namespace AGroupOnStage.EngineersReport
 {
-    [KSPAddon(KSPAddon.Startup.EditorAny, false)]
+    [KSPAddon(KSPAddon.Startup.EditorAny, true)]
     public class EngineersReportInitialiser : MonoBehaviour 
     {
 
@@ -31,16 +31,19 @@ namespace AGroupOnStage.EngineersReport
                 Destroy(this); // Free a miniscule amount of RAM!
                 return;
             }
-            Log("Registering GameEvents for Engineer's Report");
-            GameEvents.onGUIEngineersReportReady.Add(AddConcerns);
-            GameEvents.onGUIEngineersReportDestroy.Add(RemoveConcerns);
-            designConcerns = new List<IDesignConcern>();
-            Log("Generating list of AGOS Concerns...");
-            designConcerns.AddRange(new IDesignConcern[] { new OutOfStageRangeConcern(), new InvalidPartReferenceConcern(), new NoGroupsConfiguredConcern() }.ToList());
-            Log("{0} concern(s) will be added:", designConcerns.Count);
-            foreach (IDesignConcern dc in designConcerns)
-                Log("\t{0}: {1}", dc.ToString(), dc.GetSeverity().ToString());
-            Log("Waiting for Engineer's Report 'ready' state...");
+            if (!hasAddedConcerns)
+            {
+                Log("Registering GameEvents for Engineer's Report");
+                GameEvents.onGUIEngineersReportReady.Add(AddConcerns);
+                GameEvents.onGUIEngineersReportDestroy.Add(RemoveConcerns);
+                designConcerns = new List<IDesignConcern>();
+                Log("Generating list of AGOS Concerns...");
+                designConcerns.AddRange(new IDesignConcern[] { new OutOfStageRangeConcern(), new InvalidPartReferenceConcern(), new NoGroupsConfiguredConcern(), new TechLevelTooLowConcern() }.ToList());
+                Log("{0} concern(s) will be added:", designConcerns.Count);
+                foreach (IDesignConcern dc in designConcerns)
+                    Log("\t{0}: {1}", dc.ToString(), dc.GetSeverity().ToString());
+                Log("Waiting for Engineer's Report 'ready' state...");
+            }
 
         }
 

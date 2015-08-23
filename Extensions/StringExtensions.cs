@@ -21,5 +21,11 @@ namespace AGroupOnStage.Extensions
             return 0;
         }
 
+        // Because to ignore case, String.StartsWith() requires 3 parameters that I don't always want to provide.
+        public static bool StartsWithIgnoreCase(this string s, string start)
+        {
+            return s.ToLower().StartsWith(start.ToLower());
+        }
+
     }
 }

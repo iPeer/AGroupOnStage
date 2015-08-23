@@ -9,6 +9,7 @@ using AGroupOnStage.Extensions;
 using System.IO;
 using System.Reflection;
 using System.Timers;
+using System.Diagnostics;
 
 namespace AGroupOnStage.Main
 {
@@ -16,6 +17,7 @@ namespace AGroupOnStage.Main
     {
 
         private static GUISkin currentSkin;
+        private static FileVersionInfo fvi;
 
         public static bool isLoadedSceneOneOf(params GameScenes[] scenes)
         {
@@ -119,12 +121,12 @@ namespace AGroupOnStage.Main
             return (HighLogic.LoadedSceneIsEditor ? EditorLogic.fetch.ship.parts : FlightGlobals.fetch.activeVessel.parts);
         }
 
-        public static string getActionGroupInfo(IActionGroup ag)
+        public static string getActionGroupInfo(AGOSActionGroup ag)
         {
             return String.Format("[{7}] {0}, {1}, {2}, {3}, {4}, {5}, {6}", ag.Group.ToString(), (ag.Stages != null && ag.Stages.Length > 0 ? intArrayToString(ag.Stages, "|") : "none"), (ag.linkedPart != null ? ag.linkedPart.ToString() : "none"), ag.ThrottleLevel.ToString(), ag.cameraMode.ToString(), ag.isPartLocked, ag.partRef, ag.FlightID);
         }
 
-        public static void printActionGroupInfo(IActionGroup ag)
+        public static void printActionGroupInfo(AGOSActionGroup ag)
         {
             Logger.Log(getActionGroupInfo(ag));
         }
@@ -243,11 +245,14 @@ namespace AGroupOnStage.Main
         /// </summary>
         /// <param name="ag">The Action Group to check</param>
         /// <returns>True if the group is valid, otherwise false</returns>
-        public static bool isGroupValidForVessel(IActionGroup ag)
+        public static bool isGroupValidForVessel(AGOSActionGroup ag)
         {
 
             if (!techLevelEnoughForGroup(ag.Group)) // 2.0.9-dev2: Mark parts that have higher tech requirement than the player currently has.
                 return false;
+
+            if (ag.FireType == AGOSActionGroup.FireTypes.DOCK || ag.FireType == AGOSActionGroup.FireTypes.UNDOCK)
+                return true;
 
             List<Part> parts = (HighLogic.LoadedSceneIsEditor ? EditorLogic.fetch.ship.parts : FlightGlobals.fetch.activeVessel.parts);
             if (ag.isPartLocked)
@@ -270,7 +275,7 @@ namespace AGroupOnStage.Main
 
         public static bool hasOutOfRangeStageConfig()
         {
-            foreach (IActionGroup ag in AGOSMain.Instance.actionGroups)
+            foreach (AGOSActionGroup ag in AGOSMain.Instance.actionGroups)
             {
 
                 if (ag.isPartLocked)
@@ -285,7 +290,7 @@ namespace AGroupOnStage.Main
         public static bool hasInvalidPartLinkedConfig()
         {
             List<Part> parts = (HighLogic.LoadedSceneIsEditor ? EditorLogic.fetch.ship.parts : FlightGlobals.fetch.activeVessel.parts);
-            foreach (IActionGroup ag in AGOSMain.Instance.actionGroups)
+            foreach (AGOSActionGroup ag in AGOSMain.Instance.actionGroups)
             {
                 if (!ag.isPartLocked)
                     continue;
@@ -350,6 +355,50 @@ namespace AGroupOnStage.Main
             timer.Stop();
             timer.Dispose();
             method.Invoke();
+        }
+
+        public static string getModVersion()
+        {
+            if (fvi == null)
+            {
+                AssemblyLoader.LoadedAssembly agos = AssemblyLoader.loadedAssemblies.First(a => a.name.Equals("AGroupOnStage"));
+                fvi = FileVersionInfo.GetVersionInfo(agos.assembly.Location);
+            }
+            string version = fvi.FileVersion;
+            if (version.EndsWith(".0.0"))
+                return version.Substring(0, 3);
+            else if (version.EndsWith(".0"))
+                return version.Substring(0, 5);
+            else
+                return version;
+        }
+
+        // Thanks to KospY and KIS for showing me how to do this!
+        // https://github.com/KospY/KIS/blob/86387f0f43ab1c1e6282f90bc76b471c596178ae/Plugins/Source/KIS_Shared.cs#L60
+        public static Part getPartUnderCursor()
+        {
+            Part part = null;
+            Camera cam = null;
+            RaycastHit hit;
+
+            if (HighLogic.LoadedSceneIsFlight)
+                cam = FlightCamera.fetch.mainCamera;
+            else if (HighLogic.LoadedSceneIsEditor)
+                cam = EditorLogic.fetch.editorCamera;
+            else
+            {
+                Logger.LogError("Current scene ('{0}') is not a valid scene for getting parts!", HighLogic.LoadedScene);
+                return null;
+            }
+
+
+            if (Physics.Raycast(cam.ScreenPointToRay(Input.mousePosition), out hit, 1000, 481651))
+            {
+                part = (Part)UIPartActionController.GetComponentUpwards("Part", hit.transform.gameObject);
+            }
+
+            return part;
+
         }
 
     }

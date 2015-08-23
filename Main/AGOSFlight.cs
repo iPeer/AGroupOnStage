@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
-using System.Threading;
+using System.Timers;
 
 namespace AGroupOnStage.Main
 {
@@ -20,8 +20,8 @@ namespace AGroupOnStage.Main
         private bool handledBySeparation = false;
         private bool processingStageEvent = false;
         private Vessel lastVessel;
-        //private List<Timer> groupTimers = new List<Timer>();
-        private Dictionary<IActionGroup, DateTime> groupTimers = new Dictionary<IActionGroup, DateTime>();
+        private Dictionary<AGOSActionGroup, DateTime> groupTimers = new Dictionary<AGOSActionGroup, DateTime>();
+        private Timer stageLockTimer;
 
         public static AGOSFlight Instance { get; protected set; }
 
@@ -43,6 +43,7 @@ namespace AGroupOnStage.Main
                 GameEvents.onPartUndock.Add(OnPartUndock);
                 GameEvents.onCrewOnEva.Add(onCrewOnEVA); //             2.0.10-dev3: Disable AGOS toolbar buttons when EVAing a Kerbal
                 GameEvents.onCrewBoardVessel.Add(onCrewBoardVessel); // ^
+                //GameEvents.onUndock.Add(onUndock);
                 //GameEvents.onLevelWasLoaded.Add(onLevelWasLoaded);
                 //GameEvents.onVesselGoOffRails.Add(onVesselUnpack);
                 AGOSMain.Instance.FlightEventsRegistered = true;
@@ -67,13 +68,51 @@ namespace AGroupOnStage.Main
         private void OnPartUndock(Part data)
         {
             Logger.Log("Vessel undock: {0}", data.vessel.name);
+            activateDockingUndockingActionGroups(data.vessel, AGOSActionGroup.FireTypes.UNDOCK);
+
+            ModuleDockingNode mdn = (ModuleDockingNode)data.Modules["ModuleDockingNode"];
+            if (mdn != null)
+            {
+                uint otherVesselID = mdn.vesselInfo.rootPartUId;
+                List<Vessel> vessels = new List<Vessel>(FlightGlobals.fetch.vessels); // create a list we can safely iterate over
+
+                foreach (Vessel v in vessels)
+                    Logger.Log("{0} {1}", v.vesselName, (v.rootPart != null ? "(" + v.rootPart.flightID + ")" : ""));
+
+                Vessel vessel = vessels.Find(v => v.parts.FindAll(p => p.flightID == otherVesselID).Any());
+
+                if (vessel != null)
+                    activateDockingUndockingActionGroups(vessel, AGOSActionGroup.FireTypes.UNDOCK);
+                else
+                    Logger.LogError("Couldn't find a vessel matching FlightID {0}", otherVesselID);
+
+            }
+            else
+            {
+                Logger.LogError("Unable to acquire ModuleDockingNode for modified docking node!");
+            }
+
             AGOSMain.Instance.getMasterAGOSModule(data.vessel).resetFlightID(data.vessel.rootPart.flightID);
         }
+
+        /*public void delayedNonControlledVesselUndockFire(uint flightID) 
+        {
+            this.undockingTimer.Stop();
+            //this.undockingTimer.Enabled = false;
+            this.undockingTimer.Dispose();
+
+            Vessel v = FlightGlobals.Vessels.Find(a => a.rootPart.flightID == flightID);
+            try { Logger.Log("{0}", v.vesselName); }
+            catch (NullReferenceException) { Logger.Log("Vessel == null"); }
+
+        }*/
 
         private void OnPartCouple(GameEvents.FromToAction<Part, Part> data)
         {
 
             Logger.Log("Vessel '{0}' ({1}) docked to vessel '{2}' ({3})", data.from.vessel.vesselName, data.from.vessel.rootPart.flightID, data.to.vessel.vesselName, data.to.vessel.rootPart.flightID);
+            activateDockingUndockingActionGroups(data.to.vessel, AGOSActionGroup.FireTypes.DOCK);
+            activateDockingUndockingActionGroups(data.from.vessel, AGOSActionGroup.FireTypes.DOCK);
             AGOSMain.Instance.getMasterAGOSModule(data.to.vessel).setFlightID(data.to.vessel.rootPart.flightID, true, data.from.vessel.rootPart.flightID);
 
         }
@@ -193,65 +232,96 @@ namespace AGroupOnStage.Main
                 return;
             }
             processingStageEvent = true;
-            List<IActionGroup> toFire = new List<IActionGroup>();
-            List<IActionGroup> thisVesselsGroups = new List<IActionGroup>();
+            List<AGOSActionGroup> toFire = new List<AGOSActionGroup>();
+            List<AGOSActionGroup> thisVesselsGroups = new List<AGOSActionGroup>();
             thisVesselsGroups.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => AGOSUtils.isLoadedCraftID(a.FlightID)));
             int stageNum = (AGOSMain.Instance.useAGXConfig && s >= 8 ? s - 7 : s);
             toFire.AddRange(thisVesselsGroups.FindAll(a => a.Stages != null && a.Stages.Length > 0 && a.Stages.Contains(stageNum)/* && a.Vessel == FlightGlobals.fetch.activeVessel*/)); // Regular action groups
             toFire.AddRange(thisVesselsGroups.FindAll(a => a.isPartLocked && a.linkedPart.inverseStage == stageNum/* && a.Vessel == FlightGlobals.fetch.activeVessel*/)); // Part locked groups
             //List<IActionGroup> toFire = AGOSMain.Instance.actionGroups.FindAll(a => (a.Stages.Length > 0 && a.Stages.Contains(s)) || (a.isPartLocked && a.linkedPart.inverseStage == s));
             Logger.Log("{0} group(s) to fire", toFire.Count);
-            foreach (IActionGroup ag in toFire) 
+            foreach (AGOSActionGroup ag in toFire) 
             {
-                if (ag.GetType() == typeof(StageLockActionGroup))
-                {
-                    stageLockScheduled = true;
-                    Logger.Log("A stage lock has been scheduled");
-                }
-                else if (ag.GetType() == typeof(ThrottleControlActionGroup))
-                {
-                    FlightInputHandler.state.mainThrottle = ag.ThrottleLevel;
-                    Logger.Log("Set throttle to {0:P0}", ag.ThrottleLevel);
-                }
-                else if (ag.GetType() == typeof(CameraControlActionGroup))
-                {
-                    if (AGOSMain.Settings.get<bool>("InstantCameraTransitions"))
-                        FlightCamera.SetModeImmediate(ag.cameraMode);
-                    else
-                        FlightCamera.SetMode(ag.cameraMode);
-                    Logger.Log("Camera mode set to {0}", ag.cameraMode.ToString());
-                }
-                else if (ag.GetType() == typeof(FineControlActionGroup))
-                {
-                    toggleFineControls();
-                    Logger.Log("Fine controls toggled");
-                }
-                else if (ag.GetType() == typeof(TimeDelayedActionGroup) && ag.timerDelay > -1)
-                {
-
-                    Logger.Log("Group '{0}' will be fired in {1}'s", ag.fireGroupID, ag.timerDelay);
-                    DateTime dt = DateTime.Now.AddSeconds(ag.timerDelay);
-                    this.groupTimers.Add(ag, dt);
-
-                }
-                else
-                {
-                    fireActionGroup(ag.GetType() == typeof(TimeDelayedActionGroup) ? ag.fireGroupID : ag.Group);
-                }
-                if (ag.isPartLocked || ag.Stages.Count(a => a < FlightGlobals.fetch.activeVessel.currentStage) == 1)
-                {
-                    Logger.Log("Removing action group from config as it has no more triggers");
-                    AGOSMain.Instance.actionGroups.Remove(ag);
-                }
+                processGroup(ag);
             }
             processingStageEvent = false;
         }
 
+        public void activateDockingUndockingActionGroups(Vessel v, AGOSActionGroup.FireTypes fireType = AGOSActionGroup.FireTypes.DOCK)
+        {
+            List<AGOSActionGroup> toFire = new List<AGOSActionGroup>();
+            List<AGOSActionGroup> vesselGroups = new List<AGOSActionGroup>();
+
+            Logger.LogDebug("DOCK/UNDOCK: {0}", v.vesselName);
+
+            vesselGroups.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.FlightID == v.rootPart.flightID));
+            toFire.AddRange(vesselGroups.FindAll(b => b.FireType == fireType));
+
+            Logger.Log("{0} group(s) to fire", toFire.Count);
+
+            foreach (AGOSActionGroup ag in toFire)
+                processGroup(ag, true, v);
+
+        }
+
+        public void processGroup(AGOSActionGroup ag, bool onDock = false, Vessel v = null)
+        {
+            if (ag.GetType() == typeof(StageLockActionGroup))
+            {
+                toggleStageLock();
+                Logger.Log("Stage lock toggled");
+            }
+            else if (ag.GetType() == typeof(ThrottleControlActionGroup))
+            {
+                FlightInputHandler.state.mainThrottle = ag.ThrottleLevel;
+                Logger.Log("Set throttle to {0:P0}", ag.ThrottleLevel);
+            }
+            else if (ag.GetType() == typeof(CameraControlActionGroup))
+            {
+                if (AGOSMain.Settings.get<bool>("InstantCameraTransitions"))
+                    FlightCamera.SetModeImmediate(ag.cameraMode);
+                else
+                    FlightCamera.SetMode(ag.cameraMode);
+                Logger.Log("Camera mode set to {0}", ag.cameraMode.ToString());
+            }
+            else if (ag.GetType() == typeof(FineControlActionGroup))
+            {
+                toggleFineControls();
+                Logger.Log("Fine controls toggled");
+            }
+            else if (ag.GetType() == typeof(TimeDelayedActionGroup) && ag.timerDelay > -1)
+            {
+
+                Logger.Log("Group '{0}' will be fired in {1}'s", ag.fireGroupID, ag.timerDelay);
+                DateTime dt = DateTime.Now.AddSeconds(ag.timerDelay);
+                this.groupTimers.Add(ag, dt);
+
+            }
+            else
+            {
+                if (onDock)
+                    fireActionGroup(ag.GetType() == typeof(TimeDelayedActionGroup) ? ag.fireGroupID : ag.Group, v);
+                else
+                    fireActionGroup(ag.GetType() == typeof(TimeDelayedActionGroup) ? ag.fireGroupID : ag.Group);
+            }
+            if ((ag.isPartLocked || ag.Stages.Count(a => a < FlightGlobals.fetch.activeVessel.currentStage) == 1) && ag.FireType == AGOSActionGroup.FireTypes.STAGE)
+            {
+                Logger.Log("Removing action group from config as it has no more triggers");
+                AGOSMain.Instance.actionGroups.Remove(ag);
+            }
+        }
+
         public void fireActionGroup(int g)
+        {
+            fireActionGroup(g, null);
+        }
+
+        public void fireActionGroup(int g, Vessel v)
         {
 
             if (AGOSMain.Instance.useAGXConfig && g >= 8)
             {
+                // TODO: AGX support for (un)docking vessels
                 AGX.AGXInterface.AGExtToggleGroup(g - 7);
                 Logger.Log("Firing AGX Action Group #{0}", g - 7);
             }
@@ -260,8 +330,22 @@ namespace AGroupOnStage.Main
                 //Logger.Log("{0}", ag.Group);
                 KSPActionGroup _g = AGOSMain.Instance.stockAGMap[g];
                 Logger.Log("Firing action group {0} ({1})", g, AGOSMain.Instance.actionGroupList[g]);
-                FlightGlobals.ActiveVessel.ActionGroups.ToggleGroup(_g);
+                (v == null ? FlightGlobals.ActiveVessel : v).ActionGroups.ToggleGroup(_g);
             }
+
+        }
+
+        public void toggleStageLock()
+        {
+            /*if (this.stageLockTimer != null)
+            {
+                this.stageLockTimer.Stop();
+                this.stageLockTimer.Dispose();
+            }*/
+
+            FlightInputHandler.fetch.stageLock = !FlightInputHandler.fetch.stageLock;
+            Logger.Log("StageLock = {0}", FlightInputHandler.fetch.stageLock);
+
 
         }
 
@@ -289,11 +373,11 @@ namespace AGroupOnStage.Main
 
         public void Update()
         {
-            if (this.groupTimers.Count > 0)
+            if (this.groupTimers.Count > 0) // TODO: Replace this with timers
             {
-                List<IActionGroup> groups = new List<IActionGroup>(this.groupTimers.Keys);
+                List<AGOSActionGroup> groups = new List<AGOSActionGroup>(this.groupTimers.Keys);
 
-                foreach (IActionGroup a in groups)
+                foreach (AGOSActionGroup a in groups)
                 {
                     if (DateTime.Compare(DateTime.Now, this.groupTimers[a]) >= 0)
                     {

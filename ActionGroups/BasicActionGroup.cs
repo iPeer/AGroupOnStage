@@ -5,9 +5,9 @@ using System.Text;
 
 namespace AGroupOnStage.ActionGroups
 {
-    class BasicActionGroup : IActionGroup
+    public class BasicActionGroup : AGOSActionGroup
     {
-        public Vessel Vessel { get; set; }
+        /*public Vessel Vessel { get; set; }
         public int[] Stages { get; set; }
         public int Group { get; set; }
         public float ThrottleLevel { get; set; }
@@ -26,5 +26,6 @@ namespace AGroupOnStage.ActionGroups
                 return AGroupOnStage.Main.AGOSUtils.intArrayToString(Stages);
             }
         }
+        public bool onDock { get; set; }*/
     }
 }

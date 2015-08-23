@@ -55,15 +55,15 @@ namespace AGroupOnStage.Main
                     node.AddValue("idList", AGOSUtils.arrayToString<uint>(AGOSFlight.Instance.dockedVesselIDs.ToArray(), ","));
                 }
             }*/
-            List<IActionGroup> groupsToSave = new List<IActionGroup>();
-            groupsToSave.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.FlightID == this.flightID));
+            List<AGOSActionGroup> groupsToSave = new List<AGOSActionGroup>();
+            groupsToSave.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.FlightID == this.flightID && !a.IsTester));
             if (groupsToSave.Count > 0)
             {
                 Logger.Log("{0} groups to save", groupsToSave.Count);
                 node.AddNode("AGOS");
                 ConfigNode node_agos = node.GetNode("AGOS");
                 node_agos.AddNode("GROUPS");
-                foreach (IActionGroup ag in groupsToSave)
+                foreach (AGOSActionGroup ag in groupsToSave)
                 {
                     ConfigNode node_group = node_agos.GetNode("GROUPS");
                     Logger.Log("Saving group config: {0}", AGOSUtils.getActionGroupInfo(ag));
@@ -80,10 +80,11 @@ namespace AGroupOnStage.Main
                     if (ag.OriginalFlightID > 0)
                         node_n.AddValue("originalFlightID", ag.OriginalFlightID);
                     node_n.AddValue("groupType", ag.GetType().Name);
+                    node_n.AddValue("fireType", ag.FireType);
                     node_n.AddValue("isPartLocked", ag.isPartLocked);
                     if (ag.isPartLocked)
                         node_n.AddValue("partLink", /*String.Format("{0}_{1}", ag.linkedPart.name, ag.linkedPart.craftID)*/ag.partRef);
-                    else
+                    else if (ag.FireType == AGOSActionGroup.FireTypes.STAGE)
                         node_n.AddValue("stages", AGOSUtils.intArrayToString(ag.Stages, ","));
                     if (ag.GetType() == typeof(FineControlActionGroup))
                         node_n.AddValue("togglesFineControls", true);
@@ -160,7 +161,7 @@ namespace AGroupOnStage.Main
                     else // backwards compat.
                         originalFlightID = this.flightID;
                     string groupType = id.GetValue("groupType");
-                    IActionGroup ag;
+                    AGOSActionGroup ag;
                     if (groupType.Equals("FineControlActionGroup"))
                         ag = new FineControlActionGroup();
                     else if (groupType.Equals("CameraControlActionGroup"))
@@ -173,6 +174,11 @@ namespace AGroupOnStage.Main
                         ag = new TimeDelayedActionGroup();
                     else
                         ag = new BasicActionGroup();
+                    AGOSActionGroup.FireTypes FireType;
+                    if (id.HasValue("fireType"))
+                        FireType = ag.FireType = (AGOSActionGroup.FireTypes)Enum.Parse(typeof(AGOSActionGroup.FireTypes), id.GetValue("fireType"));
+                    else
+                        FireType = ag.FireType = AGOSActionGroup.FireTypes.STAGE;
 
                     // Error checking (for days!)
 
@@ -184,9 +190,9 @@ namespace AGroupOnStage.Main
                         continue;
                     }
 
-                    if (!isPartLocked && !id.HasValue("stages"))
+                    if (!isPartLocked && !id.HasValue("stages") && FireType == AGOSActionGroup.FireTypes.STAGE)
                     {
-                        Logger.LogWarning("Action group {0}:{1} is saved as type '{2}', is not partLinked and doesn't have a stage list, skipping.", groupID, _id, groupType);
+                        Logger.LogWarning("Action group {0}:{1} is saved as type '{2}', is not partLinked and doesn't have a stage list.", groupID, _id, groupType);
                     }
 
                     if (!AGOSUtils.checkSavedGroupIsValid(id, groupType))
@@ -229,7 +235,7 @@ namespace AGroupOnStage.Main
                         ag.partRef = id.GetValue("partLink");
                         ag.Stages = new int[0]; // 2.0.10-dev3: Fix for NRE when loading AGX vessels w/o AGX installed (Assumed to be caused by AGX, any way)
                     }
-                    else
+                    else if (ag.FireType == AGOSActionGroup.FireTypes.STAGE)
                     {
                         int[] stageList = id.GetValue("stages").Split(',').Select(a => int.Parse(a)).ToArray();
                         ag.Stages = stageList;
@@ -287,10 +293,12 @@ namespace AGroupOnStage.Main
 
             this.flightID = id;
             Logger.Log("Processing flightID update from external source ({0})", id);
-            List<IActionGroup> groupsToUpdate = new List<IActionGroup>();
+            List<AGOSActionGroup> groupsToUpdate = new List<AGOSActionGroup>();
             groupsToUpdate.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.FlightID == (fromDock && oldID > 0 ? oldID : this.tempFlightID)));
-            foreach (IActionGroup b in groupsToUpdate)
+            foreach (AGOSActionGroup b in groupsToUpdate)
             {
+                if (fromDock && b.FireType != AGOSActionGroup.FireTypes.STAGE)
+                    return;
                 b.FlightID = id;
                 if (b.OriginalFlightID == 0)
                     b.OriginalFlightID = id;
@@ -302,9 +310,9 @@ namespace AGroupOnStage.Main
         public void resetFlightID(uint currentID)
         {
             Logger.Log("Resetting flightID for groups with current flight ID of '{0}'", currentID);
-            List<IActionGroup> toUpdate = new List<IActionGroup>();
-            toUpdate.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.FlightID == currentID));
-            foreach (IActionGroup a in toUpdate)
+            List<AGOSActionGroup> toUpdate = new List<AGOSActionGroup>();
+            toUpdate.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.FireType == AGOSActionGroup.FireTypes.STAGE && a.FlightID == currentID));
+            foreach (AGOSActionGroup a in toUpdate)
                 a.FlightID = a.OriginalFlightID;
             Logger.Log("Updated {0} groups to their previous flight IDs", toUpdate.Count);
         }
