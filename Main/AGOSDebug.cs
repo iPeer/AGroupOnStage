@@ -20,8 +20,9 @@ namespace AGroupOnStage.Main
         private static bool guiVisible = false;
         private static Rect _winPos = new Rect();
         private static Vector2 scrollPos = Vector2.zero;
-        private static Vector2 entireScrollPos = Vector2.zero;
+        private static Vector2 logScrollPos = Vector2.zero;
         private static System.Random _random = new System.Random();
+        private static List<String> logStrings = new List<String>();
         /*private int hello = 0;*/
 
         public void Start()
@@ -65,7 +66,7 @@ namespace AGroupOnStage.Main
         {
 
 
-
+            GUILayout.BeginHorizontal();
             GUILayout.BeginVertical(GUILayout.MinWidth(300f), GUILayout.MinHeight(400f), GUILayout.ExpandHeight(true));
 
 
@@ -174,7 +175,21 @@ namespace AGroupOnStage.Main
                     AGOSPartSelectionHandler.Instance.enterPartSelectionMode();
             }
 
+            if (GUILayout.Button("Globally activate group Custom01"))
+            {
+                FlightGlobals.fetch.vessels.FindAll(v => !v.HoldPhysics).ForEach(_v => { Logger.Log("Firing Custom01 on " + _v.vesselName); _v.ActionGroups.ToggleGroup(KSPActionGroup.Custom01); });
+            }
+
             GUILayout.EndVertical();
+
+            // Debug log (AGOS only)
+            logScrollPos = GUILayout.BeginScrollView(logScrollPos, GUILayout.MinWidth(300f), GUILayout.MinHeight(400f));
+            foreach (string s in logStrings)
+                GUILayout.Label(s);
+            GUILayout.EndScrollView();
+
+
+            GUILayout.EndHorizontal();
 
             GUI.DragWindow();
 
@@ -196,6 +211,15 @@ namespace AGroupOnStage.Main
 
         }
 
+        public static void addLogString(String str)
+        {
+            while (logStrings.Count > 150)
+                logStrings.RemoveAt(0);
+            logStrings.Add(str);
+            if (guiVisible)
+                logScrollPos.y = Mathf.Infinity;
+        }
+
         public void Update()
         {
             /*hello++;
@@ -207,7 +231,7 @@ namespace AGroupOnStage.Main
             {
                 /*if (Input.anyKey)
                     Logger.Log("A key is down! Key down! I repeat, KEY. DOWN!");*/
-                if (GameSettings.MODIFIER_KEY.GetKeyDown() && Input.GetKeyDown(KeyCode.A))
+                if (GameSettings.MODIFIER_KEY.GetKey() && Input.GetKeyDown(KeyCode.A))
                 {
                     toggleGUI();
                 }

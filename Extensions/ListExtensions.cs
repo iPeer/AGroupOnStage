@@ -20,5 +20,13 @@ namespace AGroupOnStage.Extensions
             return list[list.Count - 2];
         }
 
+        public static void RemoveRange<T>(this List<T> list, IEnumerable<T> items)
+        {
+            foreach (T item in items)
+            {
+                list.Remove(item);
+            }
+        }
+
     }
 }

@@ -20,8 +20,7 @@ namespace AGroupOnStage.Main
         private bool handledBySeparation = false;
         private bool processingStageEvent = false;
         private Vessel lastVessel;
-        private Dictionary<AGOSActionGroup, DateTime> groupTimers = new Dictionary<AGOSActionGroup, DateTime>();
-        private Timer stageLockTimer;
+        private List<Timer> groupTimers = new List<Timer>();
 
         public static AGOSFlight Instance { get; protected set; }
 
@@ -74,7 +73,10 @@ namespace AGroupOnStage.Main
             if (mdn != null)
             {
                 uint otherVesselID = mdn.vesselInfo.rootPartUId;
-                List<Vessel> vessels = new List<Vessel>(FlightGlobals.fetch.vessels); // create a list we can safely iterate over
+
+                StartCoroutine(finishPartUndocProcess(otherVesselID));
+
+                /*List<Vessel> vessels = new List<Vessel>(FlightGlobals.fetch.vessels); // create a list we can safely iterate over
 
                 foreach (Vessel v in vessels)
                     Logger.Log("{0} {1}", v.vesselName, (v.rootPart != null ? "(" + v.rootPart.flightID + ")" : ""));
@@ -84,7 +86,7 @@ namespace AGroupOnStage.Main
                 if (vessel != null)
                     activateDockingUndockingActionGroups(vessel, AGOSActionGroup.FireTypes.UNDOCK);
                 else
-                    Logger.LogError("Couldn't find a vessel matching FlightID {0}", otherVesselID);
+                    Logger.LogError("Couldn't find a vessel matching FlightID {0}", otherVesselID);*/
 
             }
             else
@@ -93,6 +95,27 @@ namespace AGroupOnStage.Main
             }
 
             AGOSMain.Instance.getMasterAGOSModule(data.vessel).resetFlightID(data.vessel.rootPart.flightID);
+        }
+
+        public IEnumerator<WaitForSeconds> finishPartUndocProcess(uint id)
+        {
+            yield return null;
+
+            List<Vessel> vessels = new List<Vessel>(FlightGlobals.fetch.vessels); // Safe list to iterate over
+            Vessel undocked = vessels.Find(v => v.rootPart != null && v.rootPart.flightID == id);//vessels.Find(v => v.parts.FindAll(p => p.flightID == id).Any());
+
+            foreach (Vessel __v in FlightGlobals.fetch.vessels)
+                if (__v == undocked)
+                    Logger.Log("Undocked vessel is in loaded vessel pool");
+
+            if (undocked == null)
+                Logger.LogError("No undocked vessel found with ID '{0}'", id);
+            else
+            {
+                //Logger.Log("UNDOCKED: {0}", undocked.vesselName);
+                activateDockingUndockingActionGroups(undocked, AGOSActionGroup.FireTypes.UNDOCK);
+            }
+
         }
 
         /*public void delayedNonControlledVesselUndockFire(uint flightID) 
@@ -242,8 +265,9 @@ namespace AGroupOnStage.Main
             Logger.Log("{0} group(s) to fire", toFire.Count);
             foreach (AGOSActionGroup ag in toFire) 
             {
-                processGroup(ag);
+                ag.fire();
             }
+            AGOSMain.Instance.removeGroupsWithNoTriggers();
             processingStageEvent = false;
         }
 
@@ -260,10 +284,11 @@ namespace AGroupOnStage.Main
             Logger.Log("{0} group(s) to fire", toFire.Count);
 
             foreach (AGOSActionGroup ag in toFire)
-                processGroup(ag, true, v);
+                ag.fireOnVessel(v);
 
         }
 
+        [Obsolete("Use AGOSActionGroup.fire[OnVessel]([vessel]) instead", false)]
         public void processGroup(AGOSActionGroup ag, bool onDock = false, Vessel v = null)
         {
             if (ag.GetType() == typeof(StageLockActionGroup))
@@ -294,7 +319,7 @@ namespace AGroupOnStage.Main
 
                 Logger.Log("Group '{0}' will be fired in {1}'s", ag.fireGroupID, ag.timerDelay);
                 DateTime dt = DateTime.Now.AddSeconds(ag.timerDelay);
-                this.groupTimers.Add(ag, dt);
+                //this.groupTimers.Add(ag, dt);
 
             }
             else
@@ -311,11 +336,13 @@ namespace AGroupOnStage.Main
             }
         }
 
+        [Obsolete("Use AGOSActionGroup.fire[OnVessel]([vessel]) instead", false)]
         public void fireActionGroup(int g)
         {
             fireActionGroup(g, null);
         }
 
+        [Obsolete("Use AGOSActionGroup.fire[OnVessel]([vessel]) instead", true)]
         public void fireActionGroup(int g, Vessel v)
         {
 
@@ -329,8 +356,18 @@ namespace AGroupOnStage.Main
             {
                 //Logger.Log("{0}", ag.Group);
                 KSPActionGroup _g = AGOSMain.Instance.stockAGMap[g];
-                Logger.Log("Firing action group {0} ({1})", g, AGOSMain.Instance.actionGroupList[g]);
-                (v == null ? FlightGlobals.ActiveVessel : v).ActionGroups.ToggleGroup(_g);
+                Logger.Log("Firing action group {0} ({1}) on vessel '{2}'", g, AGOSMain.Instance.actionGroupList[g], (v == null ? FlightGlobals.fetch.activeVessel : v).vesselName);
+                if (v == null)
+                    FlightGlobals.fetch.activeVessel.ActionGroups.ToggleGroup(_g);
+                else
+                {
+                    Vessel ves = v;
+                    foreach (Vessel _v in FlightGlobals.fetch.vessels) // Work around for groups not firing on this vessel?
+                        if (_v == v)
+                            ves = _v;
+                    ves.ActionGroups.ToggleGroup(_g);
+                }
+                //(v == null ? FlightGlobals.ActiveVessel : v).ActionGroups.ToggleGroup(_g);
             }
 
         }
@@ -371,7 +408,7 @@ namespace AGroupOnStage.Main
 
         }
 
-        public void Update()
+        /*public void Update()
         {
             if (this.groupTimers.Count > 0) // TODO: Replace this with timers
             {
@@ -388,7 +425,7 @@ namespace AGroupOnStage.Main
                 }
 
             }
-        }
+        }*/
 
         public void toggleFineControls()
         {
@@ -405,6 +442,34 @@ namespace AGroupOnStage.Main
                 System.Random ra = new System.Random();
                 ScreenMessages.PostScreenMessage((ra.NextBoolOneIn(AGOSMain.Settings.get<int>("FineControlsEEChance")) && AGOSMain.Settings.get<bool>("AllowEE") ? "fINE cONTROLS" : "Fine Controls") + " have been " + (FlightInputHandler.fetch.precisionMode ? "enabled" : "disabled") + ".", 5f, ScreenMessageStyle.UPPER_CENTER);
             }
+        }
+
+        public List<Timer> registerTimer(Timer timer)
+        {
+            if (!this.groupTimers.Contains(timer))
+                this.groupTimers.Add(timer);
+            return this.groupTimers;
+        }
+
+        public List<Timer> unregisterTimer(Timer timer)
+        {
+            if (this.groupTimers.Contains(timer))
+            {
+                timer.Stop();
+                timer.Dispose();
+                this.groupTimers.Remove(timer);
+            }
+            return this.groupTimers;
+        }
+
+        public void unregisterAllTimers()
+        {
+            foreach (Timer t in this.groupTimers)
+            {
+                t.Stop();
+                t.Dispose();
+            }
+            this.groupTimers.Clear();
         }
 
         public bool isVesselInFlight()

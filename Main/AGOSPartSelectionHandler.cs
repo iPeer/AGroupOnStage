@@ -18,6 +18,7 @@ namespace AGroupOnStage.Main
     //[KSPAddon(KSPAddon.Startup.Flight, true)]
     /// This class controls the selection of parts in the editors and flight mode from the user actually clicking them in a specific mode, rather than using AGOS' standard right click -> "Action group control"
     [KSPAddon(KSPAddon.Startup.EveryScene, false)] // Seeing as I can't make it just start in Editors and Flight (error CS0579: Duplicate 'KSPAddon' attribute) :/
+    //[KSPAddon(KSPAddon.Startup.EditorAny | KSPAddon.Startup.Flight, false)] // Doesn't work, sadly
     public class AGOSPartSelectionHandler : MonoBehaviour
     {
 
@@ -44,6 +45,7 @@ namespace AGroupOnStage.Main
 
         public void OnDestroy()
         {
+            if (Instance == null) { return; }
             Instance = null;
             Logger.Log("Part Selection Manager destroy");
         }

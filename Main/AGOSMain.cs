@@ -457,7 +457,7 @@ namespace AGroupOnStage.Main
 
         public void renderGroupButton(int x)
         {
-            if ((x == 0 || x == 1/* || x == -7*/) || !AGOSUtils.techLevelEnoughForGroup(x)) { return; } // "None", "Stage" and "Lock Staging" action groups
+            if ((x == 0 || x == 1 || x == -7) || !AGOSUtils.techLevelEnoughForGroup(x)) { return; } // "None", "Stage" and "Lock Staging" action groups
             if (useAGXConfig && x >= 8)
             {
                 string groupName = (x - 7 < 0 ? actionGroupList[x] : x - 7 + (AGXInterface.getAGXGroupName(x - 7) != "" ? ": " + AGXInterface.getAGXGroupName(x - 7) : ""));
@@ -1131,6 +1131,13 @@ namespace AGroupOnStage.Main
                 Settings.toggleGUI();
             Settings.removeFile();
             Settings = new AGOSSettings(Settings.configPath);
+        }
+
+        public void removeGroupsWithNoTriggers()
+        {
+            List<AGOSActionGroup> toRemove = actionGroups.FindAll(a => !a.stillHasTriggers);
+            Logger.Log("Removing {0} group(s) that no longer have valid triggers", toRemove.Count);
+            actionGroups.RemoveRange(toRemove);
         }
     }
 }
