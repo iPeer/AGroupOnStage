@@ -27,8 +27,10 @@ namespace AGroupOnStage.Main
         private Part hoveredPart = null;
         private Part lastHoveredPart = null;
         private ScreenMessage selectMessage;
+        private ScreenMessage errorMessage;
         private PartSelectionMode mode;
         private Color32 partHighlightColour;
+        private Color32 partHighlightInvalidColour = new Color32(255, 0, 0, 255);
         
         public static AGOSPartSelectionHandler Instance { get; protected set; }
 
@@ -39,7 +41,8 @@ namespace AGroupOnStage.Main
             if (Instance == null)
                 Instance = this;
             Logger.Log("Part Selection Manager Startup");
-            selectMessage = new ScreenMessage("Click which part you want to assign to the group configuration.\nPress 'Cancel' in the AGOS GUI or 'P' to cancel.", float.MaxValue, ScreenMessageStyle.UPPER_CENTER, AGOSMain.Instance._labelStyleRed);
+            selectMessage = new ScreenMessage("Click which part you want to assign to the group configuration.\nPress 'Cancel' in the AGOS GUI or 'P' to cancel.", Mathf.Infinity, ScreenMessageStyle.UPPER_CENTER, AGOSMain.Instance._labelStyleRed);
+            errorMessage = new ScreenMessage("The part you selected is not on the active vessel!", 5f, ScreenMessageStyle.UPPER_CENTER);
             partHighlightColour = new Color32(AGOSMain.Settings.get<byte>("PartPickerColour-R"), AGOSMain.Settings.get<byte>("PartPickerColour-G"), AGOSMain.Settings.get<byte>("PartPickerColour-B"), 255);
         }
 
@@ -70,6 +73,7 @@ namespace AGroupOnStage.Main
         public void exitPartSelectionMode()
         {
             ScreenMessages.RemoveMessage(selectMessage);
+            ScreenMessages.RemoveMessage(errorMessage);
             this.partSelectModeActive = false;
             if (lastHoveredPart)
                 this.lastHoveredPart.SetHighlightDefault();
@@ -98,13 +102,18 @@ namespace AGroupOnStage.Main
                 if (Input.GetKey(KeyCode.Mouse0)) // It's weird referring to the mouse buttons as "keys"
                 {
                     if (currentlyHovered == null) { return; }
+                    if (!(HighLogic.LoadedSceneIsFlight ? FlightGlobals.fetch.activeVessel.parts : EditorLogic.fetch.ship.parts).Contains(this.hoveredPart))
+                    {
+                        ScreenMessages.PostScreenMessage(errorMessage);
+                        return;
+                    }
                     if (this.mode == PartSelectionMode.FOR_LINK)
                     {
                         AGOSMain.Instance.linkPart = currentlyHovered;
                         AGOSMain.Instance.isPartTriggered = true;
                         exitPartSelectionMode();
                     }
-                    Logger.Log("{0} / {1}", currentlyHovered.name, currentlyHovered.partInfo.name);
+                    //Logger.Log("{0} / {1}", currentlyHovered.name, currentlyHovered.partInfo.name);
                 }
             }
         }
@@ -130,6 +139,8 @@ namespace AGroupOnStage.Main
             if (this.hoveredPart != null)
             {
                 //this.hoveredPart.SetHighlightType(Part.HighlightType.OnMouseOver);
+                if (!(HighLogic.LoadedSceneIsFlight ? FlightGlobals.fetch.activeVessel.parts : EditorLogic.fetch.ship.parts).Contains(this.hoveredPart))
+                    return;
                 this.hoveredPart.SetHighlightColor(partHighlightColour);
                 this.hoveredPart.SetHighlight(true, false);
             }
