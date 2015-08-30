@@ -745,7 +745,7 @@ namespace AGroupOnStage.Main
                     if (GUILayout.Button("Remove", _buttonStyle, GUILayout.MaxWidth(70f)))
                         actionGroups.Remove(ag);
                     if (ag.IsTester)
-                        if (GUILayout.Button("S", _buttonStyle))
+                        if (GUILayout.Button("S", _buttonStyle, GUILayout.MaxWidth(30f)))
                             ag.IsTester = false;
 
                     GUILayout.EndHorizontal();
@@ -916,7 +916,7 @@ namespace AGroupOnStage.Main
                         ag.Group = x;
                     }
 
-                    ag.FlightID = AGOSUtils.getFlightID();
+                    ag.FlightID = ag.OriginalFlightID = AGOSUtils.getFlightID();
 
                     Logger.Log("\t{0}", ag.ToString());
                     actionGroups.Add(ag);
@@ -1133,6 +1133,7 @@ namespace AGroupOnStage.Main
             Settings = new AGOSSettings(Settings.configPath);
         }
 
+        [Obsolete("Use AGOSActionGroup.removeIfNoTriggers() instead", true)]
         public void removeGroupsWithNoTriggers()
         {
             List<AGOSActionGroup> toRemove = actionGroups.FindAll(a => !a.stillHasTriggers);
