@@ -11,7 +11,7 @@ namespace AGroupOnStage.Main
     public enum PartSelectionMode
     {
         FOR_LINK,
-        FOR_TASK
+        FOR_TASK // Sneak peak?!
     }
 
     //[KSPAddon(KSPAddon.Startup.EditorAny, true)]

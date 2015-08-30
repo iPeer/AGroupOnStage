@@ -66,8 +66,8 @@ namespace AGroupOnStage.Main
 
         private void OnPartUndock(Part data)
         {
-            Logger.Log("Vessel undock: {0}", data.vessel.name);
-            activateDockingUndockingActionGroups(data.vessel, AGOSActionGroup.FireTypes.UNDOCK);
+            //Logger.Log("Vessel undock: {0}", data.vessel.name);
+            /*activateDockingUndockingActionGroups(data.vessel, AGOSActionGroup.FireTypes.UNDOCK);
 
             ModuleDockingNode mdn = (ModuleDockingNode)data.Modules["ModuleDockingNode"];
             if (mdn != null)
@@ -75,24 +75,11 @@ namespace AGroupOnStage.Main
                 uint otherVesselID = mdn.vesselInfo.rootPartUId;
 
                 StartCoroutine(finishPartUndocProcess(otherVesselID));
-
-                /*List<Vessel> vessels = new List<Vessel>(FlightGlobals.fetch.vessels); // create a list we can safely iterate over
-
-                foreach (Vessel v in vessels)
-                    Logger.Log("{0} {1}", v.vesselName, (v.rootPart != null ? "(" + v.rootPart.flightID + ")" : ""));
-
-                Vessel vessel = vessels.Find(v => v.parts.FindAll(p => p.flightID == otherVesselID).Any());
-
-                if (vessel != null)
-                    activateDockingUndockingActionGroups(vessel, AGOSActionGroup.FireTypes.UNDOCK);
-                else
-                    Logger.LogError("Couldn't find a vessel matching FlightID {0}", otherVesselID);*/
-
             }
             else
             {
                 Logger.LogError("Unable to acquire ModuleDockingNode for modified docking node!");
-            }
+            }*/
 
             AGOSMain.Instance.getMasterAGOSModule(data.vessel).resetFlightID(data.vessel.rootPart.flightID);
         }
@@ -266,8 +253,9 @@ namespace AGroupOnStage.Main
             foreach (AGOSActionGroup ag in toFire) 
             {
                 ag.fire();
+                ag.removeIfNoTriggers();
             }
-            AGOSMain.Instance.removeGroupsWithNoTriggers();
+            //AGOSMain.Instance.removeGroupsWithNoTriggers();
             processingStageEvent = false;
         }
 
@@ -276,7 +264,7 @@ namespace AGroupOnStage.Main
             List<AGOSActionGroup> toFire = new List<AGOSActionGroup>();
             List<AGOSActionGroup> vesselGroups = new List<AGOSActionGroup>();
 
-            Logger.LogDebug("DOCK/UNDOCK: {0}", v.vesselName);
+            //Logger.LogDebug("DOCK/UNDOCK: {0}", v.vesselName);
 
             vesselGroups.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.FlightID == v.rootPart.flightID));
             toFire.AddRange(vesselGroups.FindAll(b => b.FireType == fireType));
@@ -284,7 +272,10 @@ namespace AGroupOnStage.Main
             Logger.Log("{0} group(s) to fire", toFire.Count);
 
             foreach (AGOSActionGroup ag in toFire)
+            {
                 ag.fireOnVessel(v);
+                ag.removeIfNoTriggers();
+            }
 
         }
 
@@ -342,7 +333,7 @@ namespace AGroupOnStage.Main
             fireActionGroup(g, null);
         }
 
-        [Obsolete("Use AGOSActionGroup.fire[OnVessel]([vessel]) instead", true)]
+        [Obsolete("Use AGOSActionGroup.fire[OnVessel]([vessel]) instead", false)]
         public void fireActionGroup(int g, Vessel v)
         {
 

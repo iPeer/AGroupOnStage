@@ -297,12 +297,18 @@ namespace AGroupOnStage.Main
             groupsToUpdate.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.FlightID == (fromDock && oldID > 0 ? oldID : this.tempFlightID)));
             foreach (AGOSActionGroup b in groupsToUpdate)
             {
+                b.FlightID = id;
+                if (b.OriginalFlightID == 0)
+                    b.OriginalFlightID = id;
+            }
+            /*foreach (AGOSActionGroup b in groupsToUpdate)
+            {
                 if (fromDock && b.FireType != AGOSActionGroup.FireTypes.STAGE)
                     return;
                 b.FlightID = id;
                 if (b.OriginalFlightID == 0)
                     b.OriginalFlightID = id;
-            }
+            }*/
             Logger.Log("Updated {0} groups to new flightID", groupsToUpdate.Count);
 
         }
@@ -311,7 +317,7 @@ namespace AGroupOnStage.Main
         {
             Logger.Log("Resetting flightID for groups with current flight ID of '{0}'", currentID);
             List<AGOSActionGroup> toUpdate = new List<AGOSActionGroup>();
-            toUpdate.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.FireType == AGOSActionGroup.FireTypes.STAGE && a.FlightID == currentID));
+            toUpdate.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => /*a.FireType == AGOSActionGroup.FireTypes.STAGE && */a.FlightID == currentID));
             foreach (AGOSActionGroup a in toUpdate)
                 a.FlightID = a.OriginalFlightID;
             Logger.Log("Updated {0} groups to their previous flight IDs", toUpdate.Count);

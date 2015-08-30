@@ -42,9 +42,9 @@ namespace AGroupOnStage.Main
 
         public static Dictionary<int, string> preferredSkins = new Dictionary<int, string>() {
 
-            { 0, "Unity" },
-			{ 1, "GameSkin(Clone)" },
-			{ 2, "GameSkin" }
+            { 0, "GameSkin(Clone)" },
+			{ 1, "GameSkin" },
+			{ 2, "Unity" }
 
 		};
 

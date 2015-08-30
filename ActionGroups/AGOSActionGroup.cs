@@ -72,14 +72,15 @@ namespace AGroupOnStage.ActionGroups
         {
             get
             {
-                if (this.FireType != AGOSActionGroup.FireTypes.STAGE) { return true; }
-                return this.isPartLocked || this._Stages.Count(a => a < FlightGlobals.fetch.activeVessel.currentStage) == 1;
+                if (this.FireType != FireTypes.STAGE) { return true; }
+                return this.isPartLocked || this.Stages.Count(a => a < FlightGlobals.fetch.activeVessel.currentStage) > 1;
                 //return ((this.isPartLocked || this.Stages.Count(a => a < FlightGlobals.fetch.activeVessel.currentStage) == 1) && this.FireType == AGOSActionGroup.FireTypes.STAGE);
             }
         }
 
         public virtual void removeIfNoTriggers()
         {
+
             if (!this.stillHasTriggers)
             {
                 Logger.Log("Removing action group from config as it has no more triggers");
