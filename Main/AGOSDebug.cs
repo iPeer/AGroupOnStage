@@ -22,6 +22,7 @@ namespace AGroupOnStage.Main
         private static Rect _winPos = new Rect();
         private static Vector2 scrollPos = Vector2.zero;
         private static Vector2 logScrollPos = Vector2.zero;
+        private static Vector2 buttonsScrollPos = Vector2.zero;
         private static System.Random _random = new System.Random();
         private static List<String> logStrings = new List<String>();
         /*private int hello = 0;*/
@@ -70,6 +71,8 @@ namespace AGroupOnStage.Main
             GUILayout.BeginHorizontal();
             GUILayout.BeginVertical(GUILayout.MinWidth(300f), GUILayout.MinHeight(400f), GUILayout.ExpandHeight(true));
 
+            GUILayout.BeginScrollView(buttonsScrollPos, GUILayout.MaxHeight(400f));
+
 
             if (GUILayout.Button("Move current vessel to orbit"))
             {
@@ -79,7 +82,7 @@ namespace AGroupOnStage.Main
                 //FlightGlobals.fetch.SetShipOrbit(Planetarium.fetch.CurrentMainBody.flightGlobalsIndex, 1.0d, 100d, 0d, 1d, 1d, 1d, 1d);
             }
 
-            scrollPos = GUILayout.BeginScrollView(scrollPos, GUILayout.MaxHeight(300f));
+            scrollPos = GUILayout.BeginScrollView(scrollPos, GUILayout.MinHeight(300f), GUILayout.MaxHeight(300f));
 
             AGOSInputLockManager.DEBUGdrawLockButtons();
             
@@ -187,6 +190,17 @@ namespace AGroupOnStage.Main
                 foreach (AGOSActionGroup ag in AGOSMain.Instance.actionGroups.ToList()) // Already a list, but this should give us a safe one to iterate over
                     Logger.Log(ag.ToString());
             }
+
+            if (GUILayout.Button("Drump all loaded textures (VERY spammy)"))
+            {
+                List<GameDatabase.TextureInfo> textures = GameDatabase.Instance.databaseTexture;
+                foreach (GameDatabase.TextureInfo ti in textures)
+                {
+                    Logger.Log("{0}", ti.name);
+                }
+            }
+
+            GUILayout.EndScrollView();
 
             GUILayout.EndVertical();
 

@@ -157,12 +157,12 @@ namespace AGroupOnStage.Main
             //if (useAGXConfig) { /* DO NAAHTHING! */ } // AGX is installed - use its controller, not stock's
             //else // Not installed - fall back to stock controller.
             loadActionGroups();
+            loadSASModes();
             Logger.Log("Loading AGOS' settings");
             Settings.load();
             if (Settings.get<bool>("EnableDebugOptions"))
                 Logger.Log("Debug options are enabled.");
             Logger.Log("AGOS' Settings loaded");
-            loadSASModes();
             GroupManager = new AGOSGroupManager();
 
             if (Settings.get<bool>("AddAGOSKerbals"))
@@ -945,7 +945,7 @@ namespace AGroupOnStage.Main
 
                     ag.FlightID = ag.OriginalFlightID = AGOSUtils.getFlightID();
 
-                    Logger.Log("\t{0}", ag.ToString());
+                    //Logger.Log("\t{0}", ag.ToString());
                     actionGroups.Add(ag);
                     actionGroupSettings[x] = false;
 

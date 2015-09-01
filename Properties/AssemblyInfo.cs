@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 // and "{Major}.{Minor}.{Build}.*" will update just the revision.
 
 [assembly: AssemblyVersion("2.0.0")]
-[assembly: AssemblyFileVersionAttribute("2.0.11")]
+[assembly: AssemblyFileVersionAttribute("2.0.12")]
 [assembly: KSPAssembly("AGroupOnStage", 2, 0)]
 
 // The following attributes are used to specify the signing key for the assembly,

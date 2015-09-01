@@ -1,5 +1,8 @@
-??, v2.??:
+??, v2.0.12:
 	* Users can now pick parts to link group configurations to from within AGOS' GUI.
+	* Added a new group config: SAS mode change - change the autopilot's mode when staging!
+	* [#27] Fixed an issue causing AGOS' Engineer's Report concerns from being registered every time the player entered an editor.
+	* [#29] Fixed an issue causing configurations creating in the flight scene not being restored to their vessel correctly when undocking.
 
 26/07/15, v2.0.11:
 	* [#24] Fixed an issue where AGOS' toolbar buttons could become stuck in a disabled state if the player changed scene while controlling a Kerbal
