@@ -143,6 +143,8 @@ namespace AGroupOnStage.Main
                 return (node.HasValue("changesCamera") && node.HasValue("cameraMode"));
             else if (groupType.Equals(typeof(TimeDelayedActionGroup)) && Convert.ToBoolean(node.GetValue("firesDelayed")))
                 return (node.HasValue("delay") && node.HasValue("firesGroupID"));
+            else if (groupType.Equals(typeof(SASModeChangeGroup)))
+                return node.HasValue("SASMode");
             else
                 return true;
         }
@@ -192,8 +194,9 @@ namespace AGroupOnStage.Main
         }*/
 
 
-        public static void resetActionGroupConfig(bool clearCommited = false)
+        public static void resetActionGroupConfig(string source, bool clearCommited = false)
         {
+            Logger.Log("Clearing action group config data (clear commited: {0}). Requested from '{1}'", clearCommited, source);
             if (AGOSMain.Instance.actionGroups.Count() > 0 && clearCommited)
                 AGOSMain.Instance.actionGroups.Clear();
             int[] keys = AGOSMain.Instance.actionGroupSettings.Keys.ToArray();
@@ -399,6 +402,46 @@ namespace AGroupOnStage.Main
 
             return part;
 
+        }
+
+        public static VesselAutopilot.AutopilotMode getSASModeForID(int id)
+        {
+
+            /*
+                StabilityAssist = 0,
+                Prograde = 1,
+                Retrograde = 2,
+                Normal = 3,
+                Antinormal = 4,
+                RadialIn = 5,
+                RadialOut = 6,
+                Target = 7,
+                AntiTarget = 8,
+                Maneuver = 9,
+             */
+            switch (id)
+            {
+                case 1:
+                    return VesselAutopilot.AutopilotMode.Prograde;
+                case 2:
+                    return VesselAutopilot.AutopilotMode.Retrograde;
+                case 3:
+                    return VesselAutopilot.AutopilotMode.Normal;
+                case 4:
+                    return VesselAutopilot.AutopilotMode.Antinormal;
+                case 5:
+                    return VesselAutopilot.AutopilotMode.RadialIn;
+                case 6:
+                    return VesselAutopilot.AutopilotMode.RadialOut;
+                case 7:
+                    return VesselAutopilot.AutopilotMode.Target;
+                case 8:
+                    return VesselAutopilot.AutopilotMode.AntiTarget;
+                case 9:
+                    return VesselAutopilot.AutopilotMode.Maneuver;
+                default:
+                    return VesselAutopilot.AutopilotMode.StabilityAssist;
+            }
         }
 
     }

@@ -43,16 +43,17 @@ namespace AGroupOnStage.Main
 
         private void onPartDestroyed(Part data)
         {
+            if (!HighLogic.LoadedSceneIsEditor) { return; }
             int partsInScene = EditorLogic.fetch.CountAllSceneParts(true);
             //Logger.Log("Parts in scene: {0}", partsInScene); // Spammy on large vessels.
             if (partsInScene == 0)
-                AGOSUtils.resetActionGroupConfig(true);
+                AGOSUtils.resetActionGroupConfig("Editor->onPartDestroyed", true);
         }
 
         private void onEditorRestart()
         {
             Logger.Log("Editor restart.");
-            AGOSUtils.resetActionGroupConfig(true);
+            AGOSUtils.resetActionGroupConfig("Editor->onEditorRestart", true);
         }
 
         private void onEditorLoad(ShipConstruct data0, CraftBrowser.LoadType data1)

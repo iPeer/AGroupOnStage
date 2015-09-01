@@ -193,6 +193,7 @@ namespace AGroupOnStage.Main
             //AGOSMain.Instance.removeInvalidActionGroups();
             AGOSMain.Instance.getMasterAGOSModule(FlightGlobals.fetch.activeVessel).setFlightID(AGOSUtils.getFlightID());
             AGOSMain.Instance.findHomesForPartLockedGroups(FlightGlobals.fetch.activeVessel);
+            Logger.Log("{0} group(s) are loaded", AGOSMain.Instance.actionGroups.Count);
             //AGOSDebug.printAllActionGroups();
 
             //AGOSMain.Instance.backupActionGroupList();

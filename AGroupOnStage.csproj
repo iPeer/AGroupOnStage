@@ -126,6 +126,7 @@
   <ItemGroup>
     <Compile Include="000Toolbar\ToolbarWrapper.cs" />
     <Compile Include="ActionGroups\BasicActionGroup.cs" />
+    <Compile Include="ActionGroups\SASModeChangeGroup.cs" />
     <Compile Include="ActionGroups\StageLockActionGroup.cs" />
     <Compile Include="ActionGroups\AGOSActionGroup.cs" />
     <Compile Include="ActionGroups\CameraControlActionGroup.cs" />

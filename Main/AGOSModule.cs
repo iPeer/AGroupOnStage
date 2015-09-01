@@ -56,7 +56,7 @@ namespace AGroupOnStage.Main
                 }
             }*/
             List<AGOSActionGroup> groupsToSave = new List<AGOSActionGroup>();
-            groupsToSave.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.FlightID == this.flightID && !a.IsTester));
+            groupsToSave.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => (a.FlightID == this.flightID || a.FlightID == this.tempFlightID) && !a.IsTester));
             if (groupsToSave.Count > 0)
             {
                 Logger.Log("{0} groups to save", groupsToSave.Count);
@@ -107,7 +107,12 @@ namespace AGroupOnStage.Main
                         node_n.AddValue("changesCamera", true);
                         node_n.AddValue("cameraMode", ag.cameraMode.ToString());
                     }
-                    
+
+                    if (ag.GetType() == typeof(SASModeChangeGroup))
+                    {
+                        node_n.AddValue("ChangesSAS", true);
+                        node_n.AddValue("SASMode", ag.fireGroupID);
+                    }
 
                 }
 
@@ -172,6 +177,8 @@ namespace AGroupOnStage.Main
                         ag = new ThrottleControlActionGroup();
                     else if (groupType.Equals("TimeDelayedActionGroup"))
                         ag = new TimeDelayedActionGroup();
+                    else if (groupType.Equals("SASModeChangeGroup"))
+                        ag = new SASModeChangeGroup();
                     else
                         ag = new BasicActionGroup();
                     AGOSActionGroup.FireTypes FireType;
@@ -206,6 +213,7 @@ namespace AGroupOnStage.Main
                     bool changesCamera = (id.HasValue("changesCamera") ? Convert.ToBoolean(id.GetValue("changesCamera")) : false);
                     bool isThrottleControl = (id.HasValue("changesThrottle") ? Convert.ToBoolean(id.GetValue("changesThrottle")) : false);
                     bool isDelayedGroup = id.HasValue("firesDelayed");
+                    bool isSASChanger = id.HasValue("ChangesSAS") && Convert.ToBoolean(id.GetValue("ChangesSAS"));
                     float throttleLevel = (isThrottleControl ? Convert.ToSingle(id.GetValue("throttleLevel"), System.Globalization.CultureInfo.InvariantCulture) : 0f);
 
                     // Throttle sanity checks
@@ -252,6 +260,9 @@ namespace AGroupOnStage.Main
 
                     if (isThrottleControl)
                         ag.ThrottleLevel = throttleLevel;
+
+                    if (isSASChanger)
+                        ag.fireGroupID = Convert.ToInt32(id.GetValue("SASMode"));
 
                     ag.Group = groupID;
                     ag.Vessel = this.vessel;

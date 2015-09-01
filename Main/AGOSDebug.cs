@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using System.Reflection;
+using System.IO;
 
 namespace AGroupOnStage.Main
 {
@@ -178,6 +179,13 @@ namespace AGroupOnStage.Main
             if (GUILayout.Button("Globally activate group Custom01"))
             {
                 FlightGlobals.fetch.vessels.FindAll(v => !v.HoldPhysics).ForEach(_v => { Logger.Log("Firing Custom01 on " + _v.vesselName); _v.ActionGroups.ToggleGroup(KSPActionGroup.Custom01); });
+            }
+
+            if (GUILayout.Button("Print all (loaded) AGOS configs (spammy)"))
+            {
+                if (AGOSMain.Instance.actionGroups.Count == 0) { Logger.Log("No configs to output"); return; }
+                foreach (AGOSActionGroup ag in AGOSMain.Instance.actionGroups.ToList()) // Already a list, but this should give us a safe one to iterate over
+                    Logger.Log(ag.ToString());
             }
 
             GUILayout.EndVertical();

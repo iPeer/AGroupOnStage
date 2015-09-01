@@ -60,7 +60,8 @@ namespace AGroupOnStage.Main
             {"DebugMenuShortcut", String.Format("Allow AGOS' debug menu to be opened by pressing {0}+A", GameSettings.MODIFIER_KEY.name)},
             {"PartPickerColour-R", "The R value of the colour used for highlighting parts while in part picker mode."},
             {"PartPickerColour-G", "The G value of the colour used for highlighting parts while in part picker mode."},
-            {"PartPickerColour-B", "The B value of the colour used for highlighting parts while in part picker mode."}
+            {"PartPickerColour-B", "The B value of the colour used for highlighting parts while in part picker mode."},
+            //{"AllowTextureCaching", "Let AGOS create caches for textures it uses instead of getting them from the game database every time"} // No longer needed
 
         };
         private bool lastAGOSKSetting;
@@ -102,7 +103,7 @@ namespace AGroupOnStage.Main
                 {"DebugMenuShortcut", false},
                 {"PartPickerColour-R", (byte)255},
                 {"PartPickerColour-G", (byte)2},
-                {"PartPickerColour-B", (byte)141},
+                {"PartPickerColour-B", (byte)141}
             };
 
         }

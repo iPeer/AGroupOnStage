@@ -3,6 +3,7 @@ using AGroupOnStage.Main;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 namespace AGroupOnStage.ActionGroups
@@ -72,8 +73,9 @@ namespace AGroupOnStage.ActionGroups
         {
             get
             {
+                if (HighLogic.LoadedSceneIsEditor) { return true; } // I have no idea why this is being checked in the editor
                 if (this.FireType != FireTypes.STAGE) { return true; }
-                return this.isPartLocked || this.Stages.Count(a => a < FlightGlobals.fetch.activeVessel.currentStage) > 1;
+                return this.isPartLocked || this._Stages.Count(a => a < FlightGlobals.fetch.activeVessel.currentStage) > 1;
                 //return ((this.isPartLocked || this.Stages.Count(a => a < FlightGlobals.fetch.activeVessel.currentStage) == 1) && this.FireType == AGOSActionGroup.FireTypes.STAGE);
             }
         }
@@ -112,6 +114,25 @@ namespace AGroupOnStage.ActionGroups
         public virtual void fireOnVesselID(uint vID)
         {
             Logger.LogWarning("Action group config for Group {0} is using an unimplemented group type while trying to activate for vessel ID '{1}'", this.Group, vID);
+        }
+
+        /// <summary>
+        /// Returns all the data within this class as a string.
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString()
+        {
+
+            PropertyInfo[] fields = this.GetType().BaseType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+            StringBuilder sb = new StringBuilder();
+            sb.Append(this.GetType().ToString()+":");
+            foreach (PropertyInfo fi in fields)
+            {
+                sb.AppendLine(String.Format("\t{0}: {1}", fi.Name, fi.GetValue(this, null)));
+            }
+
+            return sb.ToString();
+
         }
 
     }

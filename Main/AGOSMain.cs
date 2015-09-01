@@ -82,6 +82,8 @@ namespace AGroupOnStage.Main
         private string stageList = "";
         private bool useAGXGroup = false;
         private bool debugButtonsVisible = false;
+        private int sasMode = 0;
+        private string[] sasModeNames;
 
         #endregion
 
@@ -99,7 +101,8 @@ namespace AGroupOnStage.Main
             CAMERA_FREE = -6,
             LOCK_STAGING = -7,
             CAMERA_LOCKED = -8,
-            TIMED_ACTION_GROUP = -9
+            TIMED_ACTION_GROUP = -9,
+            SAS_MODE_SWITCH = -10
         }
 
         #endregion
@@ -131,7 +134,8 @@ namespace AGroupOnStage.Main
             {"CAMERA_FREE", "Set camera: FREE"},
             {"LOCK_STAGING", "Lock staging"},
             {"CAMERA_LOCKED", "Set camera: LOCKED"},
-            {"TIMED_ACTION_GROUP", "Time-delayed Action Group"}
+            {"TIMED_ACTION_GROUP", "Time-delayed Action Group"},
+            {"SAS_MODE_SWITCH", "Set SAS mode"}
 
         };
 
@@ -158,6 +162,7 @@ namespace AGroupOnStage.Main
             if (Settings.get<bool>("EnableDebugOptions"))
                 Logger.Log("Debug options are enabled.");
             Logger.Log("AGOS' Settings loaded");
+            loadSASModes();
             GroupManager = new AGOSGroupManager();
 
             if (Settings.get<bool>("AddAGOSKerbals"))
@@ -201,6 +206,13 @@ namespace AGroupOnStage.Main
 #endif
             sw.Stop();
             Logger.Log("AGOS {1} initalised in {0}s", sw.Elapsed.TotalSeconds, AGOSUtils.getModVersion());
+        }
+
+        private void loadSASModes()
+        {
+            Logger.Log("Creating SAS mode list...");
+            sasModeNames = Enum.GetNames(typeof(VesselAutopilot.AutopilotMode));
+            Logger.Log("{0} SAS modes loaded", sasModeNames.Length);
         }
 
         private void onGUIAstronautComplexSpawn()
@@ -416,7 +428,7 @@ namespace AGroupOnStage.Main
                 {
                     if (linkPart != null)
                         linkPart = null;
-                    AGOSUtils.resetActionGroupConfig();
+                    AGOSUtils.resetActionGroupConfig("Main->toggleGUI");
                 }
 
             }
@@ -650,6 +662,13 @@ namespace AGroupOnStage.Main
                 GUILayout.EndHorizontal();
                 GUILayout.Space(4);
             }
+
+            if (actionGroupSettings[-10]) // SAS control
+            {
+                GUILayout.BeginHorizontal();
+                sasMode = GUILayout.SelectionGrid(sasMode, sasModeNames, 2, _buttonStyle);
+                GUILayout.EndHorizontal();
+            }
             bool hasStageList = !string.IsNullOrEmpty(stageList);
             bool hasLinkedPart = !(linkPart == null);
             bool hasGroups = !(actionGroupSettings.Values.Count(a => a) == 0);
@@ -714,6 +733,8 @@ namespace AGroupOnStage.Main
                     string groupDescription = "";
                     if (ag.GetType() == typeof(TimeDelayedActionGroup))
                         groupName = String.Format("'{0}' after {1}s", (useAGXConfig && ag.fireGroupID >= 8 ? "" + (ag.fireGroupID - 7) : actionGroupList[ag.fireGroupID]), String.Format("{0:N0}", ag.timerDelay));
+                    else if (ag.GetType() == typeof(SASModeChangeGroup))
+                        groupName = String.Format("Set SAS to '{0}'", ((VesselAutopilot.AutopilotMode)ag.fireGroupID).ToString());
                     else if (useAGXConfig && ag.Group >= 8)
                         groupName = ag.Group - 7 + (AGXInterface.getAGXGroupName(ag.Group - 7) != "" ? ": " + AGXInterface.getAGXGroupName(ag.Group - 7) : "");
                     else
@@ -844,6 +865,7 @@ namespace AGroupOnStage.Main
                     LOCK_STAGING = -7,
                     CAMERA_LOCKED = -8,
                     TIMED_ACTION_GROUP = -9
+                    SAS_MODE_SWITCH = -10
                     */
 
                     AGOSActionGroup ag;
@@ -870,6 +892,11 @@ namespace AGroupOnStage.Main
                         ag = new TimeDelayedActionGroup();
                         ag.timerDelay = Convert.ToInt32(Math.Floor(timerDelay));
                         ag.fireGroupID = delayedGroup;
+                    }
+                    else if (x == -10)
+                    {
+                        ag = new SASModeChangeGroup();
+                        ag.fireGroupID = sasMode;
                     }
                     else
                     {
@@ -929,6 +956,7 @@ namespace AGroupOnStage.Main
             timerDelay = 1f;
             stageList = "";
             manualGroup = "";
+            sasMode = 0;
             //linkPart = null; // 2.0-dev5/2.0-rel: No longer clear part link when commiting groups
         }
 
@@ -1105,7 +1133,11 @@ namespace AGroupOnStage.Main
                 backupActionGroups.Clear(); // 2.0.6-dev1 fix for yet another dupe (I hope)
                 backupActionGroupList();
             }*/
-            AGOSUtils.resetActionGroupConfig(true);
+            if (HighLogic.LoadedSceneIsFlight)
+            {
+                //getMasterAGOSModule(FlightGlobals.fetch.activeVessel).setFlightID(0, false, FlightGlobals.fetch.activeVessel.rootPart.flightID); // Reset action groups for active vessel to id 0 so they show uo properly in the editor.
+                AGOSUtils.resetActionGroupConfig("Main->onSceneLoadRequested", true);
+            }
         }
 
         private void onLevelWasLoaded(GameScenes level)
