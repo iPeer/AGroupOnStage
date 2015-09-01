@@ -1,8 +1,10 @@
 ﻿using AGroupOnStage.Logging;
+using AGroupOnStage.Main;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using UnityEngine;
 
 namespace AGroupOnStage.ActionGroups
 {
@@ -26,12 +28,24 @@ namespace AGroupOnStage.ActionGroups
             }
             if (v.Autopilot.CanSetMode(mode))
             {
+                // This is about as hacky as they come, really
+                GameObject autopilotUI = GameObject.Find("AutopilotModes2");
+                VesselAutopilotUI vesselAutopilotUI = autopilotUI.GetComponent<VesselAutopilotUI>();
+                Logger.Log("Current vessel Autopilot mode: {0}", v.Autopilot.Mode);
                 Logger.Log("Setting SAS mode to '{0}' on vessel '{1}' ({2}, {3})", mode.ToString(), v.vesselName, v.rootPart.flightID, v.id);
+                if (!(AGOSMain.Instance.isGameGUIHidden && AGOSMain.Settings.get<bool>("SilenceWhenUIHidden")))
+                    ScreenMessages.PostScreenMessage(String.Format("Vessel's autopilot has been set to '{0}'", mode), 5f, ScreenMessageStyle.UPPER_CENTER);
+                vesselAutopilotUI.modeButtons[(int)v.Autopilot.Mode].SetFalse(false);
+                vesselAutopilotUI.modeButtons[(int)mode].SetTrue(true);
                 v.Autopilot.SetMode(mode);
+                v.Autopilot.Update();
+                Logger.Log("New vessel Autopilot mode: {0}", v.Autopilot.Mode);
             }
             else
             {
-                Logger.LogWarning("Vessel '{1}' ({2}, {3}) cannot be set into SAS mode '{0}'", sasMode.ToString(), v.vesselName, v.rootPart.flightID, v.id);
+                Logger.LogWarning("Vessel '{1}' ({2}, {3}) cannot be set into SAS mode '{0}'", mode, v.vesselName, v.rootPart.flightID, v.id);
+                if (!(AGOSMain.Instance.isGameGUIHidden && AGOSMain.Settings.get<bool>("SilenceWhenUIHidden")))
+                    ScreenMessages.PostScreenMessage(String.Format("Vessel cannot be set to autopilot mode '{0}' because that mode is not available.", mode), 5f, ScreenMessageStyle.UPPER_CENTER);
             }
         }
 
