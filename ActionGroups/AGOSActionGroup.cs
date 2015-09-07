@@ -75,7 +75,14 @@ namespace AGroupOnStage.ActionGroups
             {
                 if (HighLogic.LoadedSceneIsEditor) { return true; } // I have no idea why this is being checked in the editor
                 if (this.FireType != FireTypes.STAGE) { return true; }
-                return this.isPartLocked || this._Stages.Count(a => a < FlightGlobals.fetch.activeVessel.currentStage) > 1;
+                if (this.isPartLocked)
+                {
+                    if (this.linkedPart == null)
+                        return false;
+                    List<Part> parts = (HighLogic.LoadedSceneIsFlight ? FlightGlobals.fetch.activeVessel.parts : EditorLogic.fetch.ship.parts);
+                    return parts.Contains(this.linkedPart);
+                }
+                return this._Stages.Count(a => a < Staging.lastStage) > 1;
                 //return ((this.isPartLocked || this.Stages.Count(a => a < FlightGlobals.fetch.activeVessel.currentStage) == 1) && this.FireType == AGOSActionGroup.FireTypes.STAGE);
             }
         }

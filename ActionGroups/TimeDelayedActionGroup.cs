@@ -1,4 +1,5 @@
-﻿using AGroupOnStage.Logging;
+﻿using AGroupOnStage.ActionGroups.Timers;
+using AGroupOnStage.Logging;
 using AGroupOnStage.Main;
 using System;
 using System.Collections.Generic;
@@ -18,41 +19,24 @@ namespace AGroupOnStage.ActionGroups
 
         public override void fireOnVessel(Vessel v)
         {
-            Timer timer = new Timer();
-            timer.Interval = this.timerDelay * 1000d;
-            timer.Elapsed += (e, sender) => this.timerVesselCallBack(timer, v);
-            timer.Start();
-            Logger.Log("Timer for action group {0} has been started for vessel '{1}' ({2}, {3})", this.fireGroupID, v.vesselName, v.rootPart.flightID, v.id);
-            AGOSFlight.Instance.registerTimer(timer);
+            Logger.Log("Creating timer to fire group ID {0} on vessel '{1}' ({2}, {3})", this.Group, v.vesselName, v.rootPart.flightID, v.id);
+            ActionGroupTimer agt = new ActionGroupTimer(this.fireGroupID, this.FlightID, this.timerDelay);
+            AGOSActionGroupTimerManager.Instance.registerTimer(agt, HighLogic.LoadedSceneIsFlight);
         }
 
         public override void fireOnVesselID(uint vID)
         {
-            Timer timer = new Timer();
-            timer.Interval = this.timerDelay * 1000d;
-            timer.Elapsed += (e, sender) => this.timerVIDCallBack(timer, vID);
-            timer.Start();
-            Logger.Log("Timer for action group {0} has been started for vessel '{1}'", this.fireGroupID, vID);
-            AGOSFlight.Instance.registerTimer(timer);
+            Vessel vessel = FlightGlobals.fetch.vessels.Find(v => v.rootPart.flightID == vID);
+
+            if (vessel == null)
+            {
+                Logger.LogError("Tried to fire action group on vessel ID {0} but no such vessel ID exists", vID);
+                return;
+            }
+
+            fireOnVessel(vessel);
         }
 
-        private void timerVIDCallBack(Timer t, uint vID)
-        {
-            Logger.Log("Timer for action group {0} has expired for vessel '{1}'", this.fireGroupID, vID);
-            BasicActionGroup bag = new BasicActionGroup();
-            bag.Group = this.fireGroupID;
-            bag.fireOnVesselID(vID);
-            AGOSFlight.Instance.unregisterTimer(t);
-        }
-
-        private void timerVesselCallBack(Timer t, Vessel vessel)
-        {
-            Logger.Log("Timer for action group {0} has expired for vessel '{1}' ({2}, {3})", this.fireGroupID, vessel.vesselName, vessel.rootPart.flightID, vessel.id);
-            BasicActionGroup bag = new BasicActionGroup();
-            bag.Group = this.fireGroupID;
-            bag.fireOnVessel(vessel);
-            AGOSFlight.Instance.unregisterTimer(t);
-        }
 
     }
 }

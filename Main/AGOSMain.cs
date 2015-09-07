@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using System.Reflection;
+using AGroupOnStage.ActionGroups.Timers;
 
 namespace AGroupOnStage.Main
 {
@@ -694,9 +695,23 @@ namespace AGroupOnStage.Main
             List<AGOSActionGroup> groups = new List<AGOSActionGroup>(); //                              2.0.8-dev2: Filter action groups to the current flightID only.
             groups.AddRange(actionGroups.FindAll(g => AGOSUtils.isLoadedCraftID(g.FlightID))); // ^
 
+            List<ActionGroupTimer> timers = new List<ActionGroupTimer>();
+            if (HighLogic.LoadedSceneIsFlight)
+                timers.AddRange(AGOSActionGroupTimerManager.Instance.activeTimersForVessel(FlightGlobals.fetch.activeVessel.rootPart.flightID));
+
+
+            if (groups.Count > 0 || timers.Count > 0)
+                _scrollPosConfig = GUILayout.BeginScrollView(_scrollPosConfig, _scrollStyle);
+
+
+            if (timers.Count > 0)
+            {
+                foreach (ActionGroupTimer t in timers)
+                    GUILayout.Label(String.Format("Firing group {0} in {1} seconds", t.Group, t.RemainingDelay), _labelStyle);
+            }
+
             if (groups.Count > 0)
             {
-                _scrollPosConfig = GUILayout.BeginScrollView(_scrollPosConfig, _scrollStyle);
 
                 foreach (AGOSActionGroup ag in groups)
                 {
@@ -772,9 +787,12 @@ namespace AGroupOnStage.Main
                     GUILayout.EndHorizontal();
                 }
 
-                GUILayout.EndScrollView();
             }
-            else
+
+            if (groups.Count > 0 || timers.Count > 0)
+                GUILayout.EndScrollView();
+
+            if (groups.Count == 0 && (!HighLogic.LoadedSceneIsFlight || timers.Count == 0))
             {
                 GUILayout.Label((AGOSUtils.getVesselPartsList().Count == 0 ? "No vessel is loaded!" : "There are no groups configured for this vessel"), _labelCenteredYellow, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
             }

@@ -54,7 +54,7 @@ namespace AGroupOnStage.ActionGroups
         public override void fireOnVesselID(uint vID)
         {
 
-            Vessel vessel = FlightGlobals.fetch.vessels.Find(v => v.rootPart.flightID == vID);
+            Vessel vessel = FlightGlobals.fetch.vessels.Find(v => v.rootPart != null && v.rootPart.flightID == vID);
 
             if (vessel == null)
             {

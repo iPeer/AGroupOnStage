@@ -1,4 +1,5 @@
 ﻿using AGroupOnStage.ActionGroups;
+using AGroupOnStage.ActionGroups.Timers;
 using AGroupOnStage.Logging;
 using System;
 using System.Collections.Generic;
@@ -57,11 +58,22 @@ namespace AGroupOnStage.Main
             }*/
             List<AGOSActionGroup> groupsToSave = new List<AGOSActionGroup>();
             groupsToSave.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => (a.FlightID == this.flightID || a.FlightID == this.tempFlightID) && !a.IsTester));
+
+            List<ActionGroupTimer> timers = new List<ActionGroupTimer>();
+            if (HighLogic.LoadedSceneIsFlight/* && AGOSActionGroupTimerManager.Instance != null*/)
+                timers.AddRange(AGOSActionGroupTimerManager.Instance.activeTimersForVessel(this.flightID));
+
+            ConfigNode node_agos = new ConfigNode();
+
+            if (groupsToSave.Count > 0 || timers.Count > 0)
+            {
+                node.AddNode("AGOS");
+                node_agos = node.GetNode("AGOS");
+            }
+
             if (groupsToSave.Count > 0)
             {
                 Logger.Log("{0} groups to save", groupsToSave.Count);
-                node.AddNode("AGOS");
-                ConfigNode node_agos = node.GetNode("AGOS");
                 node_agos.AddNode("GROUPS");
                 foreach (AGOSActionGroup ag in groupsToSave)
                 {
@@ -116,10 +128,17 @@ namespace AGroupOnStage.Main
 
                 }
 
-                if (AGOSMain.Settings.get<bool>("LogNodeSaving"))
-                    Logger.Log("{0}", node.ToString());
-
             }
+
+            if (timers.Count > 0)
+            {
+                Logger.Log("{0} timer(s) to save", timers.Count);
+                node_agos.AddNode("TIMERS", AGOSActionGroupTimerManager.Instance.getConfigNodeForVessel(this.flightID));
+            }
+
+            if (AGOSMain.Settings.get<bool>("LogNodeSaving"))
+                Logger.Log("{0}", node.ToString());
+
         }
 
         public override void OnLoad(ConfigNode node)

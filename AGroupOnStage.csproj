@@ -134,6 +134,8 @@
     <Compile Include="ActionGroups\TestActionGroup.cs" />
     <Compile Include="ActionGroups\ThrottleControlActionGroup.cs" />
     <Compile Include="ActionGroups\TimeDelayedActionGroup.cs" />
+    <Compile Include="ActionGroups\Timers\ActionGroupTimer.cs" />
+    <Compile Include="ActionGroups\Timers\AGOSActionGroupTimerManager.cs" />
     <Compile Include="EngineersReport\EngineersReportInitialiser.cs" />
     <Compile Include="EngineersReport\InvalidPartReferenceConcern.cs" />
     <Compile Include="EngineersReport\NoGroupsConfiguredConcern.cs" />
