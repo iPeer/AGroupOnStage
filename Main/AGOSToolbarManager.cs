@@ -141,20 +141,21 @@ namespace AGroupOnStage.Main
             Texture2D mainTex = AGOSUtils.loadTextureFromDDS(System.IO.Path.Combine(AGOSUtils.getDLLPath(), "Textures/Buttons.dds"), TextureFormat.DXT5);
             Color[] pixels = mainTex.GetPixels(x, y, w, h); // Get the pixels we want from the main texture
             Texture2D buttonTex = new Texture2D(w, h, TextureFormat.ARGB32, false); // Create the image that will be used for the button
-            buttonTex.SetPixels(pixels); // Fill the image with the pixels we want
+            //buttonTex.SetPixels(pixels); // Fill the image with the pixels we want
             if (type != ButtonType.SETTINGS && AGOSMain.Instance.SpecialOccasion) // Draw confetting for special occasions! \o/
             {
-                for (int a = 0; a < 128; a++) // height
+                // 2.0.12-dev4: Fixes button showing white textures when overlaying confetti. Also made this code slightly more efficient, because everyone likes efficiency!
+                Color[] confetti = mainTex.GetPixels(128, 128, 128, 128);
+
+                for (int i = 0; i < pixels.Length; i++)
                 {
-                    for (int b = 0; b < 128; b++) // width
-                    {
-                        Color pixel = mainTex.GetPixel(a + 128, b + 128);
-                        Color pixelBack = buttonTex.GetPixel(a, b);
-                        Color _pixel = pixel * pixel.a;
-                        buttonTex.SetPixel(a, b, pixelBack + _pixel);
-                    }
+                    if (confetti[i].a < 1f)
+                        pixels[i] += confetti[i];
+                    else pixels[i] = confetti[i];
                 }
             }
+
+            buttonTex.SetPixels(pixels);
 
             buttonTex.Apply(); // Apply changes
             return buttonTex;
