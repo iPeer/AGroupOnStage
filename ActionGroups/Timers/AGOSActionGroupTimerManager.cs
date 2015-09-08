@@ -55,6 +55,8 @@ namespace AGroupOnStage.ActionGroups.Timers
             if (data.rootPart == null) { return; }
             List<ActionGroupTimer> vesselTimers = this.activeTimers.FindAll(a => a.FlightID == data.rootPart.flightID);
             Logger.Log("Vessel destroyed: {0}. Unregistering timers for this vessel", data.vesselName);
+            foreach (ActionGroupTimer t in vesselTimers)
+                unregisterTimer(t);
         }
 
         private void onGamePause()
