@@ -444,5 +444,10 @@ namespace AGroupOnStage.Main
             }
         }
 
+        public static Vessel getVesselForFlightID(uint flightID)
+        {
+            return FlightGlobals.fetch.vessels.Find(a => a.rootPart != null && a.rootPart.flightID == flightID);
+        }
+
     }
 }

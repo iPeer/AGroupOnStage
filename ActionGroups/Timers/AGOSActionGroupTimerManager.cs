@@ -24,6 +24,8 @@ namespace AGroupOnStage.ActionGroups.Timers
             GameEvents.onFlightReady.Add(onFlightReady);
             GameEvents.onGamePause.Add(onGamePause);
             GameEvents.onGameUnpause.Add(onGameUnpause);
+            GameEvents.onVesselDestroy.Add(onVesselDestroy);
+            GameEvents.onVesselGoOffRails.Add(onVesselGoOffRails);
         }
 
         public void OnDestroy()
@@ -32,8 +34,27 @@ namespace AGroupOnStage.ActionGroups.Timers
             GameEvents.onFlightReady.Remove(onFlightReady);
             GameEvents.onGamePause.Remove(onGamePause);
             GameEvents.onGameUnpause.Remove(onGameUnpause);
+            GameEvents.onVesselDestroy.Remove(onVesselDestroy);
+            GameEvents.onVesselGoOffRails.Remove(onVesselGoOffRails);
             unregisterAllTimers();
             Instance = null;
+        }
+
+        private void onVesselGoOffRails(Vessel data)
+        {
+            if (data.rootPart == null) { return; }
+            List<ActionGroupTimer> timers = activeTimersForVessel(data.rootPart.flightID, false);
+            foreach (ActionGroupTimer t in timers)
+            {
+                t.flightReady();
+            }
+        }
+
+        private void onVesselDestroy(Vessel data)
+        {
+            if (data.rootPart == null) { return; }
+            List<ActionGroupTimer> vesselTimers = this.activeTimers.FindAll(a => a.FlightID == data.rootPart.flightID);
+            Logger.Log("Vessel destroyed: {0}. Unregistering timers for this vessel", data.vesselName);
         }
 
         private void onGamePause()
@@ -48,7 +69,42 @@ namespace AGroupOnStage.ActionGroups.Timers
 
         public void onFlightReady()
         {
+            Logger.Log("Timer manager: OnFlightReady");
             this.flightReady = true;
+            //this.enableAllLoadedTimers();
+        }
+
+        [Obsolete]
+        public void enableAllLoadedTimers()
+        {
+            List<Vessel> loadedVessels = new List<Vessel>();
+            loadedVessels.AddRange(FlightGlobals.fetch.vessels.FindAll(a => a.rootPart != null && !a.HoldPhysics));
+            /*loadedVessels.ForEach(
+                v => 
+                {
+                    this.activeTimers.FindAll(a => a.FlightID == v.rootPart.flightID).ForEach(
+                        t => 
+                        { 
+                            Logger.Log("Enabling timer '{0}'", t.Guid); 
+                            t.Enabled = true; 
+                        }); 
+                });*/
+
+            Logger.Log("{0} vessel(s) to update timer state for", loadedVessels.Count);
+
+            foreach (Vessel v in loadedVessels)
+            {
+                List<ActionGroupTimer> timers = new List<ActionGroupTimer>();
+                timers.AddRange(activeTimersForVessel(v.rootPart.flightID, false));
+
+                Logger.Log("{0} timer(s) to update to flight state for vessel {1}", timers.Count, v.vesselName);
+
+                foreach (ActionGroupTimer t in timers)
+                {
+                    t.flightReady();
+                }
+
+            }
         }
 
         public bool areTimersActive(uint flightID = 0)
@@ -153,6 +209,8 @@ namespace AGroupOnStage.ActionGroups.Timers
 
         public int loadTimersFromConfigNode(ConfigNode node)
         {
+            Logger.Log("Loading from save node:\n");
+            Logger.Log("{0}", node.ToString());
             int loaded = 0;
             foreach (ConfigNode n in node.nodes)
             {

@@ -8,6 +8,7 @@ using System.Text;
 using UnityEngine;
 using System.Reflection;
 using System.IO;
+using AGroupOnStage.ActionGroups.Timers;
 
 namespace AGroupOnStage.Main
 {
@@ -71,7 +72,7 @@ namespace AGroupOnStage.Main
             GUILayout.BeginHorizontal();
             GUILayout.BeginVertical(GUILayout.MinWidth(300f), GUILayout.MinHeight(400f), GUILayout.ExpandHeight(true));
 
-            GUILayout.BeginScrollView(buttonsScrollPos, GUILayout.MaxHeight(400f));
+            buttonsScrollPos = GUILayout.BeginScrollView(buttonsScrollPos, GUILayout.MaxHeight(400f));
 
 
             if (GUILayout.Button("Move current vessel to orbit"))
@@ -197,6 +198,16 @@ namespace AGroupOnStage.Main
                 foreach (GameDatabase.TextureInfo ti in textures)
                 {
                     Logger.Log("{0}", ti.name);
+                }
+            }
+
+            if (GUILayout.Button("Dump all loaded timers (spammy, maybe)"))
+            {
+                List<ActionGroupTimer> timers = AGOSActionGroupTimerManager.Instance.activeTimers.ToList();
+                Logger.Log("{0} timer(s) are loaded:", timers.Count);
+                foreach (ActionGroupTimer t in timers)
+                {
+                    Logger.Log("\tTimer: {0} FlightID: {4} Group: {1} Delay: {2} ({3})", t.Guid, t.Group, t.Delay, t.RemainingDelay, t.FlightID);
                 }
             }
 

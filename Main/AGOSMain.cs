@@ -794,7 +794,7 @@ namespace AGroupOnStage.Main
 
             if (groups.Count == 0 && (!HighLogic.LoadedSceneIsFlight || timers.Count == 0))
             {
-                GUILayout.Label((AGOSUtils.getVesselPartsList().Count == 0 ? "No vessel is loaded!" : "There are no groups configured for this vessel"), _labelCenteredYellow, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
+                GUILayout.Label((AGOSUtils.getVesselPartsList().Count == 0 ? "No vessel is loaded!" : "There are no groups or timers configured for this vessel"), _labelCenteredYellow, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
             }
             GUILayout.EndHorizontal();
             GUILayout.BeginVertical();

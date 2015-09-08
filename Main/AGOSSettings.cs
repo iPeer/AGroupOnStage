@@ -85,7 +85,7 @@ namespace AGroupOnStage.Main
                 {"LockInputsOnGUIOpen", true},
                 {"SilenceWhenUIHidden", true},
                 {"UseStockToolbar", true},
-                {"MaxGroupTimeDelay", 10f},
+                {"MaxGroupTimeDelay", 60f},
                 {"AddAGOSKerbals", false},
                 {"TacosAllDayErrDay", false},
                 {"AGOSGroupsLast", false},

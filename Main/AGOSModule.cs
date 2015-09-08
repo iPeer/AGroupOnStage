@@ -296,6 +296,12 @@ namespace AGroupOnStage.Main
                 }
 
             }
+            if (node_agos.HasNode("TIMERS"))
+            {
+                Logger.Log("Loading timers");
+                ConfigNode node_timers = node_agos.GetNode("TIMERS");
+                AGOSActionGroupTimerManager.Instance.loadTimersFromConfigNode(node_timers);
+            }
 
         }
 

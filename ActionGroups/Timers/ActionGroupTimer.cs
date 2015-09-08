@@ -53,7 +53,7 @@ namespace AGroupOnStage.ActionGroups.Timers
 
             this._lastUpdate = Planetarium.GetUniversalTime();
 
-            if (AGOSActionGroupTimerManager.Instance.isGamePaused)
+            if (AGOSActionGroupTimerManager.Instance.isGamePaused || AGOSUtils.getVesselForFlightID(this._flightID).HoldPhysics)
                 return;
 
             if (--this._remainingDelay == 0) // Fire the group
@@ -77,7 +77,21 @@ namespace AGroupOnStage.ActionGroups.Timers
 
         public void createFromConfigNode(ConfigNode node)
         {
-            // TODO
+            Logger.Log("Trying to create timer from node: {0}", node.ToString());
+            try
+            {
+                this._guid = new Guid(node.GetValue("Guid"));
+            }
+            catch
+            {
+                Logger.LogWarning("Could not parse Guid for timer, assigning it a new one");
+                this._guid = Guid.NewGuid();
+            }
+            this._delay = Convert.ToInt32(node.GetValue("Delay"));
+            this._remainingDelay = Convert.ToInt32(node.GetValue("RemainingDelay"));
+            this._flightID = Convert.ToUInt32(node.GetValue("FlightID"));
+            this._group = Convert.ToInt32(node.GetValue("Group"));
+            this._lastUpdate = Convert.ToDouble(node.GetValue("LastUpdate"));
             this._initialised = true;
         }
 
