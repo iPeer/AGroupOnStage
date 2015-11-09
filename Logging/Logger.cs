@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AGroupOnStage.Main;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -25,6 +26,7 @@ namespace AGroupOnStage.Logging
         {
 
             message = String.Format(message, data);
+            AGOSDebug.addLogString(message);
 
             foreach (string line in Regex.Split(message, "\r\n")) {
 

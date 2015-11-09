@@ -1,4 +1,5 @@
 ﻿using AGroupOnStage.Logging;
+using AGroupOnStage.Extensions;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -54,7 +55,14 @@ namespace AGroupOnStage.Main
             {"TacoButtonChance", "1-in-N chance of the Taco AGOS button being used"},
             {"FineControlsEEChance", "1-in-N chance of the Fine Controls easter egg firing"},
             {"UnloadUnusedAssets", "Unload AGOS assets that are in memory but don't need to be on game load"},
-            {"EnableEngineersReportHook", "Allow AGOS to hook into the Engineer's Report to give information on misconfigurations"}
+            {"EnableEngineersReportHook", "Allow AGOS to hook into the Engineer's Report to give information on misconfigurations"},
+            {"RestrictGUIToScreen", "Prevent the AGOS GUI from being dragged offscreen"},
+            {"DebugMenuShortcut", String.Format("Allow AGOS' debug menu to be opened by pressing {0}+A", GameSettings.MODIFIER_KEY.name)},
+            {"PartPickerColour-R", "The R value of the colour used for highlighting parts while in part picker mode."},
+            {"PartPickerColour-G", "The G value of the colour used for highlighting parts while in part picker mode."},
+            {"PartPickerColour-B", "The B value of the colour used for highlighting parts while in part picker mode."},
+            {"HappyLittleTrees", "Always give the AGOS button its stylish hair do."}
+            //{"AllowTextureCaching", "Let AGOS create caches for textures it uses instead of getting them from the game database every time"} // No longer needed
 
         };
         private bool lastAGOSKSetting;
@@ -78,7 +86,7 @@ namespace AGroupOnStage.Main
                 {"LockInputsOnGUIOpen", true},
                 {"SilenceWhenUIHidden", true},
                 {"UseStockToolbar", true},
-                {"MaxGroupTimeDelay", 10f},
+                {"MaxGroupTimeDelay", 60f},
                 {"AddAGOSKerbals", false},
                 {"TacosAllDayErrDay", false},
                 {"AGOSGroupsLast", false},
@@ -91,7 +99,13 @@ namespace AGroupOnStage.Main
                 {"TacoButtonChance", 5},
                 {"FineControlsEEChance", 10},
                 {"UnloadUnusedAssets", true},
-                {"EnableEngineersReportHook", true}
+                {"EnableEngineersReportHook", true},
+                {"RestrictGUIToScreen", true},
+                {"DebugMenuShortcut", false},
+                {"PartPickerColour-R", (byte)255},
+                {"PartPickerColour-G", (byte)2},
+                {"PartPickerColour-B", (byte)141},
+                {"HappyLittleTrees", false}
             };
 
         }
@@ -311,7 +325,7 @@ namespace AGroupOnStage.Main
                 if (s.Equals("AddAGOSKerbals") && HighLogic.CurrentGame.Mode == Game.Modes.CAREER) // Don't show Kerbal options on Career saves.
                     continue;
 
-                if (s.StartsWith("DEBUG") && (!AGOSDebug.isDebugBuild() && !get<bool>("EnableDebugOptions"))) // Skip debug options if this isn't a debug build or debug options are disabled
+                if (s.StartsWithIgnoreCase("DEBUG") && (!AGOSDebug.isDebugBuild() && !get<bool>("EnableDebugOptions"))) // Skip debug options if this isn't a debug build or debug options are disabled
                     continue;
 
                 bool __;

@@ -9,6 +9,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using System.Reflection;
+using AGroupOnStage.ActionGroups.Timers;
 
 namespace AGroupOnStage.Main
 {
@@ -42,10 +44,11 @@ namespace AGroupOnStage.Main
             }
         }
         public Part linkPart { get; set; }
+        public bool isPartTriggered = false;
         public bool guiVisible = false;
         public bool settingsGUIVisible = false;
         public bool useAGXConfig = false;
-        public List<IActionGroup> actionGroups = new List<IActionGroup>();
+        public List<AGOSActionGroup> actionGroups = new List<AGOSActionGroup>();
         public Dictionary<int, string> actionGroupList = new Dictionary<int, string>();
         public Dictionary<int, bool> actionGroupSettings = new Dictionary<int, bool>();
         public Dictionary<int, KSPActionGroup> stockAGMap;
@@ -69,7 +72,6 @@ namespace AGroupOnStage.Main
         public bool isGameGUIHidden = false;
         public static readonly List<string> agosKerbalNames = new List<string>() { "iPeer", "Roxy", "Shimmy", "Addle", "Gav", "Kofeyh", "Mator" }; // You have to be super awesome to make it into this list
 
-
         #endregion
 
         #region GUI control vars
@@ -80,6 +82,9 @@ namespace AGroupOnStage.Main
         private string manualGroup = "";
         private string stageList = "";
         private bool useAGXGroup = false;
+        private bool debugButtonsVisible = false;
+        private int sasMode = 0;
+        private string[] sasModeNames;
 
         #endregion
 
@@ -97,7 +102,8 @@ namespace AGroupOnStage.Main
             CAMERA_FREE = -6,
             LOCK_STAGING = -7,
             CAMERA_LOCKED = -8,
-            TIMED_ACTION_GROUP = -9
+            TIMED_ACTION_GROUP = -9,
+            SAS_MODE_SWITCH = -10
         }
 
         #endregion
@@ -129,7 +135,8 @@ namespace AGroupOnStage.Main
             {"CAMERA_FREE", "Set camera: FREE"},
             {"LOCK_STAGING", "Lock staging"},
             {"CAMERA_LOCKED", "Set camera: LOCKED"},
-            {"TIMED_ACTION_GROUP", "Time-delayed Action Group"}
+            {"TIMED_ACTION_GROUP", "Time-delayed Action Group"},
+            {"SAS_MODE_SWITCH", "Set SAS mode"}
 
         };
 
@@ -151,6 +158,7 @@ namespace AGroupOnStage.Main
             //if (useAGXConfig) { /* DO NAAHTHING! */ } // AGX is installed - use its controller, not stock's
             //else // Not installed - fall back to stock controller.
             loadActionGroups();
+            loadSASModes();
             Logger.Log("Loading AGOS' settings");
             Settings.load();
             if (Settings.get<bool>("EnableDebugOptions"))
@@ -198,7 +206,14 @@ namespace AGroupOnStage.Main
             }
 #endif
             sw.Stop();
-            Logger.Log("AGOS initalised in {0}s", sw.Elapsed.TotalSeconds);
+            Logger.Log("AGOS {1} initalised in {0}s", sw.Elapsed.TotalSeconds, AGOSUtils.getModVersion());
+        }
+
+        private void loadSASModes()
+        {
+            Logger.Log("Creating SAS mode list...");
+            sasModeNames = Enum.GetNames(typeof(VesselAutopilot.AutopilotMode));
+            Logger.Log("{0} SAS modes loaded", sasModeNames.Length);
         }
 
         private void onGUIAstronautComplexSpawn()
@@ -315,12 +330,12 @@ namespace AGroupOnStage.Main
             int start = this.actionGroups.Count;
             if (start < 2) // Don't bother if it's impossible for there to be duplicates
                 return;
-            List<IActionGroup> newList = this.actionGroups.GroupBy(o =>
-                new { o.cameraMode, o.fireGroupID, o.FlightID, o.Group, o.isPartLocked, o.linkedPart, o.partRef, o.StagesAsString, o.ThrottleLevel, o.timerDelay, o.Vessel }
-                ).Select(n => n.First()).ToList<IActionGroup>();
+            List<AGOSActionGroup> newList = this.actionGroups.GroupBy(o =>
+                new { o.cameraMode, o.fireGroupID, o.FlightID, o.Group, o.isPartLocked, o.linkedPart, o.partRef, o.StagesAsString, o.ThrottleLevel, o.timerDelay, o.Vessel, o.FireType }
+                ).Select(n => n.First()).ToList<AGOSActionGroup>();
             int end = newList.Count;
             Logger.Log("Removed {0} duplicate action group(s)", (start - end));
-            this.actionGroups = new List<IActionGroup>(newList);
+            this.actionGroups = new List<AGOSActionGroup>(newList);
         }
 
         private void loadActionGroups()
@@ -414,12 +429,14 @@ namespace AGroupOnStage.Main
                 {
                     if (linkPart != null)
                         linkPart = null;
-                    AGOSUtils.resetActionGroupConfig();
+                    AGOSUtils.resetActionGroupConfig("Main->toggleGUI");
                 }
 
             }
             else
             {
+                if (fromPart)
+                    this.isPartTriggered = true;
                 if (fromPart && guiVisible) { return; }
                 if (EditorTooltip.Instance != null) // 2.0.9-dev3: Fix for NRE when opening GUI without visiting the editor first.
                     EditorTooltip.Instance.HideToolTip();
@@ -439,7 +456,14 @@ namespace AGroupOnStage.Main
 
             if (!hasSetupStyles)
                 setUpStyles();
-            _windowPos = GUILayout.Window(AGOS_GUI_WINDOW_ID, _windowPos, OnWindow, "Action group control", _windowStyle, GUILayout.MinHeight(500f), GUILayout.MinWidth(500f), GUILayout.MaxWidth(500f));
+
+            if (Settings.get<bool>("RestrictGUIToScreen"))
+            {
+                _windowPos.x = Mathf.Clamp(_windowPos.x, 0f, Screen.width - _windowPos.width);
+                _windowPos.y = Mathf.Clamp(_windowPos.y, 0f, Screen.height - _windowPos.height);
+            }
+
+            _windowPos = GUILayout.Window(AGOS_GUI_WINDOW_ID, _windowPos, OnWindow, String.Format("AGroupOnStage {0} {1}", AGOSUtils.getModVersion(), (AGOSDebug.isDebugBuild() ? "(Debug Mode)" : "")), _windowStyle, GUILayout.MinHeight(500f), GUILayout.MinWidth(500f), GUILayout.MaxWidth(500f));
             // TODO: GUI position sanity checks
 
         }
@@ -475,11 +499,11 @@ namespace AGroupOnStage.Main
             }
 
             // Draw settings button
-            Rect settingsBtnRect;
-            if (linkPart != null)
-                settingsBtnRect = new Rect(_windowPos.width - 20, 3, 16, 16);
-            else
-                settingsBtnRect = new Rect(_windowPos.width - 20, 20, 16, 16);
+            /*Rect settingsBtnRect;
+            if (linkPart != null)*/
+            Rect settingsBtnRect = new Rect(_windowPos.width - 20, 3, 16, 16);
+            /*else
+                settingsBtnRect = new Rect(_windowPos.width - 20, 20, 16, 16);*/
             if (GUI.Button(settingsBtnRect, Settings.buttonTex, _tinyButtonStyle))
             {
                 Settings.toggleGUI();
@@ -530,13 +554,41 @@ namespace AGroupOnStage.Main
             GUILayout.EndScrollView();
             GUILayout.EndVertical();
             GUILayout.BeginVertical(GUILayout.Width(240f));
-            if (linkPart != null)
+            GUILayout.BeginHorizontal();
+
+            isPartTriggered = !GUILayout.Toggle(!isPartTriggered, "Stage(s)", _buttonStyle);
+            isPartTriggered = GUILayout.Toggle(isPartTriggered, "Part", _buttonStyle);
+
+            GUILayout.EndHorizontal();
+            if (isPartTriggered)
             {
-                GUILayout.BeginHorizontal();
-                GUILayout.Label("Part: " + linkPart.name + "_" + linkPart.craftID, _labelStyle);
-                if (GUILayout.Button("X", _buttonStyle, GUILayout.MaxWidth(30f)))
-                    linkPart = null;
-                GUILayout.EndHorizontal();
+                if (linkPart != null)
+                {
+                    GUILayout.BeginHorizontal();
+                    GUILayout.Label("Part: " + linkPart.name + "_" + linkPart.craftID, _labelStyle);
+                    if (GUILayout.Button("X", _buttonStyle, GUILayout.MaxWidth(30f)))
+                        linkPart = null;
+                    if (GUILayout.Button(new GUIContent("C", "Change part"), _buttonStyle, GUILayout.MaxWidth(30f)))
+                    {
+                        linkPart = null;
+                        AGOSPartSelectionHandler.Instance.enterPartSelectionMode();
+                        this.isPartTriggered = true; // Sanity
+                    }
+                    GUILayout.EndHorizontal();
+                }
+                else
+                {
+                    bool selectingPart = AGOSPartSelectionHandler.Instance.partSelectModeActive;
+                    string buttonText = selectingPart ? "Cancel" : "Select part from scene";
+                    if (GUILayout.Button(buttonText, _buttonStyle))
+                    {
+                        if (selectingPart)
+                            AGOSPartSelectionHandler.Instance.exitPartSelectionMode();
+                        else
+                            AGOSPartSelectionHandler.Instance.enterPartSelectionMode();
+                        selectingPart = !selectingPart;
+                    }
+                }
             }
             else
             {
@@ -611,6 +663,13 @@ namespace AGroupOnStage.Main
                 GUILayout.EndHorizontal();
                 GUILayout.Space(4);
             }
+
+            if (actionGroupSettings[-10]) // SAS control
+            {
+                GUILayout.BeginHorizontal();
+                sasMode = GUILayout.SelectionGrid(sasMode, sasModeNames, 2, _buttonStyle);
+                GUILayout.EndHorizontal();
+            }
             bool hasStageList = !string.IsNullOrEmpty(stageList);
             bool hasLinkedPart = !(linkPart == null);
             bool hasGroups = !(actionGroupSettings.Values.Count(a => a) == 0);
@@ -633,14 +692,28 @@ namespace AGroupOnStage.Main
             GUILayout.BeginHorizontal();
 
             //IActionGroup[] groups = actionGroups.ToArray();
-            List<IActionGroup> groups = new List<IActionGroup>(); //                              2.0.8-dev2: Filter action groups to the current flightID only.
+            List<AGOSActionGroup> groups = new List<AGOSActionGroup>(); //                              2.0.8-dev2: Filter action groups to the current flightID only.
             groups.AddRange(actionGroups.FindAll(g => AGOSUtils.isLoadedCraftID(g.FlightID))); // ^
+
+            List<ActionGroupTimer> timers = new List<ActionGroupTimer>();
+            if (HighLogic.LoadedSceneIsFlight)
+                timers.AddRange(AGOSActionGroupTimerManager.Instance.activeTimersForVessel(FlightGlobals.fetch.activeVessel.rootPart.flightID));
+
+
+            if (groups.Count > 0 || timers.Count > 0)
+                _scrollPosConfig = GUILayout.BeginScrollView(_scrollPosConfig, _scrollStyle);
+
+
+            if (timers.Count > 0)
+            {
+                foreach (ActionGroupTimer t in timers)
+                    GUILayout.Label(String.Format("Firing group {0} in {1} seconds", t.Group, t.RemainingDelay), _labelStyle);
+            }
 
             if (groups.Count > 0)
             {
-                _scrollPosConfig = GUILayout.BeginScrollView(_scrollPosConfig, _scrollStyle);
 
-                foreach (IActionGroup ag in groups)
+                foreach (AGOSActionGroup ag in groups)
                 {
                     //AGOSUtils.printActionGroupInfo(ag);
                     //if (!HighLogic.LoadedSceneIsEditor && ag.Vessel != FlightGlobals.fetch.activeVessel) { continue; }
@@ -655,10 +728,16 @@ namespace AGroupOnStage.Main
                         }
                         stagesString = String.Format("(PART) {1}", ag.partRef, ag.linkedPart.inverseStage);
                     }
-                    else
+                    else if (ag.FireType == AGOSActionGroup.FireTypes.STAGE)
                     {
                         int[] stages = ag.Stages;
                         stagesString = AGOSUtils.intArrayToString(stages, ", ");
+                    }
+                    else
+                    {
+                        stagesString = (ag.FireType == AGOSActionGroup.FireTypes.DOCK ? "DOCK" : "UNDOCK");
+                        /*if (AGOSDebug.isDebugBuild() || Settings.get<bool>("EnableDebugOptions"))
+                            stagesString += ": " + AGOSUtils.isGroupValidForVessel(ag);*/
                     }
 
                     GUILayout.BeginHorizontal();
@@ -668,11 +747,15 @@ namespace AGroupOnStage.Main
                     string groupName;
                     string groupDescription = "";
                     if (ag.GetType() == typeof(TimeDelayedActionGroup))
-                        groupName = String.Format("Fire group '{0}' after {1}s", (useAGXConfig && ag.fireGroupID >= 8 ? "" + (ag.fireGroupID - 7) : actionGroupList[ag.fireGroupID]), String.Format("{0:N0}", ag.timerDelay));
+                        groupName = String.Format("'{0}' after {1}s", (useAGXConfig && ag.fireGroupID >= 8 ? "" + (ag.fireGroupID - 7) : actionGroupList[ag.fireGroupID]), String.Format("{0:N0}", ag.timerDelay));
+                    else if (ag.GetType() == typeof(SASModeChangeGroup))
+                        groupName = String.Format("Set SAS to '{0}'", ((VesselAutopilot.AutopilotMode)ag.fireGroupID).ToString());
                     else if (useAGXConfig && ag.Group >= 8)
                         groupName = ag.Group - 7 + (AGXInterface.getAGXGroupName(ag.Group - 7) != "" ? ": " + AGXInterface.getAGXGroupName(ag.Group - 7) : "");
                     else
                         groupName = actionGroupList[ag.Group];
+                    if (ag.IsTester)
+                        groupName = "* " + groupName;
                     if (ag.GetType() == typeof(ThrottleControlActionGroup))
                         groupDescription = String.Format(" ({0:P0})", ag.ThrottleLevel);
                     GUILayout.Label(groupName + (groupDescription.Length > 0 ? " " + groupDescription : ""), __labelStyle, GUILayout.MinWidth(150f));
@@ -697,41 +780,56 @@ namespace AGroupOnStage.Main
                     }
                     if (GUILayout.Button("Remove", _buttonStyle, GUILayout.MaxWidth(70f)))
                         actionGroups.Remove(ag);
+                    if (ag.IsTester)
+                        if (GUILayout.Button("S", _buttonStyle, GUILayout.MaxWidth(30f)))
+                            ag.IsTester = false;
 
                     GUILayout.EndHorizontal();
                 }
 
-                GUILayout.EndScrollView();
             }
-            else
+
+            if (groups.Count > 0 || timers.Count > 0)
+                GUILayout.EndScrollView();
+
+            if (groups.Count == 0 && (!HighLogic.LoadedSceneIsFlight || timers.Count == 0))
             {
-                GUILayout.Label((AGOSUtils.getVesselPartsList().Count == 0 ? "No vessel is loaded!" : "There are no groups configured for this vessel"), _labelCenteredYellow, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
+                GUILayout.Label((AGOSUtils.getVesselPartsList().Count == 0 ? "No vessel is loaded!" : "There are no groups or timers configured for this vessel"), _labelCenteredYellow, GUILayout.ExpandWidth(true), GUILayout.ExpandHeight(true));
             }
             GUILayout.EndHorizontal();
             GUILayout.BeginVertical();
             if (AGOSDebug.isDebugBuild() || Settings.get<bool>("EnableDebugOptions"))
             {
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("DEBUG: Dump groups", _buttonStyle))
-                    AGOSGroupManager.dumpActionGroupConfig();
+                if (debugButtonsVisible)
+                {
+                    GUILayout.BeginHorizontal();
+                    if (GUILayout.Button("DEBUG: Dump groups", _buttonStyle))
+                        AGOSGroupManager.dumpActionGroupConfig();
 
-                if (GUILayout.Button("DEBUG: Toggle debug window", _buttonStyle))
-                    AGOSDebug.toggleGUI();
-                GUILayout.EndHorizontal();
-                GUILayout.BeginHorizontal();
-                if (GUILayout.Button("DEBUG: Show AGs", _buttonStyle))
-                {
-                    GroupManager.toggleGUI();
+                    if (GUILayout.Button("DEBUG: Toggle debug window", _buttonStyle))
+                        AGOSDebug.toggleGUI();
+                    GUILayout.EndHorizontal();
+                    GUILayout.BeginHorizontal();
+                    if (GUILayout.Button("DEBUG: Show AGs", _buttonStyle))
+                    {
+                        GroupManager.toggleGUI();
+                    }
+                    if (GUILayout.Button("DEBUG: Display active lock list", _buttonStyle))
+                    {
+                        AGOSInputLockManager.DEBUGListActiveLocks();
+                    }
+                    GUILayout.EndHorizontal();
+                    GUILayout.BeginHorizontal();
+                    if (GUILayout.Button("DEBUG: Dump all possible control locks", _buttonStyle))
+                    {
+                        AGOSInputLockManager.DEBUGListAllPossibleLocks();
+                    }
+                    GUILayout.EndHorizontal();
                 }
-                if (GUILayout.Button("DEBUG: Display active lock list", _buttonStyle))
-                {
-                    AGOSInputLockManager.DEBUGListActiveLocks();
-                }
-                GUILayout.EndHorizontal();
                 GUILayout.BeginHorizontal();
-                if (GUILayout.Button("DEBUG: Dump all possible control locks", _buttonStyle))
+                if (GUILayout.Button(string.Format("DEBUG: {0} debug options", debugButtonsVisible ? "Hide" : "Show")))
                 {
-                    AGOSInputLockManager.DEBUGListAllPossibleLocks();
+                    debugButtonsVisible = !debugButtonsVisible;
                 }
                 GUILayout.EndHorizontal();
             }
@@ -785,9 +883,10 @@ namespace AGroupOnStage.Main
                     LOCK_STAGING = -7,
                     CAMERA_LOCKED = -8,
                     TIMED_ACTION_GROUP = -9
+                    SAS_MODE_SWITCH = -10
                     */
 
-                    IActionGroup ag;
+                    AGOSActionGroup ag;
                     if (x == -1) // Throttle
                     {
                         ag = new ThrottleControlActionGroup();
@@ -812,11 +911,16 @@ namespace AGroupOnStage.Main
                         ag.timerDelay = Convert.ToInt32(Math.Floor(timerDelay));
                         ag.fireGroupID = delayedGroup;
                     }
+                    else if (x == -10)
+                    {
+                        ag = new SASModeChangeGroup();
+                        ag.fireGroupID = sasMode;
+                    }
                     else
                     {
                         ag = new BasicActionGroup();
                     }
-                    if (linkPart != null)
+                    if (linkPart != null && isPartTriggered)
                     {
                         ag.linkedPart = linkPart;
                         ag.isPartLocked = true;
@@ -857,9 +961,9 @@ namespace AGroupOnStage.Main
                         ag.Group = x;
                     }
 
-                    ag.FlightID = AGOSUtils.getFlightID();
+                    ag.FlightID = ag.OriginalFlightID = AGOSUtils.getFlightID();
 
-                    Logger.Log("\t{0}", ag.ToString());
+                    //Logger.Log("\t{0}", ag.ToString());
                     actionGroups.Add(ag);
                     actionGroupSettings[x] = false;
 
@@ -870,6 +974,7 @@ namespace AGroupOnStage.Main
             timerDelay = 1f;
             stageList = "";
             manualGroup = "";
+            sasMode = 0;
             //linkPart = null; // 2.0-dev5/2.0-rel: No longer clear part link when commiting groups
         }
 
@@ -968,14 +1073,14 @@ namespace AGroupOnStage.Main
         [Obsolete("Use findHomesForPartLockedGroups() instead", true)]
         public void updatePartLockedStages(bool suppressLog = false)
         {
-            List<IActionGroup> toUpdate = actionGroups.FindAll(a => a.linkedPart != null);
+            List<AGOSActionGroup> toUpdate = actionGroups.FindAll(a => a.linkedPart != null);
             if (toUpdate.Count == 0)
             {
                 if (!suppressLog)
                     Logger.Log("No part locked groups to update");
                 return;
             }
-            foreach (IActionGroup ag in toUpdate)
+            foreach (AGOSActionGroup ag in toUpdate)
                 if (ag.Stages[0] != ag.linkedPart.inverseStage)
                     ag.Stages[0] = ag.linkedPart.inverseStage;
             if (!suppressLog)
@@ -990,9 +1095,9 @@ namespace AGroupOnStage.Main
             if (vessel.Count() == 0) // Empty parts list
                 return;
             //Logger.Log("Finding homes for part locked action group configurations");
-            List<IActionGroup> partLinkedGroups = actionGroups.FindAll(a => a.isPartLocked && a.linkedPart == null);
+            List<AGOSActionGroup> partLinkedGroups = actionGroups.FindAll(a => a.isPartLocked && a.linkedPart == null);
             Logger.Log("{0} homeless group(s)", partLinkedGroups.Count());
-            foreach (IActionGroup g in partLinkedGroups)
+            foreach (AGOSActionGroup g in partLinkedGroups)
             {
                 Part part = AGOSUtils.findPartByReference(g.partRef, vessel);
                 if (part == null)
@@ -1046,7 +1151,11 @@ namespace AGroupOnStage.Main
                 backupActionGroups.Clear(); // 2.0.6-dev1 fix for yet another dupe (I hope)
                 backupActionGroupList();
             }*/
-            AGOSUtils.resetActionGroupConfig(true);
+            if (HighLogic.LoadedSceneIsFlight)
+            {
+                //getMasterAGOSModule(FlightGlobals.fetch.activeVessel).setFlightID(0, false, FlightGlobals.fetch.activeVessel.rootPart.flightID); // Reset action groups for active vessel to id 0 so they show uo properly in the editor.
+                AGOSUtils.resetActionGroupConfig("Main->onSceneLoadRequested", true);
+            }
         }
 
         private void onLevelWasLoaded(GameScenes level)
@@ -1072,6 +1181,14 @@ namespace AGroupOnStage.Main
                 Settings.toggleGUI();
             Settings.removeFile();
             Settings = new AGOSSettings(Settings.configPath);
+        }
+
+        [Obsolete("Use AGOSActionGroup.removeIfNoTriggers() instead", true)]
+        public void removeGroupsWithNoTriggers()
+        {
+            List<AGOSActionGroup> toRemove = actionGroups.FindAll(a => !a.stillHasTriggers);
+            Logger.Log("Removing {0} group(s) that no longer have valid triggers", toRemove.Count);
+            actionGroups.RemoveRange(toRemove);
         }
     }
 }

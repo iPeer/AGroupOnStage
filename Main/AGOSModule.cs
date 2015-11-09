@@ -1,4 +1,5 @@
 ﻿using AGroupOnStage.ActionGroups;
+using AGroupOnStage.ActionGroups.Timers;
 using AGroupOnStage.Logging;
 using System;
 using System.Collections.Generic;
@@ -55,15 +56,26 @@ namespace AGroupOnStage.Main
                     node.AddValue("idList", AGOSUtils.arrayToString<uint>(AGOSFlight.Instance.dockedVesselIDs.ToArray(), ","));
                 }
             }*/
-            List<IActionGroup> groupsToSave = new List<IActionGroup>();
-            groupsToSave.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.FlightID == this.flightID));
+            List<AGOSActionGroup> groupsToSave = new List<AGOSActionGroup>();
+            groupsToSave.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => (a.FlightID == this.flightID || a.FlightID == this.tempFlightID) && !a.IsTester));
+
+            List<ActionGroupTimer> timers = new List<ActionGroupTimer>();
+            if (HighLogic.LoadedSceneIsFlight/* && AGOSActionGroupTimerManager.Instance != null*/)
+                timers.AddRange(AGOSActionGroupTimerManager.Instance.activeTimersForVessel(this.flightID));
+
+            ConfigNode node_agos = new ConfigNode();
+
+            if (groupsToSave.Count > 0 || timers.Count > 0)
+            {
+                node.AddNode("AGOS");
+                node_agos = node.GetNode("AGOS");
+            }
+
             if (groupsToSave.Count > 0)
             {
                 Logger.Log("{0} groups to save", groupsToSave.Count);
-                node.AddNode("AGOS");
-                ConfigNode node_agos = node.GetNode("AGOS");
                 node_agos.AddNode("GROUPS");
-                foreach (IActionGroup ag in groupsToSave)
+                foreach (AGOSActionGroup ag in groupsToSave)
                 {
                     ConfigNode node_group = node_agos.GetNode("GROUPS");
                     Logger.Log("Saving group config: {0}", AGOSUtils.getActionGroupInfo(ag));
@@ -80,10 +92,11 @@ namespace AGroupOnStage.Main
                     if (ag.OriginalFlightID > 0)
                         node_n.AddValue("originalFlightID", ag.OriginalFlightID);
                     node_n.AddValue("groupType", ag.GetType().Name);
+                    node_n.AddValue("fireType", ag.FireType);
                     node_n.AddValue("isPartLocked", ag.isPartLocked);
                     if (ag.isPartLocked)
                         node_n.AddValue("partLink", /*String.Format("{0}_{1}", ag.linkedPart.name, ag.linkedPart.craftID)*/ag.partRef);
-                    else
+                    else if (ag.FireType == AGOSActionGroup.FireTypes.STAGE)
                         node_n.AddValue("stages", AGOSUtils.intArrayToString(ag.Stages, ","));
                     if (ag.GetType() == typeof(FineControlActionGroup))
                         node_n.AddValue("togglesFineControls", true);
@@ -106,14 +119,26 @@ namespace AGroupOnStage.Main
                         node_n.AddValue("changesCamera", true);
                         node_n.AddValue("cameraMode", ag.cameraMode.ToString());
                     }
-                    
+
+                    if (ag.GetType() == typeof(SASModeChangeGroup))
+                    {
+                        node_n.AddValue("ChangesSAS", true);
+                        node_n.AddValue("SASMode", ag.fireGroupID);
+                    }
 
                 }
 
-                if (AGOSMain.Settings.get<bool>("LogNodeSaving"))
-                    Logger.Log("{0}", node.ToString());
-
             }
+
+            if (timers.Count > 0)
+            {
+                Logger.Log("{0} timer(s) to save", timers.Count);
+                node_agos.AddNode("TIMERS", AGOSActionGroupTimerManager.Instance.getConfigNodeForVessel(this.flightID));
+            }
+
+            if (AGOSMain.Settings.get<bool>("LogNodeSaving"))
+                Logger.Log("{0}", node.ToString());
+
         }
 
         public override void OnLoad(ConfigNode node)
@@ -133,8 +158,8 @@ namespace AGroupOnStage.Main
                     this.flightID = Convert.ToUInt32(node.GetValue("flightID"));
                 else
                 {
-                    Logger.LogWarning("No flightID found for this config, assigning temp value.");
                     this.tempFlightID = Convert.ToUInt32(Math.Abs(this.GetHashCode()));
+                    Logger.LogWarning("No flightID found for this config, assigning temp value of {0}.", this.tempFlightID);
                 }
             }
 
@@ -160,7 +185,7 @@ namespace AGroupOnStage.Main
                     else // backwards compat.
                         originalFlightID = this.flightID;
                     string groupType = id.GetValue("groupType");
-                    IActionGroup ag;
+                    AGOSActionGroup ag;
                     if (groupType.Equals("FineControlActionGroup"))
                         ag = new FineControlActionGroup();
                     else if (groupType.Equals("CameraControlActionGroup"))
@@ -171,8 +196,15 @@ namespace AGroupOnStage.Main
                         ag = new ThrottleControlActionGroup();
                     else if (groupType.Equals("TimeDelayedActionGroup"))
                         ag = new TimeDelayedActionGroup();
+                    else if (groupType.Equals("SASModeChangeGroup"))
+                        ag = new SASModeChangeGroup();
                     else
                         ag = new BasicActionGroup();
+                    AGOSActionGroup.FireTypes FireType;
+                    if (id.HasValue("fireType"))
+                        FireType = ag.FireType = (AGOSActionGroup.FireTypes)Enum.Parse(typeof(AGOSActionGroup.FireTypes), id.GetValue("fireType"));
+                    else
+                        FireType = ag.FireType = AGOSActionGroup.FireTypes.STAGE;
 
                     // Error checking (for days!)
 
@@ -184,9 +216,9 @@ namespace AGroupOnStage.Main
                         continue;
                     }
 
-                    if (!isPartLocked && !id.HasValue("stages"))
+                    if (!isPartLocked && !id.HasValue("stages") && FireType == AGOSActionGroup.FireTypes.STAGE)
                     {
-                        Logger.LogWarning("Action group {0}:{1} is saved as type '{2}', is not partLinked and doesn't have a stage list, skipping.", groupID, _id, groupType);
+                        Logger.LogWarning("Action group {0}:{1} is saved as type '{2}', is not partLinked and doesn't have a stage list.", groupID, _id, groupType);
                     }
 
                     if (!AGOSUtils.checkSavedGroupIsValid(id, groupType))
@@ -200,6 +232,7 @@ namespace AGroupOnStage.Main
                     bool changesCamera = (id.HasValue("changesCamera") ? Convert.ToBoolean(id.GetValue("changesCamera")) : false);
                     bool isThrottleControl = (id.HasValue("changesThrottle") ? Convert.ToBoolean(id.GetValue("changesThrottle")) : false);
                     bool isDelayedGroup = id.HasValue("firesDelayed");
+                    bool isSASChanger = id.HasValue("ChangesSAS") && Convert.ToBoolean(id.GetValue("ChangesSAS"));
                     float throttleLevel = (isThrottleControl ? Convert.ToSingle(id.GetValue("throttleLevel"), System.Globalization.CultureInfo.InvariantCulture) : 0f);
 
                     // Throttle sanity checks
@@ -229,7 +262,7 @@ namespace AGroupOnStage.Main
                         ag.partRef = id.GetValue("partLink");
                         ag.Stages = new int[0]; // 2.0.10-dev3: Fix for NRE when loading AGX vessels w/o AGX installed (Assumed to be caused by AGX, any way)
                     }
-                    else
+                    else if (ag.FireType == AGOSActionGroup.FireTypes.STAGE)
                     {
                         int[] stageList = id.GetValue("stages").Split(',').Select(a => int.Parse(a)).ToArray();
                         ag.Stages = stageList;
@@ -247,11 +280,17 @@ namespace AGroupOnStage.Main
                     if (isThrottleControl)
                         ag.ThrottleLevel = throttleLevel;
 
+                    if (isSASChanger)
+                        ag.fireGroupID = Convert.ToInt32(id.GetValue("SASMode"));
+
                     ag.Group = groupID;
                     ag.Vessel = this.vessel;
-                    ag.FlightID = (this.tempFlightID != 0 ? Convert.ToUInt32(this.tempFlightID) : flightID);
+                    ag.FlightID = (this.tempFlightID != 0 ? this.tempFlightID : flightID);
                     if (originalFlightID > 0)
                         ag.OriginalFlightID = originalFlightID;
+
+                    if (AGOSMain.Settings.get<bool>("LogNodeSaving"))
+                        Logger.Log(ag.ToString());
 
                     AGOSMain.Instance.actionGroups.Add(ag);
 
@@ -259,6 +298,12 @@ namespace AGroupOnStage.Main
 
                 }
 
+            }
+            if (node_agos.HasNode("TIMERS"))
+            {
+                Logger.Log("Loading timers");
+                ConfigNode node_timers = node_agos.GetNode("TIMERS");
+                AGOSActionGroupTimerManager.Instance.loadTimersFromConfigNode(node_timers);
             }
 
         }
@@ -282,19 +327,71 @@ namespace AGroupOnStage.Main
             return "Able to fire action groups on stage.";
         }
 
-        public void setFlightID(uint id, bool fromDock = false, uint oldID = 0)
+        public void setFlightID(uint flightID, uint oldID = 0)
+        {
+
+            if (oldID != 0) // Changing from oldID to a new ID
+            {
+                Logger.Log("Updating FlightID to {0} from {1}", flightID, oldID);
+                this.flightID = flightID;
+                List<AGOSActionGroup> toUpdate = new List<AGOSActionGroup>();
+                toUpdate.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.FlightID == oldID));
+                if (toUpdate.Count == 0)
+                    Logger.Log("No FlightID updates are needed.");
+                else
+                {
+                    toUpdate.ForEach(g => { g.OriginalFlightID = g.FlightID; g.FlightID = flightID; });
+                    Logger.Log("{2} group(s) updated from FlightID {0} to FlightID {1}", oldID, flightID, toUpdate.Count);
+                }
+            }
+            else
+            {
+                if (this.tempFlightID == 0)
+                    Logger.Warning("Temp ID is 0, configs will (probably) not update as expected.");
+                Logger.Log("Updating all parts with temp ID {0} to FlightID {1}", this.tempFlightID, flightID);
+                this.flightID = flightID;
+                List<AGOSActionGroup> toUpdate = new List<AGOSActionGroup>();
+                toUpdate.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.FlightID == this.tempFlightID));
+                if (toUpdate.Count == 0)
+                    Logger.Log("No FlightID updates are needed.");
+                else
+                {
+                    toUpdate.ForEach(g => { g.OriginalFlightID = g.FlightID = flightID; });
+                    Logger.Log("{2} group(s) updated from temp ID {0} to FlightID {1}", this.tempFlightID, flightID, toUpdate.Count);
+                }
+            }
+
+        }
+
+        // TODO: Rewrite
+        [Obsolete]
+        public void setFlightID_old(uint id, bool fromDock = false, uint oldID = 0)
         {
 
             this.flightID = id;
             Logger.Log("Processing flightID update from external source ({0})", id);
-            List<IActionGroup> groupsToUpdate = new List<IActionGroup>();
+            Logger.Log("tempFlightID == 0? {0} ({1})", this.tempFlightID == 0, this.tempFlightID);
+            if (this.tempFlightID != (uint)0)
+            {
+                Logger.Log("This module's temp ID: {0}", this.tempFlightID);
+                Logger.Log("Groups matching this temp ID: {0}", AGOSMain.Instance.actionGroups.Count(a => a.FlightID == this.tempFlightID));
+            }
+            List<AGOSActionGroup> groupsToUpdate = new List<AGOSActionGroup>();
             groupsToUpdate.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.FlightID == (fromDock && oldID > 0 ? oldID : this.tempFlightID)));
-            foreach (IActionGroup b in groupsToUpdate)
+            foreach (AGOSActionGroup b in groupsToUpdate)
             {
                 b.FlightID = id;
                 if (b.OriginalFlightID == 0)
                     b.OriginalFlightID = id;
             }
+            /*foreach (AGOSActionGroup b in groupsToUpdate)
+            {
+                if (fromDock && b.FireType != AGOSActionGroup.FireTypes.STAGE)
+                    return;
+                b.FlightID = id;
+                if (b.OriginalFlightID == 0)
+                    b.OriginalFlightID = id;
+            }*/
             Logger.Log("Updated {0} groups to new flightID", groupsToUpdate.Count);
 
         }
@@ -302,9 +399,9 @@ namespace AGroupOnStage.Main
         public void resetFlightID(uint currentID)
         {
             Logger.Log("Resetting flightID for groups with current flight ID of '{0}'", currentID);
-            List<IActionGroup> toUpdate = new List<IActionGroup>();
-            toUpdate.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.FlightID == currentID));
-            foreach (IActionGroup a in toUpdate)
+            List<AGOSActionGroup> toUpdate = new List<AGOSActionGroup>();
+            toUpdate.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => /*a.FireType == AGOSActionGroup.FireTypes.STAGE && */a.FlightID == currentID));
+            foreach (AGOSActionGroup a in toUpdate)
                 a.FlightID = a.OriginalFlightID;
             Logger.Log("Updated {0} groups to their previous flight IDs", toUpdate.Count);
         }

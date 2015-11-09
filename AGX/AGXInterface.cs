@@ -59,5 +59,11 @@ namespace AGroupOnStage.AGX
             calledType.InvokeMember("AGXToggleGroup", BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Static, null, null, new System.Object[] { group });
         }
 
+        public static void AGExtToggleGroupOnFlightID(uint flightID, int group)
+        {
+            Type calledType = Type.GetType("ActionGroupsExtended.AGExtExternal, AGExt");
+            calledType.InvokeMember("AGX2VslToggleGroup", BindingFlags.InvokeMethod | BindingFlags.Public | BindingFlags.Static, null, null, new System.Object[] { flightID, group });
+        }
+
     }
 }

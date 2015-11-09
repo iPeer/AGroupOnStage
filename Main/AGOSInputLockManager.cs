@@ -271,7 +271,11 @@ namespace AGroupOnStage.Main
                 if (new string[] { "value__", "None" }.Contains(s))
                     continue;
                 bool lockEnabled = InputLockManager.GetControlLock(String.Format("{0}_{1}", AGOS_DEBUG_LOCK_NAME, s)) != ControlTypes.None;
-                DEBUGtoggleDebugLock(s, GUILayout.Toggle(lockEnabled, s + ": " + lockEnabled, AGOSMain.Instance._buttonStyle));
+                //DEBUGtoggleDebugLock(s, GUILayout.Toggle(lockEnabled, s + ": " + lockEnabled, AGOSMain.Instance._buttonStyle));
+                if (GUILayout.Button(s + ": " + lockEnabled))
+                {
+                    DEBUGtoggleDebugLock(s);
+                }
 
             }
 
@@ -289,7 +293,7 @@ namespace AGroupOnStage.Main
 
         }
 
-        static void DEBUGtoggleDebugLock(string s, bool ignored)
+        static void DEBUGtoggleDebugLock(string s/*, bool ignored*/)
         {
 
             ControlTypes _lock = DEBUGgetLockForName(s);

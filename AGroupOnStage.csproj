@@ -116,26 +116,32 @@
   <ItemGroup>
     <Reference Include="Assembly-CSharp, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>H:\Steam\SteamApps\common\Kerbal Space Program\KSP_Data\Managed\Assembly-CSharp.dll</HintPath>
+      <HintPath>H:\KSP Experimentals\Build 1020 (1.0.5)\KSP_Data\Managed\Assembly-CSharp.dll</HintPath>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="UnityEngine">
-      <HintPath>H:\Steam\SteamApps\common\Kerbal Space Program\KSP_Data\Managed\UnityEngine.dll</HintPath>
+    <Reference Include="UnityEngine, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>H:\KSP Experimentals\Build 1020 (1.0.5)\KSP_Data\Managed\UnityEngine.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="000Toolbar\ToolbarWrapper.cs" />
     <Compile Include="ActionGroups\BasicActionGroup.cs" />
+    <Compile Include="ActionGroups\SASModeChangeGroup.cs" />
     <Compile Include="ActionGroups\StageLockActionGroup.cs" />
-    <Compile Include="ActionGroups\IActionGroup.cs" />
+    <Compile Include="ActionGroups\AGOSActionGroup.cs" />
     <Compile Include="ActionGroups\CameraControlActionGroup.cs" />
     <Compile Include="ActionGroups\FineControlActionGroup.cs" />
+    <Compile Include="ActionGroups\TestActionGroup.cs" />
     <Compile Include="ActionGroups\ThrottleControlActionGroup.cs" />
     <Compile Include="ActionGroups\TimeDelayedActionGroup.cs" />
+    <Compile Include="ActionGroups\Timers\ActionGroupTimer.cs" />
+    <Compile Include="ActionGroups\Timers\AGOSActionGroupTimerManager.cs" />
     <Compile Include="EngineersReport\EngineersReportInitialiser.cs" />
     <Compile Include="EngineersReport\InvalidPartReferenceConcern.cs" />
     <Compile Include="EngineersReport\NoGroupsConfiguredConcern.cs" />
     <Compile Include="EngineersReport\OutOfStageRangeConcern.cs" />
+    <Compile Include="EngineersReport\TechLevelTooLowConcern.cs" />
     <Compile Include="Extensions\IntegerExtensions.cs" />
     <Compile Include="Extensions\ListExtensions.cs" />
     <Compile Include="Extensions\PartExtensions.cs" />
@@ -150,6 +156,7 @@
     <Compile Include="AGX\AGXInterface.cs" />
     <Compile Include="Logging\Logger.cs" />
     <Compile Include="Main\AGOSModule.cs" />
+    <Compile Include="Main\AGOSPartSelectionHandler.cs" />
     <Compile Include="Main\AGOSSettings.cs" />
     <Compile Include="Main\AGOSToolbarManager.cs" />
     <Compile Include="Main\AGOSUtils.cs" />

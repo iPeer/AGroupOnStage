@@ -1,30 +1,30 @@
-﻿using System;
+﻿using AGroupOnStage.Main;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
 namespace AGroupOnStage.ActionGroups
 {
-    class CameraControlActionGroup : IActionGroup
+    public class CameraControlActionGroup : AGOSActionGroup
     {
-        public Vessel Vessel { get; set; }
-        public int[] Stages { get; set; }
-        public int Group { get; set; }
-        public float ThrottleLevel { get; set; }
-        public FlightCamera.Modes cameraMode { get; set; }
-        public Part linkedPart { get; set; }
-        public bool isPartLocked { get; set; }
-        public string partRef { get; set; }
-        public int timerDelay { get; set; }
-        public int fireGroupID { get; set; }
-        public uint FlightID { get; set; }
-        public uint OriginalFlightID { get; set; }
-        public string StagesAsString
+        public override void fire()
         {
-            get
-            {
-                return AGroupOnStage.Main.AGOSUtils.intArrayToString(Stages);
-            }
+            this.fireOnVessel(FlightGlobals.fetch.activeVessel);
         }
+
+        public override void fireOnVessel(Vessel v)
+        {
+            if (AGOSMain.Settings.get<bool>("InstantCameraTransitions"))
+                FlightCamera.SetModeImmediate(this.cameraMode);
+            else
+                FlightCamera.SetMode(this.cameraMode);
+        }
+
+        public override void fireOnVesselID(uint vID)
+        {
+            this.fireOnVessel(null);
+        }
+
     }
 }
