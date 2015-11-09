@@ -21,7 +21,8 @@ namespace AGroupOnStage.Main
         {
             DEFAULT,
             SHIMMY_TACO,
-            SETTINGS
+            SETTINGS,
+            BOB_ROSS
         }
 
         public static void addToolbarButton()
@@ -115,8 +116,14 @@ namespace AGroupOnStage.Main
         public static Texture2D createButtonTexture()
         {
             ButtonType t = ButtonType.DEFAULT;
-            if ((AGOSMain.Settings.get<bool>("TacosAllDayErrDay") || new System.Random().NextBoolOneIn(AGOSMain.Settings.get<int>("TacoButtonChance"))) && AGOSMain.Settings.get<bool>("AllowEE"))
-                t = ButtonType.SHIMMY_TACO;
+            if ((AGOSMain.Settings.get<bool>("TacosAllDayErrDay") || AGOSMain.Settings.get<bool>("HappyLittleTrees") || new System.Random().NextBoolOneIn(AGOSMain.Settings.get<int>("TacoButtonChance"))) && AGOSMain.Settings.get<bool>("AllowEE"))
+            {
+                bool taco = new System.Random().NextBool();
+                if (taco || AGOSMain.Settings.get<bool>("TacosAllDayErrDay"))
+                    t = ButtonType.SHIMMY_TACO;
+                else if (!taco || AGOSMain.Settings.get<bool>("HappyLittleTrees"))
+                    t = ButtonType.BOB_ROSS;
+            }
             return createButtonTexture(t);
 
         }
@@ -124,19 +131,24 @@ namespace AGroupOnStage.Main
         public static Texture2D createButtonTexture(ButtonType type)
         {
             int x = 0;
-            int y = 0;
+            int y = 128;
             int w = 128;
             int h = 128;
             if (type == ButtonType.SHIMMY_TACO)
             {
                 Logger.Log("Are you hungry?");
-                y = 128;
+                y = 256;
             }
             else if (type == ButtonType.SETTINGS)
             {
-                x = 184;
-                y = 56;
+                x = y = 184;
                 w = h = 72;
+            }
+            else if (type == ButtonType.BOB_ROSS)
+            {
+                Logger.Log("Happy little accidents!");
+                x = 128;
+                y = 0;
             }
             Texture2D mainTex = AGOSUtils.loadTextureFromDDS(System.IO.Path.Combine(AGOSUtils.getDLLPath(), "Textures/Buttons.dds"), TextureFormat.DXT5);
             Color[] pixels = mainTex.GetPixels(x, y, w, h); // Get the pixels we want from the main texture
@@ -145,7 +157,7 @@ namespace AGroupOnStage.Main
             if (type != ButtonType.SETTINGS && AGOSMain.Instance.SpecialOccasion) // Draw confetting for special occasions! \o/
             {
                 // 2.0.12-dev4: Fixes button showing white textures when overlaying confetti. Also made this code slightly more efficient, because everyone likes efficiency!
-                Color[] confetti = mainTex.GetPixels(128, 128, 128, 128);
+                Color[] confetti = mainTex.GetPixels(128, 256, 128, 128);
 
                 for (int i = 0; i < pixels.Length; i++)
                 {

@@ -61,6 +61,7 @@ namespace AGroupOnStage.Main
             {"PartPickerColour-R", "The R value of the colour used for highlighting parts while in part picker mode."},
             {"PartPickerColour-G", "The G value of the colour used for highlighting parts while in part picker mode."},
             {"PartPickerColour-B", "The B value of the colour used for highlighting parts while in part picker mode."},
+            {"HappyLittleTrees", "Always give the AGOS button its stylish hair do."}
             //{"AllowTextureCaching", "Let AGOS create caches for textures it uses instead of getting them from the game database every time"} // No longer needed
 
         };
@@ -103,7 +104,8 @@ namespace AGroupOnStage.Main
                 {"DebugMenuShortcut", false},
                 {"PartPickerColour-R", (byte)255},
                 {"PartPickerColour-G", (byte)2},
-                {"PartPickerColour-B", (byte)141}
+                {"PartPickerColour-B", (byte)141},
+                {"HappyLittleTrees", false}
             };
 
         }
