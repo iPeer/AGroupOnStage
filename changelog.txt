@@ -1,11 +1,12 @@
 ??, v2.0.12:
+	* Recompiled against KSP 1.0.5.
 	* Users can now pick parts to link group configurations to from within AGOS' GUI.
 	* Added a new group config: SAS mode change - change the autopilot's mode when staging!
 	* Time-delayed actions groups are now saved along-side the vessel so they can be resumed should the player leave flight whilst they're counting down.
 	* Maximum delay for time-delayed groups has been upped to 60 seconds by default on new installs. Existing installs will need to edit their config!
 	* [#27] Fixed an issue causing AGOS' Engineer's Report concerns from being registered every time the player entered an editor.
 	* [#29] Fixed an issue causing configurations creating in the flight scene not being restored to their vessel correctly when undocking.
-	* [#32] Fixed the button texture becoming white when overlaying teh confetti texture for special occasions.
+	* [#32] Fixed the button texture becoming white when overlaying the confetti texture for special occasions.
 
 26/07/15, v2.0.11:
 	* [#24] Fixed an issue where AGOS' toolbar buttons could become stuck in a disabled state if the player changed scene while controlling a Kerbal

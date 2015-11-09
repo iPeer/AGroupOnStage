@@ -121,9 +121,9 @@ namespace AGroupOnStage.Main
         {
 
             Logger.Log("Vessel '{0}' ({1}) docked to vessel '{2}' ({3})", data.from.vessel.vesselName, data.from.vessel.rootPart.flightID, data.to.vessel.vesselName, data.to.vessel.rootPart.flightID);
-            activateDockingUndockingActionGroups(data.to.vessel, AGOSActionGroup.FireTypes.DOCK);
-            activateDockingUndockingActionGroups(data.from.vessel, AGOSActionGroup.FireTypes.DOCK);
-            AGOSMain.Instance.getMasterAGOSModule(data.to.vessel).setFlightID(data.to.vessel.rootPart.flightID, true, data.from.vessel.rootPart.flightID);
+            /*activateDockingUndockingActionGroups(data.to.vessel, AGOSActionGroup.FireTypes.DOCK);
+            activateDockingUndockingActionGroups(data.from.vessel, AGOSActionGroup.FireTypes.DOCK);*/
+            AGOSMain.Instance.getMasterAGOSModule(data.to.vessel).setFlightID(data.to.vessel.rootPart.flightID, data.from.vessel.rootPart.flightID);
 
         }
 

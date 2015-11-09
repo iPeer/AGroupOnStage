@@ -158,8 +158,8 @@ namespace AGroupOnStage.Main
                     this.flightID = Convert.ToUInt32(node.GetValue("flightID"));
                 else
                 {
-                    Logger.LogWarning("No flightID found for this config, assigning temp value.");
                     this.tempFlightID = Convert.ToUInt32(Math.Abs(this.GetHashCode()));
+                    Logger.LogWarning("No flightID found for this config, assigning temp value of {0}.", this.tempFlightID);
                 }
             }
 
@@ -285,9 +285,12 @@ namespace AGroupOnStage.Main
 
                     ag.Group = groupID;
                     ag.Vessel = this.vessel;
-                    ag.FlightID = (this.tempFlightID != 0 ? Convert.ToUInt32(this.tempFlightID) : flightID);
+                    ag.FlightID = (this.tempFlightID != 0 ? this.tempFlightID : flightID);
                     if (originalFlightID > 0)
                         ag.OriginalFlightID = originalFlightID;
+
+                    if (AGOSMain.Settings.get<bool>("LogNodeSaving"))
+                        Logger.Log(ag.ToString());
 
                     AGOSMain.Instance.actionGroups.Add(ag);
 
@@ -324,11 +327,55 @@ namespace AGroupOnStage.Main
             return "Able to fire action groups on stage.";
         }
 
-        public void setFlightID(uint id, bool fromDock = false, uint oldID = 0)
+        public void setFlightID(uint flightID, uint oldID = 0)
+        {
+
+            if (oldID != 0) // Changing from oldID to a new ID
+            {
+                Logger.Log("Updating FlightID to {0} from {1}", flightID, oldID);
+                this.flightID = flightID;
+                List<AGOSActionGroup> toUpdate = new List<AGOSActionGroup>();
+                toUpdate.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.FlightID == oldID));
+                if (toUpdate.Count == 0)
+                    Logger.Log("No FlightID updates are needed.");
+                else
+                {
+                    toUpdate.ForEach(g => { g.OriginalFlightID = g.FlightID; g.FlightID = flightID; });
+                    Logger.Log("{2} group(s) updated from FlightID {0} to FlightID {1}", oldID, flightID, toUpdate.Count);
+                }
+            }
+            else
+            {
+                if (this.tempFlightID == 0)
+                    Logger.Warning("Temp ID is 0, configs will (probably) not update as expected.");
+                Logger.Log("Updating all parts with temp ID {0} to FlightID {1}", this.tempFlightID, flightID);
+                this.flightID = flightID;
+                List<AGOSActionGroup> toUpdate = new List<AGOSActionGroup>();
+                toUpdate.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.FlightID == this.tempFlightID));
+                if (toUpdate.Count == 0)
+                    Logger.Log("No FlightID updates are needed.");
+                else
+                {
+                    toUpdate.ForEach(g => { g.OriginalFlightID = g.FlightID = flightID; });
+                    Logger.Log("{2} group(s) updated from temp ID {0} to FlightID {1}", this.tempFlightID, flightID, toUpdate.Count);
+                }
+            }
+
+        }
+
+        // TODO: Rewrite
+        [Obsolete]
+        public void setFlightID_old(uint id, bool fromDock = false, uint oldID = 0)
         {
 
             this.flightID = id;
             Logger.Log("Processing flightID update from external source ({0})", id);
+            Logger.Log("tempFlightID == 0? {0} ({1})", this.tempFlightID == 0, this.tempFlightID);
+            if (this.tempFlightID != (uint)0)
+            {
+                Logger.Log("This module's temp ID: {0}", this.tempFlightID);
+                Logger.Log("Groups matching this temp ID: {0}", AGOSMain.Instance.actionGroups.Count(a => a.FlightID == this.tempFlightID));
+            }
             List<AGOSActionGroup> groupsToUpdate = new List<AGOSActionGroup>();
             groupsToUpdate.AddRange(AGOSMain.Instance.actionGroups.FindAll(a => a.FlightID == (fromDock && oldID > 0 ? oldID : this.tempFlightID)));
             foreach (AGOSActionGroup b in groupsToUpdate)
