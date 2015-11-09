@@ -1,4 +1,4 @@
-??, v2.0.12:
+09/11/15, v2.0.12:
 	* Recompiled against KSP 1.0.5.
 	* Users can now pick parts to link group configurations to from within AGOS' GUI.
 	* Added a new group config: SAS mode change - change the autopilot's mode when staging!
