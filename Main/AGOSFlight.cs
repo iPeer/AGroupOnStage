@@ -52,6 +52,14 @@ namespace AGroupOnStage.Main
             //AGOSUtils.resetActionGroupConfig();
         }
 
+        private void OnGUI() /* 1.1 compatible GUI render code */
+        {
+            if (AGOSMain.Instance.guiVisible)
+            {
+                AGOSMain.Instance.OnDraw();
+            }
+        }
+
         private void onCrewBoardVessel(GameEvents.FromToAction<Part, Part> data)
         {
             AGOSToolbarManager.enableToolbarButton();
@@ -317,9 +325,9 @@ namespace AGroupOnStage.Main
             else
             {
                 if (onDock)
-                    fireActionGroup(ag.GetType() == typeof(TimeDelayedActionGroup) ? ag.fireGroupID : ag.Group, v);
+                    ag.fireOnVessel(v);
                 else
-                    fireActionGroup(ag.GetType() == typeof(TimeDelayedActionGroup) ? ag.fireGroupID : ag.Group);
+                    ag.fire();
             }
             if ((ag.isPartLocked || ag.Stages.Count(a => a < FlightGlobals.fetch.activeVessel.currentStage) == 1) && ag.FireType == AGOSActionGroup.FireTypes.STAGE)
             {

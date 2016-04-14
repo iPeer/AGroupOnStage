@@ -56,7 +56,7 @@ namespace AGroupOnStage.Main
             AGOSUtils.resetActionGroupConfig("Editor->onEditorRestart", true);
         }
 
-        private void onEditorLoad(ShipConstruct data0, CraftBrowser.LoadType data1)
+        private void onEditorLoad(ShipConstruct data0, KSP.UI.Screens.CraftBrowserDialog.LoadType data1)
         {
             Logger.Log("AGOS.Main.AGOSEditor.onEditorLoad()");
             if (HighLogic.LoadedSceneIsEditor)
@@ -147,17 +147,28 @@ namespace AGroupOnStage.Main
             {
                 if (AGOSMain.Settings.get<bool>("LockInputsOnGUIOpen"))
                     AGOSInputLockManager.setControlLocksForScene(HighLogic.LoadedScene);
-                DialogOption optionOK = new DialogOption("Okay", () => undoClick(0));
-                DialogOption optionOKDS = new DialogOption("Okay - don't show this again", () => undoClick(1));
-                DialogOption optionMI = new DialogOption("More Information", () => undoClick(2), false);
+                DialogGUIButton[] options = new DialogGUIButton[]
+                {
+                    new DialogGUIButton("Okay", () => undoClick(0)),
+                    new DialogGUIButton("Okay - don't show this again", () => undoClick(1)),
+                    new DialogGUIButton("More Information", () => undoClick(2), false)
+                };
                 MultiOptionDialog mod = new MultiOptionDialog(
                     "It looks like you had groups which were locked to parts, but just tried to undo or redo something on your vessel." +
                     "Due to how the game handles undos and redos, it's not currently possible for AGOS to correctly process " +
                     "part locked configurations through these processes. Configurations using manually entered stage numbers will work as expected.\n\n" +
-                    "For more information on this issue, please click the \"More Information\" button.", "AGroupOnStage", HighLogic.Skin, optionOK, optionOKDS, optionMI);
-                PopupDialog.SpawnPopupDialog(mod, false, HighLogic.Skin);
+                    "For more information on this issue, please click the \"More Information\" button.", "AGroupOnStage", HighLogic.UISkin, options);
+                PopupDialog.SpawnPopupDialog(mod, false, HighLogic.UISkin);
             }
 
+        }
+
+        private void OnGUI() /* 1.1 compatible GUI render code */
+        {
+            if (AGOSMain.Instance.guiVisible)
+            {
+                AGOSMain.Instance.OnDraw();
+            }
         }
 
         private void OnEditorRedo(ShipConstruct data)

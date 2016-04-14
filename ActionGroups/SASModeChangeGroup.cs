@@ -35,8 +35,8 @@ namespace AGroupOnStage.ActionGroups
                 Logger.Log("Setting SAS mode to '{0}' on vessel '{1}' ({2}, {3})", mode.ToString(), v.vesselName, v.rootPart.flightID, v.id);
                 if (!(AGOSMain.Instance.isGameGUIHidden && AGOSMain.Settings.get<bool>("SilenceWhenUIHidden")))
                     ScreenMessages.PostScreenMessage(String.Format("Vessel's autopilot has been set to '{0}'", mode), 5f, ScreenMessageStyle.UPPER_CENTER);
-                vesselAutopilotUI.modeButtons[(int)v.Autopilot.Mode].SetFalse(false);
-                vesselAutopilotUI.modeButtons[(int)mode].SetTrue(true);
+                vesselAutopilotUI.modeButtons[(int)v.Autopilot.Mode].SetState(KSP.UI.UIStateToggleButton.BtnState.False);
+                vesselAutopilotUI.modeButtons[(int)mode].SetState(KSP.UI.UIStateToggleButton.BtnState.True);
                 v.Autopilot.SetMode(mode);
                 v.Autopilot.Update();
                 Logger.Log("New vessel Autopilot mode: {0}", v.Autopilot.Mode);

@@ -116,12 +116,20 @@
   <ItemGroup>
     <Reference Include="Assembly-CSharp, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>H:\KSP Experimentals\Build 1020 (1.0.5)\KSP_Data\Managed\Assembly-CSharp.dll</HintPath>
+      <HintPath>H:\KSP Experimentals\Build 1138 (1.1)\KSP_Data\Managed\Assembly-CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="KSPUtil, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>H:\KSP Experimentals\Build 1138 (1.1)\KSP_Data\Managed\KSPUtil.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="UnityEngine, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>H:\KSP Experimentals\Build 1020 (1.0.5)\KSP_Data\Managed\UnityEngine.dll</HintPath>
+      <HintPath>H:\KSP Experimentals\Build 1138 (1.1)\KSP_Data\Managed\UnityEngine.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UI, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>H:\KSP Experimentals\Build 1138 (1.1)\KSP_Data\Managed\UnityEngine.UI.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
@@ -150,7 +158,6 @@
     <Compile Include="Main\AGOSDebug.cs" />
     <Compile Include="Main\AGOSEditor.cs" />
     <Compile Include="Main\AGOSFlight.cs" />
-    <Compile Include="Main\AGOSGroupManager.cs" />
     <Compile Include="Main\AGOSInputLockManager.cs" />
     <Compile Include="Main\AGOSMain.cs" />
     <Compile Include="AGX\AGXInterface.cs" />
@@ -161,6 +168,7 @@
     <Compile Include="Main\AGOSToolbarManager.cs" />
     <Compile Include="Main\AGOSUtils.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Tests\KSP11GUIAppLauncherTest.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>

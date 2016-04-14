@@ -8,6 +8,7 @@ Library*
 PartTools*
 *.bat
 output_grep.txt
+UnityGUI/*
 
 #################
 ## Eclipse

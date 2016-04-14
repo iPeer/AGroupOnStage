@@ -48,19 +48,22 @@ namespace AGroupOnStage.Main
             if (guiVisible)
             {
                 guiVisible = false;
-                RenderingManager.RemoveFromPostDrawQueue(AGOSMain.AGOS_DEBUG_GUI_WINDOW_ID, OnDraw);
             }
             else
             {
                 guiVisible = true;
-                RenderingManager.AddToPostDrawQueue(AGOSMain.AGOS_DEBUG_GUI_WINDOW_ID, OnDraw);
             }
+        }
+
+        private static void OnGUI()
+        {
+            OnDraw();
         }
 
         public static void OnDraw()
         {
 
-
+            if (!guiVisible) { return; }
             _winPos = GUILayout.Window(AGOSMain.AGOS_DEBUG_GUI_WINDOW_ID, _winPos, OnWindow, "AGOS: Debug CHEATS!");
 
         }
