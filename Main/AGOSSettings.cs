@@ -288,7 +288,7 @@ namespace AGroupOnStage.Main
             OnDraw();
         }
 
-        private void OnDraw()
+        public void OnDraw()
         {
 
             if (!guiVisible) { return; }

@@ -165,10 +165,7 @@ namespace AGroupOnStage.Main
 
         private void OnGUI() /* 1.1 compatible GUI render code */
         {
-            if (AGOSMain.Instance.guiVisible)
-            {
-                AGOSMain.Instance.OnDraw();
-            }
+            AGOSUtils.renderVisibleGUIs();
         }
 
         private void OnEditorRedo(ShipConstruct data)

@@ -19,7 +19,7 @@ namespace AGroupOnStage.Main
 //#endif
     public class AGOSDebug : MonoBehaviour
     {
-        private static bool guiVisible = false;
+        public static bool guiVisible = false;
         private static Rect _winPos = new Rect();
         private static Vector2 scrollPos = Vector2.zero;
         private static Vector2 logScrollPos = Vector2.zero;
