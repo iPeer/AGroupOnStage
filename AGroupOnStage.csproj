@@ -165,6 +165,7 @@
     <Compile Include="Main\AGOSModule.cs" />
     <Compile Include="Main\AGOSPartSelectionHandler.cs" />
     <Compile Include="Main\AGOSSettings.cs" />
+    <Compile Include="Main\AGOSSpaceCentre.cs" />
     <Compile Include="Main\AGOSToolbarManager.cs" />
     <Compile Include="Main\AGOSUtils.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
