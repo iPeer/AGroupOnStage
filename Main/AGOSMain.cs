@@ -192,7 +192,7 @@ namespace AGroupOnStage.Main
 #if DEBUG
             if (Settings.get<bool>("HereBeDragons"))
             {
-                DialogGUIBase[] options = new DialogGUIBase[] 
+                DialogGUIButton[] options = new DialogGUIButton[] 
                 {
                     new DialogGUIButton("OK", () => dragonsCallBack(0)),
                     new DialogGUIButton("OK - Don't show again", () => dragonsCallBack(1)),
