@@ -151,13 +151,13 @@ namespace AGroupOnStage.Main
                 {
                     new DialogGUIButton("Okay", () => undoClick(0)),
                     new DialogGUIButton("Okay - don't show this again", () => undoClick(1)),
-                    new DialogGUIButton("More Information", () => undoClick(2), false)
+                    /*new DialogGUIButton("More Information", () => undoClick(2), false)*/
                 };
                 MultiOptionDialog mod = new MultiOptionDialog(
                     "It looks like you had groups which were locked to parts, but just tried to undo or redo something on your vessel." +
                     "Due to how the game handles undos and redos, it's not currently possible for AGOS to correctly process " +
-                    "part locked configurations through these processes. Configurations using manually entered stage numbers will work as expected.\n\n" +
-                    "For more information on this issue, please click the \"More Information\" button.", "AGroupOnStage", HighLogic.UISkin, options);
+                    "part locked configurations through these processes. Configurations using manually entered stage numbers will work as expected.",
+                    "AGroupOnStage", HighLogic.UISkin, options);
                 PopupDialog.SpawnPopupDialog(mod, false, HighLogic.UISkin);
             }
 
