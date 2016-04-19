@@ -41,7 +41,7 @@ namespace AGroupOnStage.Main
             if (Instance == null)
                 Instance = this;
             Logger.Log("Part Selection Manager Startup");
-            selectMessage = new ScreenMessage("Click which part you want to assign to the group configuration.\nPress 'Cancel' in the AGOS GUI or 'P' to cancel.", Mathf.Infinity, ScreenMessageStyle.UPPER_CENTER, AGOSMain.Instance._labelStyleRed);
+            selectMessage = new ScreenMessage("Click which part you want to assign to the group configuration.\nPress 'Cancel' in the AGOS GUI or 'P' to cancel.", Mathf.Infinity, ScreenMessageStyle.UPPER_CENTER);
             errorMessage = new ScreenMessage("The part you selected is not on the active vessel!", 5f, ScreenMessageStyle.UPPER_CENTER);
             partHighlightColour = new Color32(AGOSMain.Settings.get<byte>("PartPickerColour-R"), AGOSMain.Settings.get<byte>("PartPickerColour-G"), AGOSMain.Settings.get<byte>("PartPickerColour-B"), 255);
         }

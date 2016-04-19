@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
-using KSPEngineersReport = EngineersReport;
+using KSPEngineersReport = KSP.UI.Screens.EngineersReport;
 
 namespace AGroupOnStage.EngineersReport
 {

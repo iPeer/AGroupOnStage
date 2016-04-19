@@ -8,9 +8,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using UnityEngine;
 using System.Reflection;
 using AGroupOnStage.ActionGroups.Timers;
+using UnityEngine;
 
 namespace AGroupOnStage.Main
 {
@@ -33,6 +33,7 @@ namespace AGroupOnStage.Main
 
 
         };
+        public bool Is64bit { get { return IntPtr.Size == 8; } }
         public bool SpecialOccasion
         {
             get
@@ -53,7 +54,7 @@ namespace AGroupOnStage.Main
         public Dictionary<int, bool> actionGroupSettings = new Dictionary<int, bool>();
         public Dictionary<int, KSPActionGroup> stockAGMap;
         public static AGOSSettings Settings { get; protected set; }
-        public static AGOSGroupManager GroupManager { get; protected set; }
+        //public static AGOSGroupManager GroupManager { get; protected set; }
         public bool FlightEventsRegistered { get; set; }
         public bool EditorEventsRegistered { get; set; }
         public static readonly int AGOS_GUI_WINDOW_ID = 03022007;
@@ -146,9 +147,11 @@ namespace AGroupOnStage.Main
 
         public void Start()
         {
+
             System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
             sw.Start();
             Logger.Log("AGOS.Main.AGOSMain.Start()");
+            Logger.Log("KSP architecture is {0}", (Is64bit ? "x64" : "x86"));
             Settings = new AGroupOnStage.Main.AGOSSettings(IOUtils.GetFilePathFor(this.GetType(), "settings.cfg"));
             // Create the pluginData folder for AGOS, if it doesn't exist
             System.IO.Directory.CreateDirectory(Settings.configPath.Replace("settings.cfg", ""));
@@ -164,7 +167,6 @@ namespace AGroupOnStage.Main
             if (Settings.get<bool>("EnableDebugOptions"))
                 Logger.Log("Debug options are enabled.");
             Logger.Log("AGOS' Settings loaded");
-            GroupManager = new AGOSGroupManager();
 
             if (Settings.get<bool>("AddAGOSKerbals"))
                 addAGOSKerbals();
@@ -185,28 +187,29 @@ namespace AGroupOnStage.Main
             GameEvents.onHideUI.Add(onHideUI);
             //GameEvents.onGUIAstronautComplexSpawn.Add(onGUIAstronautComplexSpawn);
             //GameEvents.onGUIAstronautComplexDespawn.Add(onGUIAstronautComplexDespawn);
-            AGOSToolbarManager.addToolbarButton();
+            //AGOSToolbarManager.addToolbarButton();
 
 #if DEBUG
             if (Settings.get<bool>("HereBeDragons"))
             {
-                DialogOption[] options = new DialogOption[] 
+                DialogGUIButton[] options = new DialogGUIButton[] 
                 {
-                    new DialogOption("OK", () => dragonsCallBack(0)),
-                    new DialogOption("OK - Don't show again", () => dragonsCallBack(1)),
-                    new DialogOption("Issue Page", () => dragonsCallBack(2), false)
+                    new DialogGUIButton("OK", () => dragonsCallBack(0)),
+                    new DialogGUIButton("OK - Don't show again", () => dragonsCallBack(1)),
+                    new DialogGUIButton("Issue Page", () => dragonsCallBack(2), false)
                 };
                 MultiOptionDialog mod = new MultiOptionDialog("HERE BE DRAGONS!\n " +
                 "This is a *very* early experimental release of the new AGOS. Things are going to be broken.\n\n"+
                 "If you find a bug, which is really quite likely, please report it on AGOS' GitHub issues page.\n\n"+
                 "You can get to this page by clicking the \"Issues Page\" button below.\n\n"+
                 "When reporting a bug, please include your output_log file and a craft file  and/or persistent file (stock only, please!) if you feel it will help with the report.\n\n"+
-                "Please check back at the releases page regularly to see if there's a new release!", "Here be Dragons - AGroupOnStage", HighLogic.Skin, options);
-                PopupDialog.SpawnPopupDialog(mod, false, HighLogic.Skin);
+                "Please check back at the releases page regularly to see if there's a new release!", "Here be Dragons - AGroupOnStage", HighLogic.UISkin, options);
+                PopupDialog.SpawnPopupDialog(mod, false, HighLogic.UISkin);
             }
 #endif
             sw.Stop();
             Logger.Log("AGOS {1} initalised in {0}s", sw.Elapsed.TotalSeconds, AGOSUtils.getModVersion());
+
         }
 
         private void loadSASModes()
@@ -218,7 +221,7 @@ namespace AGroupOnStage.Main
 
         private void onGUIAstronautComplexSpawn()
         {
-            if (this.guiVisible)
+            if (guiVisible)
                 this.toggleGUI();
         }
 
@@ -396,13 +399,21 @@ namespace AGroupOnStage.Main
 
         #region GUI
 
-        public void toggleGUI()
+        /*public void toggleGUI()
         {
             toggleGUI(false);
-        }
+        }*/
 
-        public void toggleGUI(bool fromPart)
+        public void toggleGUI(bool fromPart = false)
         {
+
+            /*Logger.LogDebug("RenderingManager initialised: {0}", RenderingManager.fetch == null);
+            try { bool _ = RenderingManager.fetch.postDrawQueue == null; }
+            catch (NullReferenceException) { Logger.LogWarning("RederingManager's postDrawQueue is not initialised!"); RenderingManager.fetch.postDrawQueue = new Callback[0]; }
+            Logger.LogDebug("Post Draw queue null?: {0}", RenderingManager.fetch.postDrawQueue == null);*/
+            Logger.LogDebug("Scene: {0}", HighLogic.LoadedScene.ToString());
+            Logger.LogDebug("Loaded Space Centre?: {0}", AGOSUtils.isLoadedSceneOneOf(GameScenes.SPACECENTER));
+            Logger.LogDebug("GUI Visible: {0}", guiVisible);
 
             if (AGOSUtils.isLoadedSceneOneOf(GameScenes.SPACECENTER))
             {
@@ -421,10 +432,11 @@ namespace AGroupOnStage.Main
                 guiVisible = false;
                 if (!AGOSToolbarManager.using000Toolbar)
                     AGOSToolbarManager.agosButton.SetFalse(false);
-                RenderingManager.RemoveFromPostDrawQueue(AGOS_GUI_WINDOW_ID, OnDraw);
+                Logger.LogDebug("GUI Pos update");
                 Settings.set("wPosX", _windowPos.x);
                 Settings.set("wPosY", _windowPos.y);
                 Settings.save();
+                Logger.LogDebug("=== /GUI pos update ===");
                 if (HighLogic.LoadedSceneIsEditor)
                 {
                     if (linkPart != null)
@@ -447,12 +459,14 @@ namespace AGroupOnStage.Main
                     AGOSToolbarManager.agosButton.SetTrue(false);
                 _windowPos.x = Settings.get<float>("wPosX");
                 _windowPos.y = Settings.get<float>("wPosY");
-                RenderingManager.AddToPostDrawQueue(AGOS_GUI_WINDOW_ID, OnDraw);
+                Logger.LogDebug("Window ID: {0}", AGOS_GUI_WINDOW_ID);
             }
         }
 
-        private void OnDraw()
+        public void OnDraw()
         {
+
+            if (!guiVisible) { return; }
 
             if (!hasSetupStyles)
                 setUpStyles();
@@ -463,9 +477,8 @@ namespace AGroupOnStage.Main
                 _windowPos.y = Mathf.Clamp(_windowPos.y, 0f, Screen.height - _windowPos.height);
             }
 
-            _windowPos = GUILayout.Window(AGOS_GUI_WINDOW_ID, _windowPos, OnWindow, String.Format("AGroupOnStage {0} {1}", AGOSUtils.getModVersion(), (AGOSDebug.isDebugBuild() ? "(Debug Mode)" : "")), _windowStyle, GUILayout.MinHeight(500f), GUILayout.MinWidth(500f), GUILayout.MaxWidth(500f));
+            _windowPos = GUILayout.Window(AGOS_GUI_WINDOW_ID, _windowPos, OnWindow, String.Format("AGroupOnStage {0} {1}", AGOSUtils.getModVersion(), (AGOSDebug.isDebugBuild() ? "(Debug Mode / KSP "+Versioning.GetVersionStringFull()+")" : "")), _windowStyle, GUILayout.MinHeight(500f), GUILayout.MinWidth(500f), GUILayout.MaxWidth(500f));
             // TODO: GUI position sanity checks
-
         }
 
         public void renderGroupButton(int x)
@@ -803,17 +816,17 @@ namespace AGroupOnStage.Main
                 if (debugButtonsVisible)
                 {
                     GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("DEBUG: Dump groups", _buttonStyle))
-                        AGOSGroupManager.dumpActionGroupConfig();
+                    /*if (GUILayout.Button("DEBUG: Dump groups", _buttonStyle))
+                        AGOSGroupManager.dumpActionGroupConfig();*/
 
                     if (GUILayout.Button("DEBUG: Toggle debug window", _buttonStyle))
                         AGOSDebug.toggleGUI();
                     GUILayout.EndHorizontal();
                     GUILayout.BeginHorizontal();
-                    if (GUILayout.Button("DEBUG: Show AGs", _buttonStyle))
+                    /*if (GUILayout.Button("DEBUG: Show AGs", _buttonStyle))
                     {
                         GroupManager.toggleGUI();
-                    }
+                    }*/
                     if (GUILayout.Button("DEBUG: Display active lock list", _buttonStyle))
                     {
                         AGOSInputLockManager.DEBUGListActiveLocks();
@@ -1030,7 +1043,7 @@ namespace AGroupOnStage.Main
         #region saving and loading
 
         // These aren't actually used.
-        public void OnSave(ConfigNode node)
+        /*public void OnSave(ConfigNode node)
         {
             Logger.Log("AGOS.Main.AGOSMain.OnSave()");
             Logger.Log("Vessel name is '{0}'", (HighLogic.LoadedSceneIsEditor ? EditorLogic.fetch.shipNameField.Text : FlightGlobals.fetch.activeVessel.vesselName));
@@ -1040,7 +1053,7 @@ namespace AGroupOnStage.Main
         {
             Logger.Log("AGOS.Main.AGOSMain.OnLoad()");
             Logger.Log("Vessel name is '{0}'", (HighLogic.LoadedSceneIsEditor ? EditorLogic.fetch.shipNameField.Text : FlightGlobals.fetch.activeVessel.vesselName));
-        }
+        }*/
 
         #endregion
 
@@ -1140,7 +1153,7 @@ namespace AGroupOnStage.Main
         {
             Logger.Log("Scene change to '{0}' from '{1}' requested", scene.ToString(), HighLogic.LoadedScene.ToString());
             AGOSToolbarManager.enableToolbarButton(); // 2.0.11-dev1: Force enable toolbar buttons on scene change (Fixes #24)
-            if (this.guiVisible)
+            if (guiVisible)
                 toggleGUI();
             if (Settings.guiVisible && !scene.ToString().Equals("SPACECENTER"))
                 Settings.toggleGUI();
