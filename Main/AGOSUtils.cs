@@ -449,5 +449,15 @@ namespace AGroupOnStage.Main
             return FlightGlobals.fetch.vessels.Find(a => a.rootPart != null && a.rootPart.flightID == flightID);
         }
 
+        public static void renderVisibleGUIs()
+        {
+            if (AGOSMain.Instance.guiVisible)
+                AGOSMain.Instance.OnDraw();
+            if (AGOSMain.Settings.guiVisible)
+                AGOSMain.Settings.OnDraw();
+            if (AGOSDebug.guiVisible)
+                AGOSDebug.OnDraw();
+        }
+
     }
 }

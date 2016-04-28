@@ -19,7 +19,7 @@ namespace AGroupOnStage.Main
 //#endif
     public class AGOSDebug : MonoBehaviour
     {
-        private static bool guiVisible = false;
+        public static bool guiVisible = false;
         private static Rect _winPos = new Rect();
         private static Vector2 scrollPos = Vector2.zero;
         private static Vector2 logScrollPos = Vector2.zero;
@@ -48,19 +48,22 @@ namespace AGroupOnStage.Main
             if (guiVisible)
             {
                 guiVisible = false;
-                RenderingManager.RemoveFromPostDrawQueue(AGOSMain.AGOS_DEBUG_GUI_WINDOW_ID, OnDraw);
             }
             else
             {
                 guiVisible = true;
-                RenderingManager.AddToPostDrawQueue(AGOSMain.AGOS_DEBUG_GUI_WINDOW_ID, OnDraw);
             }
+        }
+
+        private static void OnGUI()
+        {
+            OnDraw();
         }
 
         public static void OnDraw()
         {
 
-
+            if (!guiVisible) { return; }
             _winPos = GUILayout.Window(AGOSMain.AGOS_DEBUG_GUI_WINDOW_ID, _winPos, OnWindow, "AGOS: Debug CHEATS!");
 
         }
@@ -260,6 +263,9 @@ namespace AGroupOnStage.Main
                 hello = 0;
             if (hello % 60 == 0)
                 Logger.Log("Debug Update");*/
+
+            if (!AGOSUtils.isLoadedSceneOneOf(GameScenes.FLIGHT, GameScenes.EDITOR, GameScenes.SPACECENTER, GameScenes.TRACKSTATION)) { return; } // 3.0.1: Fix NRE spam on main menu when loading AGOS on an install that does not have a settings file
+
             if (isDebugBuild() || AGOSMain.Settings.get<bool>("DebugMenuShortcut"))
             {
                 /*if (Input.anyKey)

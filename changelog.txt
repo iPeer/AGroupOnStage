@@ -1,3 +1,6 @@
+19/14/16, v3.0:
+	* Updated to work with KSP 1.1
+
 09/11/15, v2.0.12:
 	* Recompiled against KSP 1.0.5.
 	* Users can now pick parts to link group configurations to from within AGOS' GUI.

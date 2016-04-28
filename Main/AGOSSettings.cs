@@ -70,6 +70,9 @@ namespace AGroupOnStage.Main
 
         public AGOSSettings(string path)
         {
+
+            Logger.Log("Settings path: " + path);
+
             this.configPath = path;
 
             this.SETTINGS_MAP = new Dictionary<string, object> {
@@ -179,7 +182,7 @@ namespace AGroupOnStage.Main
 
             Logger.Log("AGOS is loading settings");
             ConfigNode node = ConfigNode.Load(this.configPath);
-            if (node == null || node.CountValues == 0) { Logger.Log("No settings to load!"); return; }
+            if (node == null || node.CountValues == 0) { Logger.Log("No settings to load!"); Logger.Log("Saving default settings..."); this.save(true); /* 3.0.1: Fix for settings file not being created if it doesn't exist. */ return; }
 
             Dictionary<string, object> _new = new Dictionary<string, object>();
 
@@ -193,9 +196,9 @@ namespace AGroupOnStage.Main
 
         }
 
-        public void save()
+        public void save(bool force = false)
         {
-            if (!this.hasChanged)
+            if (!this.hasChanged && !force)
                 return;
             this.hasChanged = false;
             Logger.Log("AGOS is saving config...");
@@ -214,20 +217,19 @@ namespace AGroupOnStage.Main
 
             if (guiVisible)
             {
-                RenderingManager.RemoveFromPostDrawQueue(AGOSMain.AGOS_SETTINGS_GUI_WINDOW_ID, OnDraw);
                 scrollPos = Vector2.zero;
                 this.guiVisible = false;
                 if (!AGOSToolbarManager.using000Toolbar)
                     AGOSToolbarManager.agosButton.SetFalse(false);
                 if (this.lastAGOSKSetting && !get<bool>("AddAGOSKerbals"))
                 {
-                    DialogOption[] options = new DialogOption[] { 
-                        new DialogOption("Yes", () => removeKerbalsClick(0)), 
-                        new DialogOption("No", () => removeKerbalsClick(1)) 
+                    DialogGUIButton[] options = new DialogGUIButton[] { 
+                        new DialogGUIButton("Yes", () => removeKerbalsClick(0)), 
+                        new DialogGUIButton("No", () => removeKerbalsClick(1)) 
                     };
 
-                    MultiOptionDialog mod = new MultiOptionDialog("Do you want to remove AGOS related Kerbals from your game? Only Kerbals who have a status of \"Available\" will be able to be removed.", "AGroupOnStage", HighLogic.Skin, options);
-                    PopupDialog.SpawnPopupDialog(mod, false, HighLogic.Skin);
+                    MultiOptionDialog mod = new MultiOptionDialog("Do you want to remove AGOS related Kerbals from your game? Only Kerbals who have a status of \"Available\" will be able to be removed.", "AGroupOnStage", HighLogic.UISkin, options);
+                    PopupDialog.SpawnPopupDialog(mod, false, HighLogic.UISkin);
                 }
                 else if (!this.lastAGOSKSetting && get<bool>("AddAGOSKerbals"))
                     AGOSMain.Instance.addAGOSKerbals();
@@ -238,7 +240,6 @@ namespace AGroupOnStage.Main
                 this.guiVisible = true;
                 _winPos.x = get<float>("wPosSX");
                 _winPos.y = get<float>("wPosSY");
-                RenderingManager.AddToPostDrawQueue(AGOSMain.AGOS_SETTINGS_GUI_WINDOW_ID, OnDraw);
             }
 
         }
@@ -278,12 +279,20 @@ namespace AGroupOnStage.Main
                 }
 
             }
-            MultiOptionDialog mod = new MultiOptionDialog(message.ToString(), "AGroupOnStage", HighLogic.Skin, new DialogOption("Ok", () => removeKerbalsClick(2)));
-            PopupDialog.SpawnPopupDialog(mod, false, HighLogic.Skin);
+            MultiOptionDialog mod = new MultiOptionDialog(message.ToString(), "AGroupOnStage", HighLogic.UISkin, new DialogGUIButton("Ok", () => removeKerbalsClick(2)));
+            PopupDialog.SpawnPopupDialog(mod, false, HighLogic.UISkin);
+        }
+
+        private void OnGUI()
+        {
+            OnDraw();
         }
 
         public void OnDraw()
         {
+
+            if (!guiVisible) { return; }
+
             if (!AGOSMain.Instance.hasSetupStyles)
                 AGOSMain.Instance.setUpStyles();
             if (!hasSetupStyles)
@@ -368,12 +377,12 @@ namespace AGroupOnStage.Main
 
             if (GUILayout.Button("Reset settings to defaults", AGOSMain.Instance._buttonStyle))
             {
-                DialogOption[] options = new DialogOption[] { 
-                        new DialogOption("Yes", () => resetSettingsCallback(1)), 
-                        new DialogOption("No", () => resetSettingsCallback(0)) 
+                DialogGUIButton[] options = new DialogGUIButton[] { 
+                        new DialogGUIButton("Yes", () => resetSettingsCallback(1)), 
+                        new DialogGUIButton("No", () => resetSettingsCallback(0)) 
                     };
-                MultiOptionDialog mod = new MultiOptionDialog("Are you sure you want to reset your AGOS settings? This will reset all AGOS' settings back to their defaults. This process cannot be undone!", "AGroupOnStage", HighLogic.Skin, options);
-                PopupDialog.SpawnPopupDialog(mod, false, HighLogic.Skin);
+                MultiOptionDialog mod = new MultiOptionDialog("Are you sure you want to reset your AGOS settings? This will reset all AGOS' settings back to their defaults. This process cannot be undone!", "AGroupOnStage", HighLogic.UISkin, options);
+                PopupDialog.SpawnPopupDialog(mod, false, HighLogic.UISkin);
             }
 
             if (GUILayout.Button("Save & Close", AGOSMain.Instance._buttonStyle))

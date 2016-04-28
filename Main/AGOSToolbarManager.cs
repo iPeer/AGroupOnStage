@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using KSP.UI.Screens;
 
 namespace AGroupOnStage.Main
 {
@@ -89,8 +90,8 @@ namespace AGroupOnStage.Main
                 }*/
                 Logger.Log("Adding ApplicationLauncher button");
                 agosButton = ApplicationLauncher.Instance.AddModApplication(
-                    AGOSMain.Instance.toggleGUI,
-                    AGOSMain.Instance.toggleGUI,
+                    () => AGOSMain.Instance.toggleGUI(),
+                    () => AGOSMain.Instance.toggleGUI(),
                     null,
                     null,
                     null,
