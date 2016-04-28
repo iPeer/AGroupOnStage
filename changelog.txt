@@ -1,3 +1,7 @@
+28/04/16, v3.0.1:
+	* Fixed an issue where AGOS would spam NREs at the KSP menu screen if no settings file was present.
+	* Fixed an issue where AGOS would not correctly create a settigns file on new or clean installs.
+
 19/14/16, v3.0:
 	* Updated to work with KSP 1.1
 
