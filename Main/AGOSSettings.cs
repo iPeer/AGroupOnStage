@@ -182,7 +182,7 @@ namespace AGroupOnStage.Main
 
             Logger.Log("AGOS is loading settings");
             ConfigNode node = ConfigNode.Load(this.configPath);
-            if (node == null || node.CountValues == 0) { Logger.Log("No settings to load!"); return; }
+            if (node == null || node.CountValues == 0) { Logger.Log("No settings to load!"); Logger.Log("Saving default settings..."); this.save(true); /* 3.0.1: Fix for settings file not being created if it doesn't exist. */ return; }
 
             Dictionary<string, object> _new = new Dictionary<string, object>();
 
@@ -196,9 +196,9 @@ namespace AGroupOnStage.Main
 
         }
 
-        public void save()
+        public void save(bool force = false)
         {
-            if (!this.hasChanged)
+            if (!this.hasChanged && !force)
                 return;
             this.hasChanged = false;
             Logger.Log("AGOS is saving config...");
