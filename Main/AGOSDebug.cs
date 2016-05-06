@@ -264,7 +264,7 @@ namespace AGroupOnStage.Main
             if (hello % 60 == 0)
                 Logger.Log("Debug Update");*/
 
-            if (!AGOSUtils.isLoadedSceneOneOf(GameScenes.FLIGHT, GameScenes.EDITOR, GameScenes.SPACECENTER, GameScenes.TRACKSTATION)) { return; } // 3.0.1: Fix NRE spam on main menu when loading AGOS on an install that does not have a settings file
+            if (/* < */AGOSMain.Settings == null || !AGOSMain.Settings.IsInitialised /* > 3.0.2: Fix for more settings related NREs */ || !AGOSUtils.isLoadedSceneOneOf(GameScenes.FLIGHT, GameScenes.EDITOR, GameScenes.SPACECENTER, GameScenes.TRACKSTATION)) { return; } // 3.0.1: Fix NRE spam on main menu when loading AGOS on an install that does not have a settings file
 
             if (isDebugBuild() || AGOSMain.Settings.get<bool>("DebugMenuShortcut"))
             {
