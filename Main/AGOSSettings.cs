@@ -113,6 +113,8 @@ namespace AGroupOnStage.Main
 
         }
 
+        public Boolean IsInitialised = false;
+
         public void copyTo(Dictionary<string, object> target)
         {
             if (target == null)
@@ -182,7 +184,7 @@ namespace AGroupOnStage.Main
 
             Logger.Log("AGOS is loading settings");
             ConfigNode node = ConfigNode.Load(this.configPath);
-            if (node == null || node.CountValues == 0) { Logger.Log("No settings to load!"); Logger.Log("Saving default settings..."); this.save(true); /* 3.0.1: Fix for settings file not being created if it doesn't exist. */ return; }
+            if (node == null || node.CountValues == 0) { Logger.Log("No settings to load!"); Logger.Log("Saving default settings..."); this.save(true); /* 3.0.1: Fix for settings file not being created if it doesn't exist. */ this.IsInitialised = true; /* 3.0.2: Fix for more NREs relating to settings */ return; }
 
             Dictionary<string, object> _new = new Dictionary<string, object>();
 
@@ -193,6 +195,7 @@ namespace AGroupOnStage.Main
                     _new.Add(s, node.GetValue(s));
             this.setTo(_new);
             Logger.Log("Done loading settings!");
+            this.IsInitialised = true;
 
         }
 
